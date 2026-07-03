@@ -38,10 +38,10 @@ public class Restaurant extends BaseUpdatableEntity {
     @Column(length = 1000)
     private String description;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String address;
 
-    @Column(name = "address_detail", nullable = false, length = 255)
+    @Column(name = "address_detail", nullable = false)
     private String addressDetail;
 
     @Column(name = "zip_code", nullable = false, length = 10)
