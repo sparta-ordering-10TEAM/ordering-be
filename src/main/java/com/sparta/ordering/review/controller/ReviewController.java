@@ -10,8 +10,4 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api")
 public class ReviewController {
-    @GetMapping("/reviews/test")
-    public ResponseEntity<GeneralResponse<String>> test() {
-        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, "Test");
-    }
 }
