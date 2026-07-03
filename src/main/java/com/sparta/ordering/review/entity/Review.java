@@ -1,30 +1,19 @@
 package com.sparta.ordering.review.entity;
 
 import com.sparta.ordering.global.entity.BaseUpdatableEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.util.UUID;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "p_reviews")
 @Entity
 public class Review extends BaseUpdatableEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column
-    private UUID id;
-
-    @Builder
-    public Review(int rating, String comment) {
-        this.rating = rating;
-        this.comment = comment;
-    }
-
     //@Column
     //private Order orderId;
 
@@ -36,4 +25,10 @@ public class Review extends BaseUpdatableEntity {
 
     @Column
     private String comment;
+
+    @Builder
+    public Review(int rating, String comment) {
+        this.rating = rating;
+        this.comment = comment;
+    }
 }
