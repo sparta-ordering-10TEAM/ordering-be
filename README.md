@@ -4,6 +4,18 @@
 
 ---
 
+## 👥 Team & Roles
+(각자 자신 역할에 맞게 수정 해주세요!)
+| 도메인 | 담당 팀원 | 핵심 역할 |
+| :--- | :--- | :--- |
+| **사용자 (User)** | 강소율 | 회원가입/로그인, Spring Security & JWT 보안 인프라 구축 |
+| **주문 & 상품 (Order & Product)** | 한원태 | - |
+| **결제 & 배송 (Payment & Delivery)** | 김우태 | - |
+| **음식점 (Store)** | 안병규 | - |
+| **리뷰/평점 & AI 상품 설명(Review & AI)** | 김태현 | - |
+
+---
+
 ## 🛠️ Tech Stack & Versions
 
 ### Backend
@@ -18,18 +30,6 @@
 * **Cloud & Deployment:** AWS or Oracle Cloud (Free Tier), Docker (Optional)
 * **Documentation:** Swagger / Spring RestDocs
 * **Logging:** Logback
-
----
-
-## 👥 Team & Roles
-(각자 자신 역할에 맞게 수정 해주세요!)
-| 도메인 | 담당 팀원 | 핵심 역할 |
-| :--- | :--- | :--- |
-| **사용자 (User)** | 강소율 | 회원가입/로그인, Spring Security & JWT 보안 인프라 구축 |
-| **주문 & 상품 (Order & Product)** | 한원태 | - |
-| **결제 & 배송 (Payment & Delivery)** | 김우태 | - |
-| **음식점 (Store)** | 안병규 | - |
-| **리뷰/평점 & AI 상품 설명(Review & AI)** | 김태현 | - |
 
 ---
 
