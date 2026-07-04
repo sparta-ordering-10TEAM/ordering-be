@@ -1,13 +1,8 @@
 package com.sparta.ordering.restaurant.entity;
 
 import com.sparta.ordering.global.entity.BaseUpdatableEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Table;
-import java.math.BigDecimal;
-import java.util.UUID;
+import com.sparta.ordering.user.entity.User;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,14 +10,17 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "p_restaurants")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Restaurant extends BaseUpdatableEntity {
 
-    @Column(name = "user_id", columnDefinition = "uuid", nullable = false)
-    private UUID userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Enumerated(EnumType.STRING)
@@ -69,7 +67,7 @@ public class Restaurant extends BaseUpdatableEntity {
 
     @Builder
     public Restaurant(
-            UUID userId,
+            User user,
             RestaurantCategory category,
             String name,
             String phone,
@@ -84,7 +82,7 @@ public class Restaurant extends BaseUpdatableEntity {
             BigDecimal longitude,
             BigDecimal deliveryRadiusKm
     ) {
-        this.userId = userId;
+        this.user = user;
         this.category = category;
         this.name = name;
         this.phone = phone;
