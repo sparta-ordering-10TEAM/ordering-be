@@ -1,6 +1,7 @@
 package com.sparta.ordering.review.entity;
 
 import com.sparta.ordering.global.entity.BaseUpdatableEntity;
+import com.sparta.ordering.order.entity.Order;
 import com.sparta.ordering.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -15,9 +16,9 @@ import org.hibernate.annotations.OnDeleteAction;
 @Table(name = "p_reviews")
 @Entity
 public class Review extends BaseUpdatableEntity {
-    //@ManyToOne(fetch = FetchType.LAZY)
-    //@JoinColumn(name = "order_id", nullable = false)
-    //private Order order;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", columnDefinition = "uuid", nullable = false)
+    private Order order;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", columnDefinition = "uuid", nullable = false)
