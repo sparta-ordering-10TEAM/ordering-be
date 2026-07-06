@@ -74,7 +74,7 @@ public class ReviewService {
     }
 
     @Transactional
-    public void updateReview(int rating, String comment, UUID reviewId, UUID userId) {
+    public void updateReview(Integer rating, String comment, UUID reviewId, UUID userId) {
         Review review = reviewRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(reviewId, userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.REVIEW_NOT_FOUND));
 
