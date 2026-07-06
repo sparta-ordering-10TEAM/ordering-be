@@ -4,29 +4,22 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ProductCreateRequestDto {
+public record ProductCreateRequestDto(
 
-    @NotNull
-    private UUID restaurantId;
+        @NotNull(message = "가게 ID는 필수입니다.")
+        UUID restaurantId,
 
-    @NotBlank
-    @Size(max = 100)
-    private String name;
+        @NotBlank(message = "상품 명은 필수 입니다.")
+        @Size(max = 100, message = "상품명은 100자를 넘을 수 없습니다.")
+        String name,
 
-    private String description;
+        String description,
 
-    @NotNull
-    @Positive
-    private Long price;
+        @NotNull(message = "가격은 필수입니다.")
+        @Positive(message = "가격은 0보다 커야 합니다.")
+        Long price
+) {
 }

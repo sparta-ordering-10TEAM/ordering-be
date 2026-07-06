@@ -30,14 +30,14 @@ public class ProductService {
 
     @Transactional
     public ProductResponseDto createProduct(ProductCreateRequestDto request) {
-        Restaurant restaurant = restaurantRepository.findByIdAndDeletedAtIsNull(request.getRestaurantId())
+        Restaurant restaurant = restaurantRepository.findByIdAndDeletedAtIsNull(request.restaurantId())
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.INVALID_REQUEST, "존재하지 않는 가게입니다."));
 
         Product product = Product.builder()
                 .restaurant(restaurant)
-                .name(request.getName())
-                .description(request.getDescription())
-                .price(request.getPrice())
+                .name(request.name())
+                .description(request.description())
+                .price(request.price())
                 .build();
 
         return ProductResponseDto.from(productRepository.save(product));

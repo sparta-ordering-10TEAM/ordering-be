@@ -1,28 +1,24 @@
 package com.sparta.ordering.product.dto;
 
 import com.sparta.ordering.product.entity.Product;
-import lombok.Builder;
-import lombok.Getter;
 
 import java.util.UUID;
 
-@Getter
-@Builder
-public class ProductResponseDto {
-
-    private UUID id;
-    private UUID restaurantId;
-    private String name;
-    private String description;
-    private Long price;
+public record ProductResponseDto(
+        UUID id,
+        UUID restaurantId,
+        String name,
+        String description,
+        Long price
+) {
 
     public static ProductResponseDto from(Product product) {
-        return ProductResponseDto.builder()
-                .id(product.getId())
-                .restaurantId(product.getRestaurant().getId())
-                .name(product.getName())
-                .description(product.getDescription())
-                .price(product.getPrice())
-                .build();
+        return new ProductResponseDto(
+                product.getId(),
+                product.getRestaurant().getId(),
+                product.getName(),
+                product.getDescription(),
+                product.getPrice()
+        );
     }
 }

@@ -64,11 +64,11 @@ class ProductServiceTest {
             ProductResponseDto response = productService.getProduct(productId);
 
             // then
-            assertThat(response.getId()).isEqualTo(productId);
-            assertThat(response.getRestaurantId()).isEqualTo(restaurantId);
-            assertThat(response.getName()).isEqualTo("상품1");
-            assertThat(response.getDescription()).isEqualTo("상품 설명");
-            assertThat(response.getPrice()).isEqualTo(8000L);
+            assertThat(response.id()).isEqualTo(productId);
+            assertThat(response.restaurantId()).isEqualTo(restaurantId);
+            assertThat(response.name()).isEqualTo("상품1");
+            assertThat(response.description()).isEqualTo("상품 설명");
+            assertThat(response.price()).isEqualTo(8000L);
         }
 
         @Test
@@ -96,19 +96,16 @@ class ProductServiceTest {
             Restaurant restaurant = Restaurant.builder().build();
             ReflectionTestUtils.setField(restaurant, "id", restaurantId);
 
-            ProductCreateRequestDto requestDto = ProductCreateRequestDto.builder()
-                    .restaurantId(restaurantId)
-                    .name("상품1")
-                    .description("상품 설명")
-                    .price(8000L)
-                    .build();
+            ProductCreateRequestDto requestDto = new ProductCreateRequestDto(
+                    restaurantId, "상품1", "상품 설명", 8000L
+            );
 
             UUID productId = UUID.randomUUID();
             Product savedProduct = Product.builder()
                     .restaurant(restaurant)
-                    .name(requestDto.getName())
-                    .description(requestDto.getDescription())
-                    .price(requestDto.getPrice())
+                    .name(requestDto.name())
+                    .description(requestDto.description())
+                    .price(requestDto.price())
                     .build();
             ReflectionTestUtils.setField(savedProduct, "id", productId);
 
@@ -119,11 +116,11 @@ class ProductServiceTest {
             ProductResponseDto responseDto = productService.createProduct(requestDto);
 
             // then
-            assertThat(responseDto.getId()).isEqualTo(productId);
-            assertThat(responseDto.getRestaurantId()).isEqualTo(restaurantId);
-            assertThat(responseDto.getDescription()).isEqualTo(requestDto.getDescription());
-            assertThat(responseDto.getName()).isEqualTo(requestDto.getName());
-            assertThat(responseDto.getPrice()).isEqualTo(requestDto.getPrice());
+            assertThat(responseDto.id()).isEqualTo(productId);
+            assertThat(responseDto.restaurantId()).isEqualTo(restaurantId);
+            assertThat(responseDto.description()).isEqualTo(requestDto.description());
+            assertThat(responseDto.name()).isEqualTo(requestDto.name());
+            assertThat(responseDto.price()).isEqualTo(requestDto.price());
         }
 
         @Test
@@ -132,12 +129,9 @@ class ProductServiceTest {
             // given
             UUID restaurantId = UUID.randomUUID();
 
-            ProductCreateRequestDto requestDto = ProductCreateRequestDto.builder()
-                    .restaurantId(restaurantId)
-                    .name("상품1")
-                    .description("상품 설명")
-                    .price(8000L)
-                    .build();
+            ProductCreateRequestDto requestDto = new ProductCreateRequestDto(
+                    restaurantId, "상품1", "상품 설명", 8000L
+            );
 
             when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.empty());
 
