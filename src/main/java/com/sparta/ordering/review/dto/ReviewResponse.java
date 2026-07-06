@@ -11,7 +11,7 @@ public record ReviewResponse(
         int rating,
         String comment
 ) {
-    public ReviewResponse fromEntity(Review review) {
+    public static ReviewResponse fromEntity(Review review) {
         return new ReviewResponse(
                 review.getId(),
                 review.getOrder().getId(),
