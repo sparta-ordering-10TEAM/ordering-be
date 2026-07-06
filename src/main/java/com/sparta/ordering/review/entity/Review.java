@@ -1,32 +1,42 @@
 package com.sparta.ordering.review.entity;
 
 import com.sparta.ordering.global.entity.BaseUpdatableEntity;
-import jakarta.persistence.*;
-import lombok.*;
-
-import java.util.UUID;
+import com.sparta.ordering.order.entity.Order;
+import com.sparta.ordering.user.entity.User;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
-@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Builder
-@Table(name = "t_reviews")
+@Table(name = "p_reviews")
 @Entity
 public class Review extends BaseUpdatableEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column
-    private UUID id;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", columnDefinition = "uuid", nullable = false)
+    private Order order;
 
-    //@Column
-    //private Order orderId;
-
-    //@Column
-    //private User customerId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id", columnDefinition = "uuid", nullable = false)
+    private User user;
 
     @Column
     private int rating;
 
     @Column
     private String comment;
+
+    @Builder
+    public Review(User user, int rating, String comment) {
+        this.user = user;
+        this.rating = rating;
+        this.comment = comment;
+    }
 }
