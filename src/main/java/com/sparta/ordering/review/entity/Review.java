@@ -25,7 +25,7 @@ public class Review extends BaseUpdatableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", columnDefinition = "uuid", nullable = false)
-    private User user;
+    private User customer;
 
     @Column
     private int rating;
@@ -34,8 +34,9 @@ public class Review extends BaseUpdatableEntity {
     private String comment;
 
     @Builder
-    public Review(User user, int rating, String comment) {
-        this.user = user;
+    public Review(Order order, User customer, int rating, String comment) {
+        this.order = order;
+        this.customer = customer;
         this.rating = rating;
         this.comment = comment;
     }

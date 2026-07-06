@@ -1,10 +1,101 @@
 package com.sparta.ordering.review.controller;
 
+import com.sparta.ordering.global.code.GeneralResponseCode;
+import com.sparta.ordering.global.dto.GeneralResponse;
+import com.sparta.ordering.review.dto.PostReviewRequest;
+import com.sparta.ordering.review.dto.ReviewResponse;
+import com.sparta.ordering.review.service.ReviewService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.UUID;
+
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api")
 public class ReviewController {
+    private final ReviewService reviewService;
 
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @PostMapping("/orders/{orderId}/reviews")
+    public ResponseEntity<GeneralResponse<Void>> postReview(
+            @PathVariable UUID orderId,
+            @RequestBody @Valid PostReviewRequest request,
+            @AuthenticationPrincipal UUID userId
+    ) {
+        reviewService.postReview(request.rating(), request.comment(), orderId, userId);
+
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, null);
+    }
+
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @GetMapping("/restaurants/{restaurantId}/reviews")
+    public ResponseEntity<GeneralResponse<Page<ReviewResponse>>> searchRestaurantReviews(
+            @PathVariable UUID restaurantId,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        return GeneralResponse.toResponseEntity(
+                GeneralResponseCode.OK,
+                reviewService.searchRestaurantReviews(restaurantId, pageable)
+        );
+    }
+
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @GetMapping("/products/{productId}/reviews")
+    public ResponseEntity<GeneralResponse<Page<ReviewResponse>>> searchProductReviews(
+            @PathVariable UUID productId,
+            @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        return GeneralResponse.toResponseEntity(
+                GeneralResponseCode.OK,
+                reviewService.searchProductReviews(productId, pageable)
+        );
+    }
+
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @GetMapping("/restaurants/{restaurantId}/ratings")
+    public ResponseEntity<GeneralResponse<Double>> getRestaurantAverageRating(
+            @PathVariable UUID restaurantId
+    ) {
+        return GeneralResponse.toResponseEntity(
+                GeneralResponseCode.OK,
+                reviewService.getRestaurantAverageRating(restaurantId)
+        );
+    }
+
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @PatchMapping("/reviews/{reviewId}")
+    public ResponseEntity<GeneralResponse<Void>> updateReview(
+            @PathVariable UUID reviewId,
+            @AuthenticationPrincipal UUID userId
+    ) {
+        reviewService.updateReview(reviewId, userId);
+
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, null);
+    }
+
+    @DeleteMapping("/reviews/{reviewId}")
+    public ResponseEntity<GeneralResponse<Void>> deleteReview(
+            @PathVariable UUID reviewId,
+            @AuthenticationPrincipal UUID userId
+    ) {
+        reviewService.softDeleteReview(reviewId, userId);
+
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, null);
+    }
 }
