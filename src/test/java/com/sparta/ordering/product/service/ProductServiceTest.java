@@ -112,7 +112,7 @@ class ProductServiceTest {
                     .build();
             ReflectionTestUtils.setField(savedProduct, "id", productId);
 
-            when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
             when(productRepository.save(any(Product.class))).thenReturn(savedProduct);
 
             // when
@@ -139,7 +139,7 @@ class ProductServiceTest {
                     .price(8000L)
                     .build();
 
-            when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.empty());
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() -> productService.createProduct(requestDto))
