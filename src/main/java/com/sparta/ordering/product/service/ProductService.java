@@ -22,7 +22,7 @@ public class ProductService {
     private final RestaurantRepository restaurantRepository;
 
     public ProductResponseDto getProduct(UUID productId) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.INVALID_REQUEST, "존재 하지 않는 상품입니다."));
 
         return ProductResponseDto.from(product);

@@ -58,7 +58,7 @@ class ProductServiceTest {
                     .build();
             ReflectionTestUtils.setField(product, "id", productId);
 
-            when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+            when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.of(product));
 
             // when
             ProductResponseDto response = productService.getProduct(productId);
@@ -75,7 +75,7 @@ class ProductServiceTest {
         @DisplayName("실패-존재하지 않는 상품")
         void test2() {
             UUID productId = UUID.randomUUID();
-            when(productRepository.findById(productId)).thenReturn(Optional.empty());
+            when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> productService.getProduct(productId))
                     .isInstanceOf(ApiException.class)
