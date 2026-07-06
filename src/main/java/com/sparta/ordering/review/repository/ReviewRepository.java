@@ -12,8 +12,6 @@ import java.util.UUID;
 
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, UUID> {
-    boolean existsByOrder_IdAndDeletedAtIsNull(UUID orderId);
-
     Page<Review> findByOrder_Restaurant_IdAndDeletedAtIsNull(UUID restaurantId, Pageable pageable);
 
     @Query(
@@ -41,4 +39,6 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
     double calcRestaurantAverageRating(UUID restaurantId);
 
     Optional<Review> findByIdAndCustomer_IdAndDeletedAtIsNull(UUID id, UUID customerId);
+
+    Optional<Review> findByOrder_IdAndCustomer_Id(UUID orderId, UUID customerId);
 }

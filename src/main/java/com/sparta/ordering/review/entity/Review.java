@@ -59,4 +59,8 @@ public class Review extends BaseUpdatableEntity {
             this.comment = comment;
         }
     }
+
+    public boolean isDeleted() {
+        return this.getDeletedAt() != null;
+    }
 }
