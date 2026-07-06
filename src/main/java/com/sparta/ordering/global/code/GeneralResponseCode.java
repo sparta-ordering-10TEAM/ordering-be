@@ -18,6 +18,7 @@ public enum GeneralResponseCode implements ApiResponseCode {
     // Review
     ALREADY_REVIEWED(HttpStatus.CONFLICT, "이미 리뷰를 작성한 주문입니다."),
     REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 리뷰를 찾을 수 없습니다."),
+    ORDER_NOT_COMPLETED(HttpStatus.BAD_REQUEST, "주문이 아직 완료되지 않았습니다."),
 
     // Restaurant
     RESTAURANT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 가게를 찾을 수 없습니다."),

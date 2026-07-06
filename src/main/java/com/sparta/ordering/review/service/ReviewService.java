@@ -3,6 +3,7 @@ package com.sparta.ordering.review.service;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.order.entity.Order;
+import com.sparta.ordering.order.entity.OrderStatus;
 import com.sparta.ordering.order.repository.OrderRepository;
 import com.sparta.ordering.product.repository.ProductRepository;
 import com.sparta.ordering.restaurant.repository.RestaurantRepository;
@@ -27,21 +28,37 @@ public class ReviewService {
 
     @Transactional
     public void postReview(int rating, String comment, UUID orderId, UUID userId) {
+        if (rating < 1 || rating > 5) { // 메서드 재활용 시 rating 범위에 대한 안전 장치
+            throw new ApiException(GeneralResponseCode.INVALID_REQUEST);
+        }
+
         Order order = orderRepository.findByIdAndUser_IdAndDeletedAtIsNull(orderId, userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
 
-        if (reviewRepository.existsByOrder_IdAndDeletedAtIsNull((orderId))) {
-            throw new ApiException(GeneralResponseCode.ALREADY_REVIEWED);
+        if (order.getOrderStatus() != OrderStatus.COMPLETED) {
+            throw new ApiException(GeneralResponseCode.ORDER_NOT_COMPLETED);
         }
 
-        Review review = Review.builder()
+        Review review = reviewRepository.findByOrder_IdAndCustomer_Id(orderId, userId)
+                .orElse(null);
+
+        if (review != null) {
+            if (!review.isDeleted()) {
+                throw new ApiException(GeneralResponseCode.ALREADY_REVIEWED);
+            }
+
+            reviewRepository.delete(review);
+            reviewRepository.flush();
+        }
+
+        Review newReview = Review.builder()
                 .customer(order.getUser())
                 .order(order)
                 .rating(rating)
                 .comment(comment)
                 .build();
 
-        reviewRepository.save(review);
+        reviewRepository.save(newReview);
     }
 
     @Transactional(readOnly = true)
