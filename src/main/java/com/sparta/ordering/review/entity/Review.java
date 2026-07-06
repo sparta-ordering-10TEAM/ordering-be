@@ -9,6 +9,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,7 +17,15 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "p_reviews")
+@Table(
+        name = "p_reviews",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_review_order_user",
+                        columnNames = {"order_id", "customer_id"}
+                )
+        }
+)
 @Entity
 public class Review extends BaseUpdatableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
