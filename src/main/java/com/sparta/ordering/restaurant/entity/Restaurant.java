@@ -23,6 +23,7 @@ public class Restaurant extends BaseUpdatableEntity {
     private User user;
 
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RestaurantCategory category;
 
