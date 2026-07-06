@@ -3,3 +3,7 @@ spring:
     url: jdbc:postgresql://localhost:5432/ordering?serverTimezone=Asia/Seoul
     username: ordering
     password: ordering
+jwt:
+  secret: local-dev-secret-key-that-is-at-least-256-bits-long-for-hs256
+  access-expiration: 3600000
+  refresh-expiration: 2592000 #30일
