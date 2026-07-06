@@ -49,4 +49,14 @@ public class Review extends BaseUpdatableEntity {
         this.rating = rating;
         this.comment = comment;
     }
+
+    public void updateReview(Integer rating, String comment) {
+        if (rating != null) {
+            this.rating = rating;
+        }
+
+        if (comment != null) {
+            this.comment = comment;
+        }
+    }
 }
