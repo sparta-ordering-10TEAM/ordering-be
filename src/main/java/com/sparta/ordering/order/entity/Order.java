@@ -3,7 +3,14 @@ package com.sparta.ordering.order.entity;
 import com.sparta.ordering.global.entity.BaseUpdatableEntity;
 import com.sparta.ordering.restaurant.entity.Restaurant;
 import com.sparta.ordering.user.entity.User;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,7 +20,8 @@ import org.hibernate.type.SqlTypes;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "p_orders")
+@Table
+        (name = "p_orders")
 public class Order extends BaseUpdatableEntity {
 
     @Column(name = "order_number", nullable = false, unique = true)
