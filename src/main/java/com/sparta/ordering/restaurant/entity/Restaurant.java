@@ -22,9 +22,8 @@ public class Restaurant extends BaseUpdatableEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
     private RestaurantCategory category;
 
     @Column(nullable = false, length = 100)
