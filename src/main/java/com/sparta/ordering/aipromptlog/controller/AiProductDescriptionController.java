@@ -65,7 +65,7 @@ public class AiProductDescriptionController {
     public ResponseEntity<GeneralResponse<Void>> updateAiProductDescription(
             @PathVariable UUID aiDescriptionId,
             @AuthenticationPrincipal UUID userId,
-            @RequestBody UpdateAiProductDescriptionRequest request
+            @RequestBody @Valid UpdateAiProductDescriptionRequest request
     ) {
         aiProductDescriptionService.update(aiDescriptionId, userId, request.description());
 
