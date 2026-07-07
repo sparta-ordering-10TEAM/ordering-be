@@ -15,7 +15,7 @@ public class ProfileResponse {
     private final String phoneNumber;
     private final String profileImageUrl;
 
-    public static ProfileResponse of(User user) {
+    public static ProfileResponse from(User user) {
         return new ProfileResponse(
                 user.getId(),
                 user.getUserName(),

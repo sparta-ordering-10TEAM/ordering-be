@@ -1,6 +1,5 @@
 package com.sparta.ordering.user.service;
 
-import com.sparta.ordering.user.dto.request.UserLockUpdateRequest;
 import com.sparta.ordering.user.entity.User;
 import com.sparta.ordering.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -30,8 +29,6 @@ class AdminServiceTest {
         // given
         UUID userId = UUID.randomUUID();
 
-        UserLockUpdateRequest request = new UserLockUpdateRequest(true);
-
         User user = User.builder()
                 .locked(false)
                 .build();
@@ -40,7 +37,7 @@ class AdminServiceTest {
         when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
 
         // when
-        adminService.updateLock(userId, request);
+        adminService.lock(userId);
 
         // then
         assertThat(user.isLocked()).isEqualTo(true);

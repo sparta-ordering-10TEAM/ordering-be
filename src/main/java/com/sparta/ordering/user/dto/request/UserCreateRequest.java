@@ -1,6 +1,7 @@
 package com.sparta.ordering.user.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -15,7 +16,7 @@ public record UserCreateRequest(
         )
         String userName,
 
-        @NotNull(message = "닉네임은 null이어서는 안 됩니다.")
+        @NotBlank(message = "닉네임은 null이어서는 안 됩니다.")
         String nickName,
 
         @NotNull(message = "비밀번호는 null이어서는 안 됩니다.")

@@ -6,7 +6,6 @@ import com.sparta.ordering.user.dto.request.ProfileUpdateRequest;
 import com.sparta.ordering.user.dto.request.UserCreateRequest;
 import com.sparta.ordering.user.dto.response.ProfileResponse;
 import com.sparta.ordering.user.dto.response.UserResponse;
-import com.sparta.ordering.user.entity.Role;
 import com.sparta.ordering.user.entity.User;
 import com.sparta.ordering.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +29,10 @@ public class UserService {
             throw new ApiException(GeneralResponseCode.ALREADY_EXISTS_USER);
         }
 
+        if (userRepository.existsByNickNameAndDeletedAtIsNull(userCreateRequest.nickName())) {
+            throw new ApiException(GeneralResponseCode.ALREADY_EXISTS_NICKNAME);
+        }
+
         User user = userRepository.save(
                 User.builder()
                         .userName(userCreateRequest.userName())
@@ -40,14 +43,14 @@ public class UserService {
                         .build()
         );
 
-        return UserResponse.of(user);
+        return UserResponse.from(user);
     }
 
     @Transactional(readOnly = true)
     public ProfileResponse findProfile(UUID userId) {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
-        return ProfileResponse.of(user);
+        return ProfileResponse.from(user);
     }
 
 
@@ -59,6 +62,6 @@ public class UserService {
         // TODO: 인프라 세팅 완료되면 ProfileImageUrl도 업데이트
 
         user.updateProfile(profileUpdateRequest.nickName(), profileUpdateRequest.phoneNumber(),null);
-        return ProfileResponse.of(user);
+        return ProfileResponse.from(user);
     }
 }
