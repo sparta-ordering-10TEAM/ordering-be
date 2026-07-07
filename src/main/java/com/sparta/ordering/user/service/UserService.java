@@ -3,6 +3,7 @@ package com.sparta.ordering.user.service;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.user.dto.request.UserCreateRequest;
+import com.sparta.ordering.user.dto.response.ProfileResponse;
 import com.sparta.ordering.user.dto.response.UserResponse;
 import com.sparta.ordering.user.entity.Role;
 import com.sparta.ordering.user.entity.User;
@@ -11,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +38,13 @@ public class UserService {
         );
 
         return UserResponse.of(user);
+    }
+
+    @Transactional(readOnly = true)
+    public ProfileResponse findProfile(UUID userId) {
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
+        return ProfileResponse.of(user);
     }
 
 

@@ -28,7 +28,8 @@ public enum GeneralResponseCode implements ApiResponseCode {
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 상품을 찾을 수 없습니다."),
 
     //USER
-    ALREADY_EXISTS_USER(HttpStatus.CONFLICT, "사용자가 이미 존재합니다.");
+    ALREADY_EXISTS_USER(HttpStatus.CONFLICT, "사용자가 이미 존재합니다."),
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 사용자를 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String message;
