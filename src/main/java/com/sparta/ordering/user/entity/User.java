@@ -38,7 +38,7 @@ public class User extends BaseUpdatableEntity {
         this.userName = userName;
         this.nickName = nickName;
         this.phoneNumber = phoneNumber;
-        this.role = role;
+        this.role = role == null ? Role.CUSTOMER : role;
         this.password = password;
     }
 
