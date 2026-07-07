@@ -10,12 +10,13 @@ import java.util.UUID;
 
 @Getter
 @Builder
-public class UserResponse{
+public class UserResponse {
     private final UUID id;
     private final Instant createdAt;
     private final String userName;
     private final String nickName;
     private final Role role;
+    private final boolean locked;
 
     public static UserResponse of(User user) {
         return new UserResponse(
@@ -23,7 +24,8 @@ public class UserResponse{
                 user.getCreatedAt(),
                 user.getUserName(),
                 user.getNickName(),
-                user.getRole()
+                user.getRole(),
+                user.isLocked()
         );
     }
 }

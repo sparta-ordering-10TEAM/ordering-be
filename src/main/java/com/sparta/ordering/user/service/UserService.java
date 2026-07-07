@@ -35,6 +35,7 @@ public class UserService {
                         .nickName(userCreateRequest.nickName())
                         .phoneNumber(userCreateRequest.phoneNumber())
                         .password(passwordEncoder.encode(userCreateRequest.password()))
+                        .locked(false)
                         .build()
         );
 
@@ -53,7 +54,7 @@ public class UserService {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
-        user.updateProfile(profileUpdateRequest.nickName(),profileUpdateRequest.phoneNumber());
+        user.updateProfile(profileUpdateRequest.nickName(), profileUpdateRequest.phoneNumber());
         return ProfileResponse.of(user);
     }
 }
