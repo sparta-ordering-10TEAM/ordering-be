@@ -80,7 +80,7 @@ class ProductServiceTest {
             assertThatThrownBy(() -> productService.getProduct(productId))
                     .isInstanceOf(ApiException.class)
                     .extracting("responseCode")
-                    .isEqualTo(GeneralResponseCode.NOT_FOUND);
+                    .isEqualTo(GeneralResponseCode.PRODUCT_NOT_FOUND);
         }
     }
 
@@ -139,7 +139,7 @@ class ProductServiceTest {
             assertThatThrownBy(() -> productService.createProduct(requestDto))
                     .isInstanceOf(ApiException.class)
                     .extracting("responseCode")
-                    .isEqualTo(GeneralResponseCode.NOT_FOUND);
+                    .isEqualTo(GeneralResponseCode.RESTAURANT_NOT_FOUND);
 
         }
     }
