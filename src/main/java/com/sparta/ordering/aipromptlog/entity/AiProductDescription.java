@@ -12,9 +12,9 @@ import org.hibernate.annotations.OnDeleteAction;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "p_ai_product_prompt_log")
+@Table(name = "p_ai_product_descriptions")
 @Entity
-public class AiProductPromptLog extends BaseUpdatableEntity {
+public class AiProductDescription extends BaseUpdatableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", columnDefinition = "uuid", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -24,12 +24,12 @@ public class AiProductPromptLog extends BaseUpdatableEntity {
     private String prompt;
 
     @Column
-    private String response;
+    private String description;
 
     @Builder
-    public AiProductPromptLog(Product product, String prompt, String response) {
+    public AiProductDescription(Product product, String prompt, String description) {
         this.product = product;
         this.prompt = prompt;
-        this.response = response;
+        this.description = description;
     }
 }
