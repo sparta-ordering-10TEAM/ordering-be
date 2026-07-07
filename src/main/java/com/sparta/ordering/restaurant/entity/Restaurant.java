@@ -23,6 +23,7 @@ public class Restaurant extends BaseUpdatableEntity {
     private User user;
 
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RestaurantCategory category;
 
@@ -95,5 +96,71 @@ public class Restaurant extends BaseUpdatableEntity {
         this.latitude = latitude;
         this.longitude = longitude;
         this.deliveryRadiusKm = deliveryRadiusKm;
+    }
+
+    public void update(
+            RestaurantCategory category,
+            String name,
+            String phone,
+            String description,
+            String address,
+            String addressDetail,
+            String zipCode,
+            Integer minOrderAmount,
+            Integer deliveryFee,
+            BigDecimal latitude,
+            BigDecimal longitude,
+            BigDecimal deliveryRadiusKm
+    ) {
+        if (category != null) {
+            this.category = category;
+        }
+        if (name != null) {
+            this.name = name;
+        }
+        if (phone != null) {
+            this.phone = phone;
+        }
+        if (description != null) {
+            this.description = description;
+        }
+        if (address != null) {
+            this.address = address;
+        }
+        if (addressDetail != null) {
+            this.addressDetail = addressDetail;
+        }
+        if (zipCode != null) {
+            this.zipCode = zipCode;
+        }
+        if (minOrderAmount != null) {
+            this.minOrderAmount = minOrderAmount;
+        }
+        if (deliveryFee != null) {
+            this.deliveryFee = deliveryFee;
+        }
+        if (latitude != null) {
+            this.latitude = latitude;
+        }
+        if (longitude != null) {
+            this.longitude = longitude;
+        }
+        if (deliveryRadiusKm != null) {
+            this.deliveryRadiusKm = deliveryRadiusKm;
+        }
+    }
+
+    public void changeStatus(RestaurantStatus status) {
+        if (status == null) {
+            throw new IllegalArgumentException("영업 상태가 빈 값입니다.");
+        }
+        this.status = status;
+    }
+
+    public boolean isOwnedBy(User user) {
+        return this.user != null
+                && user != null
+                && this.user.getId() != null
+                && this.user.getId().equals(user.getId());
     }
 }
