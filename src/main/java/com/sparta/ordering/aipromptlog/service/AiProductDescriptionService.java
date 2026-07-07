@@ -1,8 +1,8 @@
 package com.sparta.ordering.aipromptlog.service;
 
 import com.sparta.ordering.aipromptlog.dto.AiProductDescriptionResponse;
-import org.springdoc.core.converters.models.Pageable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
