@@ -1,5 +1,7 @@
 package com.sparta.ordering.order.controller;
 
+import com.sparta.ordering.global.code.GeneralResponseCode;
+import com.sparta.ordering.global.dto.GeneralResponse;
 import com.sparta.ordering.order.dto.OrderCreateRequest;
 import com.sparta.ordering.order.dto.OrderCreateResponse;
 import com.sparta.ordering.order.service.OrderService;
@@ -23,10 +25,10 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping("/orders")
-    public ResponseEntity<OrderCreateResponse> createOrder(@Valid @RequestBody OrderCreateRequest request,
-                                                           @AuthenticationPrincipal UUID userId
+    public ResponseEntity<GeneralResponse<OrderCreateResponse>> createOrder(@Valid @RequestBody OrderCreateRequest request,
+                                                                           @AuthenticationPrincipal UUID userId
                                                            ) {
         OrderCreateResponse response = orderService.create(request, userId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 }
