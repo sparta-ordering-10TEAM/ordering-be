@@ -41,7 +41,7 @@ public class User extends BaseUpdatableEntity {
     private String profileImageUrl;
 
     @Builder
-    public User(String userName, String nickName, String phoneNumber, Role role, String password, Boolean locked,
+    public User(String userName, String nickName, String phoneNumber, Role role, String password, boolean locked,
                 String profileImageUrl) {
         this.userName = userName;
         this.nickName = nickName;
