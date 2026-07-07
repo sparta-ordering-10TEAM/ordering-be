@@ -2,8 +2,9 @@ package com.sparta.ordering.product.service;
 
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
-import com.sparta.ordering.product.dto.ProductCreateRequestDto;
-import com.sparta.ordering.product.dto.ProductResponseDto;
+import com.sparta.ordering.product.dto.ProductCreateRequest;
+import com.sparta.ordering.product.dto.ProductResponse;
+import com.sparta.ordering.product.dto.ProductUpdateRequest;
 import com.sparta.ordering.product.entity.Product;
 import com.sparta.ordering.product.repository.ProductRepository;
 import com.sparta.ordering.restaurant.entity.Restaurant;
@@ -61,7 +62,7 @@ class ProductServiceTest {
             when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.of(product));
 
             // when
-            ProductResponseDto response = productService.getProduct(productId);
+            ProductResponse response = productService.getProduct(productId);
 
             // then
             assertThat(response.id()).isEqualTo(productId);
@@ -96,7 +97,7 @@ class ProductServiceTest {
             Restaurant restaurant = Restaurant.builder().build();
             ReflectionTestUtils.setField(restaurant, "id", restaurantId);
 
-            ProductCreateRequestDto requestDto = new ProductCreateRequestDto(
+            ProductCreateRequest requestDto = new ProductCreateRequest(
                     restaurantId, "상품1", "상품 설명", 8000L
             );
 
@@ -113,7 +114,7 @@ class ProductServiceTest {
             when(productRepository.save(any(Product.class))).thenReturn(savedProduct);
 
             // when
-            ProductResponseDto responseDto = productService.createProduct(requestDto);
+            ProductResponse responseDto = productService.createProduct(requestDto);
 
             // then
             assertThat(responseDto.id()).isEqualTo(productId);
@@ -129,7 +130,7 @@ class ProductServiceTest {
             // given
             UUID restaurantId = UUID.randomUUID();
 
-            ProductCreateRequestDto requestDto = new ProductCreateRequestDto(
+            ProductCreateRequest requestDto = new ProductCreateRequest(
                     restaurantId, "상품1", "상품 설명", 8000L
             );
 
@@ -141,6 +142,57 @@ class ProductServiceTest {
                     .extracting("responseCode")
                     .isEqualTo(GeneralResponseCode.RESTAURANT_NOT_FOUND);
 
+        }
+    }
+    @Nested
+    @DisplayName("상품 업데이트")
+    class UpdateProduct{
+
+        @Test
+        @DisplayName("성공")
+        void test1() {
+
+            // given
+            UUID restaurantId = UUID.randomUUID();
+            Restaurant restaurant = Restaurant.builder().build();
+            ReflectionTestUtils.setField(restaurant, "id", restaurantId);
+
+            UUID productId = UUID.randomUUID();
+            Product product = Product.builder()
+                    .restaurant(restaurant)
+                    .name("상품1")
+                    .description("상품 설명")
+                    .price(8000L)
+                    .build();
+            ReflectionTestUtils.setField(product, "id", productId);
+
+            ProductUpdateRequest updateDto = new ProductUpdateRequest("상품2", "상품 설명2", 8000L);
+
+            when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.of(product));
+
+            //when
+            ProductResponse updateProduct = productService.updateProduct(productId, updateDto);
+
+            //then
+            assertThat(updateProduct.description()).isEqualTo(updateDto.description());
+            assertThat(updateProduct.name()).isEqualTo(updateDto.name());
+            assertThat(updateProduct.price()).isEqualTo(updateDto.price());
+        }
+
+        @Test
+        @DisplayName("실패 - 존재 하지 않는 상품")
+        void test2() {
+            // given
+            UUID productId = UUID.randomUUID();
+            ProductUpdateRequest updateDto = new ProductUpdateRequest("상품2", "상품 설명2", 8000L);
+
+            when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> productService.updateProduct(productId, updateDto))
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(GeneralResponseCode.PRODUCT_NOT_FOUND);
         }
     }
 }
