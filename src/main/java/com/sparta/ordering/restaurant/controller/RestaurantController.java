@@ -3,7 +3,6 @@ package com.sparta.ordering.restaurant.controller;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import com.sparta.ordering.restaurant.dto.RestaurantResponse;
-import com.sparta.ordering.restaurant.entity.RestaurantCategory;
 import com.sparta.ordering.restaurant.service.RestaurantService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,7 +22,7 @@ public class RestaurantController {
 
     @GetMapping("/restaurants")
     public ResponseEntity<GeneralResponse<Page<RestaurantResponse>>> getRestaurants(
-            @RequestParam(required = false) RestaurantCategory category,
+            @RequestParam(required = false) String category,
             @PageableDefault Pageable pageable
     ) {
         return GeneralResponse.toResponseEntity(
