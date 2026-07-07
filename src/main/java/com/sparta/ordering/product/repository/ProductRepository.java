@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface ProductRepository extends JpaRepository<Product, UUID> {
+    boolean existsByIdAndDeletedAtIsNull(UUID id);
 
     Optional<Product> findByIdAndDeletedAtIsNull(UUID id);
 }

@@ -4,13 +4,14 @@ import com.sparta.ordering.user.entity.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import java.nio.charset.StandardCharsets;
-import java.util.Date;
-import java.util.UUID;
-import javax.crypto.SecretKey;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+import java.util.UUID;
 
 @Component
 public class JwtTokenProvider {
@@ -19,9 +20,9 @@ public class JwtTokenProvider {
     private final long refreshExpiration;
 
     public JwtTokenProvider(
-            @Value("${JWT_SECRET}") String secretKey,
-            @Value("${JWT_ACCESS_EXPIRATION:3600000}") long accessExpiration,
-            @Value("${JWT_REFRESH_EXPIRATION:2592000}") long refreshExpiration) {
+            @Value("${jwt.secret}") String secretKey,
+            @Value("${jwt.access-expiration:3600000}") long accessExpiration,
+            @Value("${jwt.refresh-expiration:2592000}") long refreshExpiration) {
         this.secretKey = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
         this.accessExpiration = accessExpiration;
         this.refreshExpiration = refreshExpiration;

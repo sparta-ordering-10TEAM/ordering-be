@@ -4,6 +4,7 @@ import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import com.sparta.ordering.review.dto.PostReviewRequest;
 import com.sparta.ordering.review.dto.ReviewResponse;
+import com.sparta.ordering.review.dto.UpdateReviewRequest;
 import com.sparta.ordering.review.service.ReviewService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -82,9 +83,10 @@ public class ReviewController {
     @PatchMapping("/reviews/{reviewId}")
     public ResponseEntity<GeneralResponse<Void>> updateReview(
             @PathVariable UUID reviewId,
+            @RequestBody @Valid UpdateReviewRequest request,
             @AuthenticationPrincipal UUID userId
     ) {
-        reviewService.updateReview(reviewId, userId);
+        reviewService.updateReview(request.rating(), request.comment(), reviewId, userId);
 
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, null);
     }
