@@ -13,13 +13,15 @@ public class ProfileResponse {
     private final String userName;
     private final String nickName;
     private final String phoneNumber;
+    private final String profileImageUrl;
 
     public static ProfileResponse of(User user) {
         return new ProfileResponse(
                 user.getId(),
                 user.getUserName(),
                 user.getNickName(),
-                user.getPhoneNumber()
+                user.getPhoneNumber(),
+                user.getProfileImageUrl()
         );
     }
 }

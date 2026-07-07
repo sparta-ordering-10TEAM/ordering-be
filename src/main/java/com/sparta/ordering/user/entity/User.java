@@ -37,22 +37,30 @@ public class User extends BaseUpdatableEntity {
     @Column(nullable = false)
     private boolean locked = false;
 
+    @Column(name = "profile_image_url")
+    private String profileImageUrl;
+
     @Builder
-    public User(String userName, String nickName, String phoneNumber, Role role, String password, Boolean locked) {
+    public User(String userName, String nickName, String phoneNumber, Role role, String password, Boolean locked,
+                String profileImageUrl) {
         this.userName = userName;
         this.nickName = nickName;
         this.phoneNumber = phoneNumber;
         this.role = role == null ? Role.CUSTOMER : role;
         this.password = password;
         this.locked = locked;
+        this.profileImageUrl = profileImageUrl;
     }
 
-    public void updateProfile(String nickName, String phoneNumber) {
+    public void updateProfile(String nickName, String phoneNumber, String profileImageUrl) {
         if (nickName != null) {
             this.nickName = nickName;
         }
         if (phoneNumber != null) {
             this.phoneNumber = phoneNumber;
+        }
+        if (profileImageUrl != null) {
+            this.profileImageUrl = profileImageUrl;
         }
     }
 

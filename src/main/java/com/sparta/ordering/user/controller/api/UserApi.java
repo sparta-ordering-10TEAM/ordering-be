@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -73,7 +74,8 @@ public interface UserApi {
     @PatchMapping
     ResponseEntity<GeneralResponse<ProfileResponse>> updateProfile(
             @PathVariable UUID userId,
-            @Valid @RequestPart("request") ProfileUpdateRequest profileUpdateRequest);
+            @Valid @RequestPart("request") ProfileUpdateRequest profileUpdateRequest,
+            @RequestPart(value = "image",required = false) MultipartFile profileImage);
 
 
 }

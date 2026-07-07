@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -50,11 +51,14 @@ public class UserService {
     }
 
 
-    public ProfileResponse updateProfile(UUID userId, ProfileUpdateRequest profileUpdateRequest) {
+    public ProfileResponse updateProfile(UUID userId, ProfileUpdateRequest profileUpdateRequest,
+                                         MultipartFile profileImage) {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
-        user.updateProfile(profileUpdateRequest.nickName(), profileUpdateRequest.phoneNumber());
+        // TODO: 인프라 세팅 완료되면 ProfileImageUrl도 업데이트
+
+        user.updateProfile(profileUpdateRequest.nickName(), profileUpdateRequest.phoneNumber(),null);
         return ProfileResponse.of(user);
     }
 }
