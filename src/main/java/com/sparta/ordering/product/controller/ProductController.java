@@ -33,8 +33,8 @@ public class ProductController {
     @Operation(summary = "상품 단건 조회", description = "productId로 상품을 조회합니다.")
     @GetMapping("/products/{productId}")
     public ResponseEntity<GeneralResponse<ProductResponseDto>> getProductById(@PathVariable UUID productId) {
-        ProductResponseDto productResponse =  productService.getProduct(productId);
-        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, productResponse);
+        ProductResponseDto responseDto =  productService.getProduct(productId);
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, responseDto);
     }
 
     @Operation(summary = "상품 생성", description = "가게에 새 상품을 등록합니다.")
@@ -42,9 +42,9 @@ public class ProductController {
     public ResponseEntity<GeneralResponse<ProductResponseDto>> createProduct(
             @Valid @RequestBody ProductCreateRequestDto request
     ) {
-        // 권한 체크 필요 (인증 구현 후 추가)
-        ProductResponseDto response = productService.createProduct(request);
-        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
+        // TODO: 권한 체크
+        ProductResponseDto responseDto = productService.createProduct(request);
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, responseDto);
     }
 
     @Operation(summary = "상품 수정", description = "상품을 수정합니다.")
@@ -53,6 +53,7 @@ public class ProductController {
             @PathVariable UUID productId, @Valid @RequestBody ProductUpdateDto updateDto
     ) {
 
+        // TODO: 권한 체크
         ProductResponseDto responseDto = productService.updateProduct(productId, updateDto);
 
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, responseDto);
