@@ -1,6 +1,8 @@
 package com.sparta.ordering.restaurant.entity;
 
+import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.entity.BaseUpdatableEntity;
+import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -151,7 +153,7 @@ public class Restaurant extends BaseUpdatableEntity {
 
     public void changeStatus(RestaurantStatus status) {
         if (status == null) {
-            throw new IllegalArgumentException("영업 상태가 빈 값입니다.");
+            throw new ApiException(GeneralResponseCode.RESTAURANT_STATUS_INVALID);
         }
         this.status = status;
     }
