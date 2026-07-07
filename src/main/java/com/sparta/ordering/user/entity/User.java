@@ -1,6 +1,7 @@
 package com.sparta.ordering.user.entity;
 
 import com.sparta.ordering.global.entity.BaseUpdatableEntity;
+import com.sparta.ordering.user.dto.request.ProfileUpdateRequest;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -42,4 +43,12 @@ public class User extends BaseUpdatableEntity {
         this.password = password;
     }
 
+    public void updateProfile(String nickName, String phoneNumber) {
+        if (nickName != null) {
+            this.nickName = nickName;
+        }
+        if (phoneNumber != null) {
+            this.phoneNumber = phoneNumber;
+        }
+    }
 }

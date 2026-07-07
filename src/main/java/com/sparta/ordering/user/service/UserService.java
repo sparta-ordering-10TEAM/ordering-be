@@ -2,6 +2,7 @@ package com.sparta.ordering.user.service;
 
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
+import com.sparta.ordering.user.dto.request.ProfileUpdateRequest;
 import com.sparta.ordering.user.dto.request.UserCreateRequest;
 import com.sparta.ordering.user.dto.response.ProfileResponse;
 import com.sparta.ordering.user.dto.response.UserResponse;
@@ -48,4 +49,11 @@ public class UserService {
     }
 
 
+    public ProfileResponse updateProfile(UUID userId, ProfileUpdateRequest profileUpdateRequest) {
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
+
+        user.updateProfile(profileUpdateRequest.nickName(),profileUpdateRequest.phoneNumber());
+        return ProfileResponse.of(user);
+    }
 }
