@@ -25,8 +25,7 @@ import java.util.List;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table
-        (name = "p_orders")
+@Table(name = "p_orders")
 public class Order extends BaseUpdatableEntity {
 
     @Column(name = "order_number", nullable = false, unique = true)
