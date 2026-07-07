@@ -1,10 +1,7 @@
 package com.sparta.ordering.order.entity;
 
 import com.sparta.ordering.global.entity.BaseUpdatableEntity;
-import com.sparta.ordering.global.exception.ApiException;
-import com.sparta.ordering.order.code.OrderResponseCode;
 import com.sparta.ordering.restaurant.entity.Restaurant;
-import com.sparta.ordering.user.entity.Role;
 import com.sparta.ordering.user.entity.User;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;

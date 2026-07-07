@@ -1,6 +1,5 @@
-package com.sparta.ordering.order.code;
+package com.sparta.ordering.global.code;
 
-import com.sparta.ordering.global.code.ApiResponseCode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;

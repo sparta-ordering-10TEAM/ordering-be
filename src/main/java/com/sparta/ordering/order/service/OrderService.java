@@ -1,7 +1,7 @@
 package com.sparta.ordering.order.service;
 
 import com.sparta.ordering.global.exception.ApiException;
-import com.sparta.ordering.order.code.OrderResponseCode;
+import com.sparta.ordering.global.code.OrderResponseCode;
 import com.sparta.ordering.order.dto.OrderCreateRequest;
 import com.sparta.ordering.order.dto.OrderCreateResponse;
 import com.sparta.ordering.order.entity.Order;
