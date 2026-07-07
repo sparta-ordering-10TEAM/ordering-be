@@ -36,19 +36,11 @@ public class ReviewService {
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
 
         if (order.getOrderStatus() != OrderStatus.COMPLETED) {
-            throw new ApiException(GeneralResponseCode.ORDER_NOT_COMPLETED);
+            throw new ApiException(GeneralResponseCode.ORDER_NOT_COMPLETED); // 완료되지 않은 주문에 대한 리뷰 작성 검증
         }
 
-        Review review = reviewRepository.findByOrder_IdAndCustomer_Id(orderId, userId)
-                .orElse(null);
-
-        if (review != null) {
-            if (!review.isDeleted()) {
-                throw new ApiException(GeneralResponseCode.ALREADY_REVIEWED);
-            }
-
-            reviewRepository.delete(review);
-            reviewRepository.flush();
+        if(reviewRepository.existsByOrder_IdAndCustomer_IdAndDeletedAtIsNull(orderId, userId)){
+            throw new ApiException(GeneralResponseCode.ALREADY_REVIEWED); // 리뷰 중복체크
         }
 
         Review newReview = Review.builder()

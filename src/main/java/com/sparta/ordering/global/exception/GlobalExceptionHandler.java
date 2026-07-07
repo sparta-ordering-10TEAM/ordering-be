@@ -54,4 +54,14 @@ public class GlobalExceptionHandler {
 
         return ErrorResponse.toResponseEntity(GeneralResponseCode.INTERNAL_SERVER_ERROR, null);
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> illegalArgumentException(
+            IllegalArgumentException e, HttpServletRequest request
+    ) {
+        log.error("errorCode : {}, uri : {}, message : {}",
+                e, request.getRequestURI(), e.getMessage());
+
+        return ErrorResponse.toResponseEntity(GeneralResponseCode.INVALID_REQUEST, null);
+    }
 }
