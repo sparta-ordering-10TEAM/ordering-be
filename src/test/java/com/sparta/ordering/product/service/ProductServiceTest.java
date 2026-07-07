@@ -4,6 +4,7 @@ import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.product.dto.ProductCreateRequestDto;
 import com.sparta.ordering.product.dto.ProductResponseDto;
+import com.sparta.ordering.product.dto.ProductUpdateDto;
 import com.sparta.ordering.product.entity.Product;
 import com.sparta.ordering.product.repository.ProductRepository;
 import com.sparta.ordering.restaurant.entity.Restaurant;
@@ -141,6 +142,58 @@ class ProductServiceTest {
                     .extracting("responseCode")
                     .isEqualTo(GeneralResponseCode.RESTAURANT_NOT_FOUND);
 
+        }
+    }
+    @Nested
+    @DisplayName("상품 업데이트")
+    class UpdateProduct{
+
+        @Test
+        @DisplayName("성공")
+        void test1() {
+
+            // given
+            UUID restaurantId = UUID.randomUUID();
+            Restaurant restaurant = Restaurant.builder().build();
+            ReflectionTestUtils.setField(restaurant, "id", restaurantId);
+
+            UUID productId = UUID.randomUUID();
+            Product product = Product.builder()
+                    .restaurant(restaurant)
+                    .name("상품1")
+                    .description("상품 설명")
+                    .price(8000L)
+                    .build();
+            ReflectionTestUtils.setField(product, "id", productId);
+
+            ProductUpdateDto updateDto = new ProductUpdateDto("상품2", "상품 설명2", 8000L);
+
+            when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.of(product));
+            when(productRepository.save(any(Product.class))).thenReturn(product);
+
+            //when
+            ProductResponseDto updateProduct = productService.updateProduct(productId, updateDto);
+
+            //then
+            assertThat(updateProduct.description()).isEqualTo(updateDto.description());
+            assertThat(updateProduct.name()).isEqualTo(updateDto.name());
+            assertThat(updateProduct.price()).isEqualTo(updateDto.price());
+        }
+
+        @Test
+        @DisplayName("실패 - 존재 하지 않는 상품")
+        void test2() {
+            // given
+            UUID productId = UUID.randomUUID();
+            ProductUpdateDto updateDto = new ProductUpdateDto("상품2", "상품 설명2", 8000L);
+
+            when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> productService.updateProduct(productId, updateDto))
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(GeneralResponseCode.PRODUCT_NOT_FOUND);
         }
     }
 }

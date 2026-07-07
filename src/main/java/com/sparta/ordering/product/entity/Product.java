@@ -38,4 +38,11 @@ public class Product extends BaseUpdatableEntity {
         this.description = description;
         this.price = price;
     }
+
+
+    public void update(String name, String description, Long price) {
+        if (name != null) this.name = name;
+        if (description != null) this.description = description;
+        if (price != null) this.price = price;
+    }
 }

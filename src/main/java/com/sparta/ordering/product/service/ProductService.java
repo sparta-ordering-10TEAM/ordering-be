@@ -4,6 +4,7 @@ import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.product.dto.ProductCreateRequestDto;
 import com.sparta.ordering.product.dto.ProductResponseDto;
+import com.sparta.ordering.product.dto.ProductUpdateDto;
 import com.sparta.ordering.product.entity.Product;
 import com.sparta.ordering.product.repository.ProductRepository;
 import com.sparta.ordering.restaurant.entity.Restaurant;
@@ -42,5 +43,18 @@ public class ProductService {
                 .build();
 
         return ProductResponseDto.from(productRepository.save(product));
+    }
+
+    @Transactional
+    public ProductResponseDto updateProduct(UUID productId, ProductUpdateDto updateDto) {
+        Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.PRODUCT_NOT_FOUND));
+
+
+        product.update(updateDto.name(), updateDto.description(), updateDto.price());
+
+        Product updatedProduct = productRepository.save(product);
+
+        return ProductResponseDto.from(updatedProduct);
     }
 }
