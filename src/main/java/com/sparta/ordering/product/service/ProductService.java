@@ -24,7 +24,7 @@ public class ProductService {
     @Transactional(readOnly = true)
     public ProductResponseDto getProduct(UUID productId) {
         Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
-                .orElseThrow(() -> new ApiException(GeneralResponseCode.NOT_FOUND, "존재 하지 않는 상품입니다."));
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.PRODUCT_NOT_FOUND));
 
         return ProductResponseDto.from(product);
     }
@@ -32,7 +32,7 @@ public class ProductService {
     @Transactional
     public ProductResponseDto createProduct(ProductCreateRequestDto request) {
         Restaurant restaurant = restaurantRepository.findByIdAndDeletedAtIsNull(request.restaurantId())
-                .orElseThrow(() -> new ApiException(GeneralResponseCode.NOT_FOUND, "존재하지 않는 가게입니다."));
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.RESTAURANT_NOT_FOUND));
 
         Product product = Product.builder()
                 .restaurant(restaurant)
