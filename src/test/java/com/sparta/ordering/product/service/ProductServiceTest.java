@@ -2,9 +2,9 @@ package com.sparta.ordering.product.service;
 
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
-import com.sparta.ordering.product.dto.ProductCreateRequestDto;
-import com.sparta.ordering.product.dto.ProductResponseDto;
-import com.sparta.ordering.product.dto.ProductUpdateDto;
+import com.sparta.ordering.product.dto.ProductCreateRequest;
+import com.sparta.ordering.product.dto.ProductResponse;
+import com.sparta.ordering.product.dto.ProductUpdateRequest;
 import com.sparta.ordering.product.entity.Product;
 import com.sparta.ordering.product.repository.ProductRepository;
 import com.sparta.ordering.restaurant.entity.Restaurant;
@@ -62,7 +62,7 @@ class ProductServiceTest {
             when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.of(product));
 
             // when
-            ProductResponseDto response = productService.getProduct(productId);
+            ProductResponse response = productService.getProduct(productId);
 
             // then
             assertThat(response.id()).isEqualTo(productId);
@@ -97,7 +97,7 @@ class ProductServiceTest {
             Restaurant restaurant = Restaurant.builder().build();
             ReflectionTestUtils.setField(restaurant, "id", restaurantId);
 
-            ProductCreateRequestDto requestDto = new ProductCreateRequestDto(
+            ProductCreateRequest requestDto = new ProductCreateRequest(
                     restaurantId, "상품1", "상품 설명", 8000L
             );
 
@@ -114,7 +114,7 @@ class ProductServiceTest {
             when(productRepository.save(any(Product.class))).thenReturn(savedProduct);
 
             // when
-            ProductResponseDto responseDto = productService.createProduct(requestDto);
+            ProductResponse responseDto = productService.createProduct(requestDto);
 
             // then
             assertThat(responseDto.id()).isEqualTo(productId);
@@ -130,7 +130,7 @@ class ProductServiceTest {
             // given
             UUID restaurantId = UUID.randomUUID();
 
-            ProductCreateRequestDto requestDto = new ProductCreateRequestDto(
+            ProductCreateRequest requestDto = new ProductCreateRequest(
                     restaurantId, "상품1", "상품 설명", 8000L
             );
 
@@ -166,13 +166,12 @@ class ProductServiceTest {
                     .build();
             ReflectionTestUtils.setField(product, "id", productId);
 
-            ProductUpdateDto updateDto = new ProductUpdateDto("상품2", "상품 설명2", 8000L);
+            ProductUpdateRequest updateDto = new ProductUpdateRequest("상품2", "상품 설명2", 8000L);
 
             when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.of(product));
-            when(productRepository.save(any(Product.class))).thenReturn(product);
 
             //when
-            ProductResponseDto updateProduct = productService.updateProduct(productId, updateDto);
+            ProductResponse updateProduct = productService.updateProduct(productId, updateDto);
 
             //then
             assertThat(updateProduct.description()).isEqualTo(updateDto.description());
@@ -185,7 +184,7 @@ class ProductServiceTest {
         void test2() {
             // given
             UUID productId = UUID.randomUUID();
-            ProductUpdateDto updateDto = new ProductUpdateDto("상품2", "상품 설명2", 8000L);
+            ProductUpdateRequest updateDto = new ProductUpdateRequest("상품2", "상품 설명2", 8000L);
 
             when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.empty());
 

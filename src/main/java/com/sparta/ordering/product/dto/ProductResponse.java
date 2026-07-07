@@ -4,7 +4,7 @@ import com.sparta.ordering.product.entity.Product;
 
 import java.util.UUID;
 
-public record ProductResponseDto(
+public record ProductResponse(
         UUID id,
         UUID restaurantId,
         String name,
@@ -12,8 +12,8 @@ public record ProductResponseDto(
         Long price
 ) {
 
-    public static ProductResponseDto from(Product product) {
-        return new ProductResponseDto(
+    public static ProductResponse from(Product product) {
+        return new ProductResponse(
                 product.getId(),
                 product.getRestaurant().getId(),
                 product.getName(),

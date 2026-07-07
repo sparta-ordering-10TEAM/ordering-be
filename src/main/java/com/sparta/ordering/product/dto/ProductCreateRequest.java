@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
 
-public record ProductCreateRequestDto(
+public record ProductCreateRequest(
 
         @NotNull(message = "가게 ID는 필수입니다.")
         UUID restaurantId,

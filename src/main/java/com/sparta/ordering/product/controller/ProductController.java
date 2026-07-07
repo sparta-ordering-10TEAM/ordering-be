@@ -2,9 +2,9 @@ package com.sparta.ordering.product.controller;
 
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
-import com.sparta.ordering.product.dto.ProductCreateRequestDto;
-import com.sparta.ordering.product.dto.ProductResponseDto;
-import com.sparta.ordering.product.dto.ProductUpdateDto;
+import com.sparta.ordering.product.dto.ProductCreateRequest;
+import com.sparta.ordering.product.dto.ProductResponse;
+import com.sparta.ordering.product.dto.ProductUpdateRequest;
 import com.sparta.ordering.product.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,29 +32,28 @@ public class ProductController {
 
     @Operation(summary = "상품 단건 조회", description = "productId로 상품을 조회합니다.")
     @GetMapping("/products/{productId}")
-    public ResponseEntity<GeneralResponse<ProductResponseDto>> getProductById(@PathVariable UUID productId) {
-        ProductResponseDto responseDto =  productService.getProduct(productId);
+    public ResponseEntity<GeneralResponse<ProductResponse>> getProductById(@PathVariable UUID productId) {
+        ProductResponse responseDto =  productService.getProduct(productId);
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, responseDto);
     }
 
     @Operation(summary = "상품 생성", description = "가게에 새 상품을 등록합니다.")
     @PostMapping("/products")
-    public ResponseEntity<GeneralResponse<ProductResponseDto>> createProduct(
-            @Valid @RequestBody ProductCreateRequestDto request
+    public ResponseEntity<GeneralResponse<ProductResponse>> createProduct(
+            @Valid @RequestBody ProductCreateRequest request
     ) {
         // TODO: 권한 체크
-        ProductResponseDto responseDto = productService.createProduct(request);
+        ProductResponse responseDto = productService.createProduct(request);
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, responseDto);
     }
 
     @Operation(summary = "상품 수정", description = "상품을 수정합니다.")
     @PatchMapping("/products/{productId}")
-    public ResponseEntity<GeneralResponse<ProductResponseDto>> updateProduct(
-            @PathVariable UUID productId, @Valid @RequestBody ProductUpdateDto updateDto
+    public ResponseEntity<GeneralResponse<ProductResponse>> updateProduct(
+            @PathVariable UUID productId, @Valid @RequestBody ProductUpdateRequest request
     ) {
-
         // TODO: 권한 체크
-        ProductResponseDto responseDto = productService.updateProduct(productId, updateDto);
+        ProductResponse responseDto = productService.updateProduct(productId, request);
 
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, responseDto);
     }
