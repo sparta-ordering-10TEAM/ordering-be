@@ -1,8 +1,12 @@
 package com.sparta.ordering.order.entity;
 
 import com.sparta.ordering.global.entity.BaseUpdatableEntity;
+import com.sparta.ordering.global.exception.ApiException;
+import com.sparta.ordering.order.code.OrderResponseCode;
 import com.sparta.ordering.restaurant.entity.Restaurant;
+import com.sparta.ordering.user.entity.Role;
 import com.sparta.ordering.user.entity.User;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,12 +14,16 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -48,4 +56,30 @@ public class Order extends BaseUpdatableEntity {
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "status", nullable = false)
     private OrderStatus orderStatus;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.PERSIST)
+    private List<OrderItem> orderItems = new ArrayList<>();
+
+    private Order(String orderNumber, Restaurant restaurant, User user, String deliveryAddress,
+                  String requestMessage
+    ) {
+        this.orderNumber = orderNumber;
+        this.restaurant = restaurant;
+        this.user = user;
+        this.totalPrice = 0L;
+        this.deliveryAddress = deliveryAddress;
+        this.requestMessage = requestMessage;
+        this.orderStatus = OrderStatus.REQUESTED;
+    }
+
+    public static Order create(String orderNumber, Restaurant restaurant, User user, String deliveryAddress,
+                               String requestMessage) {
+        return new Order(orderNumber, restaurant, user, deliveryAddress, requestMessage);
+    }
+
+    public void addOrderItem(OrderItem orderItem) {
+        orderItems.add(orderItem);
+        orderItem.assignOrder(this);
+        this.totalPrice += orderItem.getTotalPrice();
+    }
 }
