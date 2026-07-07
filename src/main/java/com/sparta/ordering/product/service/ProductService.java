@@ -1,5 +1,6 @@
 package com.sparta.ordering.product.service;
 
+import com.sparta.ordering.global.code.AuthResponseCode;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.product.dto.ProductCreateRequest;
@@ -53,5 +54,20 @@ public class ProductService {
         product.update(request.name(), request.description(), request.price());
 
         return ProductResponse.from(product);
+    }
+
+    @Transactional
+    public void softDeleteProduct(UUID productId, UUID userId, boolean isPrivilege) {
+
+        Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.PRODUCT_NOT_FOUND));
+
+        // manager, master 아니고, 해당 식당 주인 아닌 경우
+        if (!isPrivilege && !product.getRestaurant().getUser().getId().equals(userId)) {
+            throw new ApiException(AuthResponseCode.FORBIDDEN);
+        }
+
+        product.softDelete(userId);
+
     }
 }
