@@ -5,6 +5,7 @@ import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.product.dto.ProductCreateRequest;
 import com.sparta.ordering.product.dto.ProductResponse;
+import com.sparta.ordering.product.dto.ProductSearchRequest;
 import com.sparta.ordering.product.dto.ProductUpdateRequest;
 import com.sparta.ordering.product.entity.Product;
 import com.sparta.ordering.product.repository.ProductRepository;
@@ -16,17 +17,27 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -85,6 +96,77 @@ class ProductServiceTest {
                     .isInstanceOf(ApiException.class)
                     .extracting("responseCode")
                     .isEqualTo(GeneralResponseCode.PRODUCT_NOT_FOUND);
+        }
+    }
+
+    @Nested
+    @DisplayName("상품 목록 조회")
+    class GetProducts {
+
+        @Test
+        @DisplayName("성공")
+        void test1() {
+            // given
+            UUID restaurantId = UUID.randomUUID();
+            Restaurant restaurant = Restaurant.builder().build();
+            ReflectionTestUtils.setField(restaurant, "id", restaurantId);
+
+            Product product = Product.builder()
+                    .restaurant(restaurant)
+                    .name("상품1")
+                    .description("상품 설명")
+                    .price(8000L)
+                    .build();
+            ReflectionTestUtils.setField(product, "id", UUID.randomUUID());
+
+            ProductSearchRequest request = new ProductSearchRequest(null, null, null);
+            Pageable pageable = PageRequest.of(0, 10);
+            Page<Product> page = new PageImpl<>(List.of(product), pageable, 1);
+
+            when(productRepository.searchProducts(restaurantId, null, null, null, pageable))
+                    .thenReturn(page);
+
+            // when
+            Page<ProductResponse> result = productService.getProducts(request, restaurantId, pageable);
+
+            // then
+            assertThat(result.getTotalElements()).isEqualTo(1);
+            assertThat(result.getContent().get(0).name()).isEqualTo("상품1");
+        }
+
+        @Test
+        @DisplayName("실패 - 허용되지 않은 정렬 필드")
+        void test2() {
+            // given
+            UUID restaurantId = UUID.randomUUID();
+            ProductSearchRequest request = new ProductSearchRequest(null, null, null);
+            Pageable pageable = PageRequest.of(0, 10, Sort.by("description"));
+
+            // when & then
+            assertThatThrownBy(() -> productService.getProducts(request, restaurantId, pageable))
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(GeneralResponseCode.INVALID_REQUEST);
+        }
+
+        @Test
+        @DisplayName("허용되지 않은 페이지 크기는 10으로 고정")
+        void test3() {
+            // given
+            UUID restaurantId = UUID.randomUUID();
+            ProductSearchRequest request = new ProductSearchRequest(null, null, null);
+            Pageable pageable = PageRequest.of(0, 20);
+
+            when(productRepository.searchProducts(eq(restaurantId), isNull(), isNull(), isNull(), any(Pageable.class)))
+                    .thenReturn(Page.empty());
+
+            // when
+            productService.getProducts(request, restaurantId, pageable);
+
+            // then
+            ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+            verify(productRepository).searchProducts(eq(restaurantId), isNull(), isNull(), isNull(), captor.capture());
+            assertThat(captor.getValue().getPageSize()).isEqualTo(10);
         }
     }
 

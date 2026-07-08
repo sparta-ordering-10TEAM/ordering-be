@@ -5,6 +5,7 @@ import com.sparta.ordering.global.dto.GeneralResponse;
 import com.sparta.ordering.global.security.SecurityUtil;
 import com.sparta.ordering.product.dto.ProductCreateRequest;
 import com.sparta.ordering.product.dto.ProductResponse;
+import com.sparta.ordering.product.dto.ProductSearchRequest;
 import com.sparta.ordering.product.dto.ProductUpdateRequest;
 import com.sparta.ordering.product.service.ProductService;
 import com.sparta.ordering.user.entity.Role;
@@ -12,6 +13,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -41,6 +46,17 @@ public class ProductController {
     public ResponseEntity<GeneralResponse<ProductResponse>> getProductById(@PathVariable UUID productId) {
         ProductResponse responseDto =  productService.getProduct(productId);
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, responseDto);
+    }
+
+    @GetMapping("/restaurants/{restaurantId}/products")
+    public ResponseEntity<GeneralResponse<Page<ProductResponse>>> getProducts(
+            @PathVariable UUID restaurantId,
+            ProductSearchRequest request,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        Page<ProductResponse> responses = productService.getProducts(request, restaurantId, pageable);
+
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, responses);
     }
 
     @Operation(summary = "상품 생성", description = "가게에 새 상품을 등록합니다.")
