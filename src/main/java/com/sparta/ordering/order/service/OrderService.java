@@ -42,14 +42,14 @@ public class OrderService {
     @Transactional
     public OrderCreateResponse create(OrderCreateRequest request, UUID userId) {
 
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
         if (user.getRole() != Role.CUSTOMER) {
             throw new ApiException(GeneralResponseCode.ORDER_ONLY_CUSTOMER);
         }
 
-        Restaurant restaurant = restaurantRepository.findById(request.restaurantId())
+        Restaurant restaurant = restaurantRepository.findByIdAndDeletedAtIsNull(request.restaurantId())
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.RESTAURANT_NOT_FOUND));
 
         if (restaurant.getStatus() != RestaurantStatus.OPEN) {
@@ -64,6 +64,7 @@ public class OrderService {
                 .map(OrderCreateRequest.OrderItemRequest::productId)
                 .toList();
 
+        //  ProductRepository에 Soft Delete 제외 다건 조회 메서드가 추가되면 교체 -> findAllByIdInAndDeletedAtIsNull(productIds)
         List<Product> products = productRepository.findAllById(productIds);
 
         Map<UUID, Product> productMap = products.stream()

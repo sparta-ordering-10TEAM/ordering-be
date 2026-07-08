@@ -75,8 +75,8 @@ class OrderServiceTest {
 
             OrderCreateRequest request = createRequest(restaurantId, productId, 2);
 
-            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-            when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
             when(orderRepository.existsByOrderNumber(anyString())).thenReturn(false);
             when(productRepository.findAllById(List.of(productId))).thenReturn(List.of(product));
 
@@ -110,7 +110,7 @@ class OrderServiceTest {
             UUID userId = UUID.randomUUID();
             OrderCreateRequest request = createRequest(UUID.randomUUID(), UUID.randomUUID(), 1);
 
-            when(userRepository.findById(userId)).thenReturn(Optional.empty());
+            when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> orderService.create(request, userId))
                     .isInstanceOf(ApiException.class)
@@ -127,7 +127,7 @@ class OrderServiceTest {
             User user = createUser(userId, Role.OWNER);
             OrderCreateRequest request = createRequest(UUID.randomUUID(), UUID.randomUUID(), 1);
 
-            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+            when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
 
             assertThatThrownBy(() -> orderService.create(request, userId))
                     .isInstanceOf(ApiException.class)
@@ -147,8 +147,8 @@ class OrderServiceTest {
             User user = createUser(userId, Role.CUSTOMER);
             OrderCreateRequest request = createRequest(restaurantId, UUID.randomUUID(), 1);
 
-            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-            when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.empty());
+            when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> orderService.create(request, userId))
                     .isInstanceOf(ApiException.class)
@@ -169,8 +169,8 @@ class OrderServiceTest {
             Restaurant restaurant = createRestaurant(restaurantId, RestaurantStatus.CLOSED, 10000);
             OrderCreateRequest request = createRequest(restaurantId, UUID.randomUUID(), 1);
 
-            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-            when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
 
             assertThatThrownBy(() -> orderService.create(request, userId))
                     .isInstanceOf(ApiException.class)
@@ -191,8 +191,8 @@ class OrderServiceTest {
             Restaurant restaurant = createRestaurant(restaurantId, RestaurantStatus.OPEN, 10000);
             OrderCreateRequest request = createRequest(restaurantId, productId, 1);
 
-            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-            when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
             when(orderRepository.existsByOrderNumber(anyString())).thenReturn(false);
             when(productRepository.findAllById(List.of(productId))).thenReturn(List.of());
 
@@ -218,8 +218,8 @@ class OrderServiceTest {
             Product product = createProduct(productId, otherRestaurant, "피자", 15000L);
             OrderCreateRequest request = createRequest(restaurantId, productId, 1);
 
-            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-            when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
             when(orderRepository.existsByOrderNumber(anyString())).thenReturn(false);
             when(productRepository.findAllById(List.of(productId))).thenReturn(List.of(product));
 
@@ -243,8 +243,8 @@ class OrderServiceTest {
             Product product = createProduct(productId, restaurant, "떡볶이", 10000L);
             OrderCreateRequest request = createRequest(restaurantId, productId, 1);
 
-            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-            when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
             when(orderRepository.existsByOrderNumber(anyString())).thenReturn(false);
             when(productRepository.findAllById(List.of(productId))).thenReturn(List.of(product));
 
@@ -266,8 +266,8 @@ class OrderServiceTest {
             Restaurant restaurant = createRestaurant(restaurantId, RestaurantStatus.OPEN, 10000);
             OrderCreateRequest request = createRequest(restaurantId, UUID.randomUUID(), 1);
 
-            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-            when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
             when(orderRepository.existsByOrderNumber(anyString())).thenReturn(true);
 
             assertThatThrownBy(() -> orderService.create(request, userId))
