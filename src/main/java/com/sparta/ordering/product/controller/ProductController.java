@@ -2,15 +2,21 @@ package com.sparta.ordering.product.controller;
 
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
+import com.sparta.ordering.global.security.SecurityUtil;
 import com.sparta.ordering.product.dto.ProductCreateRequest;
 import com.sparta.ordering.product.dto.ProductResponse;
 import com.sparta.ordering.product.dto.ProductUpdateRequest;
 import com.sparta.ordering.product.service.ProductService;
+import com.sparta.ordering.user.entity.Role;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -56,6 +62,19 @@ public class ProductController {
         ProductResponse responseDto = productService.updateProduct(productId, request);
 
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, responseDto);
+    }
+
+    @DeleteMapping("/products/{productId}")
+    @PreAuthorize("hasAnyRole('MASTER', 'MANAGER', 'OWNER')")
+    public ResponseEntity<GeneralResponse<Void>> softDeleteProduct(
+            @PathVariable UUID productId,
+            @AuthenticationPrincipal UUID userId,
+            Authentication authentication
+    ) {
+        boolean isPrivilege = SecurityUtil.hasAnyRole(authentication, Role.MASTER, Role.MANAGER);
+
+        productService.softDeleteProduct(productId, userId, isPrivilege);
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, null);
     }
 
 }

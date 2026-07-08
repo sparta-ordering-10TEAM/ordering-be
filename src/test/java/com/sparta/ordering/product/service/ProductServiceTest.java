@@ -1,5 +1,6 @@
 package com.sparta.ordering.product.service;
 
+import com.sparta.ordering.global.code.AuthResponseCode;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.product.dto.ProductCreateRequest;
@@ -9,6 +10,8 @@ import com.sparta.ordering.product.entity.Product;
 import com.sparta.ordering.product.repository.ProductRepository;
 import com.sparta.ordering.restaurant.entity.Restaurant;
 import com.sparta.ordering.restaurant.repository.RestaurantRepository;
+import com.sparta.ordering.user.entity.Role;
+import com.sparta.ordering.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -194,5 +197,106 @@ class ProductServiceTest {
                     .extracting("responseCode")
                     .isEqualTo(GeneralResponseCode.PRODUCT_NOT_FOUND);
         }
+    }
+    @Nested
+    @DisplayName("상품 삭제")
+    class DeleteProduct {
+
+        @Test
+        @DisplayName("성공 - 가게 주인")
+        void test1() {
+
+            // given
+            UUID ownerId = UUID.randomUUID();
+            User owner = User.builder().role(Role.OWNER).build();
+            ReflectionTestUtils.setField(owner, "id", ownerId);
+
+            Restaurant restaurant = Restaurant.builder().user(owner).build();
+            ReflectionTestUtils.setField(restaurant, "id", UUID.randomUUID());
+
+            UUID productId = UUID.randomUUID();
+            Product product = Product.builder().restaurant(restaurant).build();
+            ReflectionTestUtils.setField(product, "id", productId);
+
+            when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.of(product));
+
+            // when
+            productService.softDeleteProduct(productId, ownerId, false);
+
+            // then
+            assertThat(product.getDeletedBy()).isEqualTo(ownerId);
+            assertThat(product.getDeletedAt()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("성공 - MASTER/MANAGER는 소유자 아니어도 삭제 가능")
+        void test2() {
+
+            // given
+            UUID ownerId = UUID.randomUUID();
+            User owner = User.builder().role(Role.OWNER).build();
+            ReflectionTestUtils.setField(owner, "id", ownerId);
+
+            Restaurant restaurant = Restaurant.builder().user(owner).build();
+            ReflectionTestUtils.setField(restaurant, "id", UUID.randomUUID());
+
+            UUID productId = UUID.randomUUID();
+            Product product = Product.builder().restaurant(restaurant).build();
+            ReflectionTestUtils.setField(product, "id", productId);
+
+            UUID masterId = UUID.randomUUID();
+            when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.of(product));
+
+            // when
+            productService.softDeleteProduct(productId, masterId, true);
+
+            // then
+            assertThat(product.getDeletedBy()).isEqualTo(masterId);
+            assertThat(product.getDeletedAt()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("실패 - 권한 없음")
+        void test3() {
+
+            // given
+            UUID ownerId = UUID.randomUUID();
+            User owner = User.builder().role(Role.OWNER).build();
+            ReflectionTestUtils.setField(owner, "id", ownerId);
+
+            Restaurant restaurant = Restaurant.builder().user(owner).build();
+            ReflectionTestUtils.setField(restaurant, "id", UUID.randomUUID());
+
+            UUID productId = UUID.randomUUID();
+            Product product = Product.builder().restaurant(restaurant).build();
+            ReflectionTestUtils.setField(product, "id", productId);
+
+            UUID otherUserId = UUID.randomUUID();
+            when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.of(product));
+
+            // when & then
+            assertThatThrownBy(() -> productService.softDeleteProduct(productId, otherUserId, false))
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(AuthResponseCode.FORBIDDEN);
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 상품")
+        void test4() {
+
+            // given
+            UUID productId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
+            when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> productService.softDeleteProduct(productId, userId, true))
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(GeneralResponseCode.PRODUCT_NOT_FOUND);
+
+        }
+
     }
 }
