@@ -10,6 +10,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface OrderRepository extends JpaRepository<Order, UUID> {
+
+    Optional<Order> findByIdAndUser_IdAndDeletedAtIsNull(UUID id, UUID userId);
+
+    boolean existsByOrderNumber(String orderNumber);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT o FROM Order o
@@ -18,4 +23,5 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
             AND o.deletedAt IS NULL
             """)
     Optional<Order> findByIdAndUserIdForUpdate(UUID id, UUID userId);
+
 }

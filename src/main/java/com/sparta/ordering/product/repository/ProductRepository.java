@@ -4,6 +4,7 @@ import com.sparta.ordering.product.entity.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -12,6 +13,9 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     Optional<Product> findByIdAndDeletedAtIsNull(UUID id);
 
+
+    List<Product> findAllByIdInAndDeletedAtIsNull(List<UUID> productIds);
+
     @Query("""
                 SELECT p FROM Product p
                 JOIN FETCH p.restaurant
@@ -19,4 +23,5 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
            """
     )
     Optional<Product> findByIdAndDeletedAtIsNullWithRestaurant(UUID id);
+
 }
