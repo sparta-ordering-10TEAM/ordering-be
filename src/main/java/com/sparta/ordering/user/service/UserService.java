@@ -74,4 +74,10 @@ public class UserService {
         String newPassword = passwordEncoder.encode(changePasswordRequest.password());
         user.updatePassword(newPassword);
     }
+
+    public void deactivate(UUID userId) {
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
+        user.softDelete(userId);
+    }
 }

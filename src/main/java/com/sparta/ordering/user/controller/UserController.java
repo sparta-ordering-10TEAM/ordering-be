@@ -12,6 +12,7 @@ import com.sparta.ordering.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -65,5 +66,10 @@ public class UserController implements UserApi {
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK,null);
     }
 
-
+    @Override
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<GeneralResponse<Void>> deleteAccount(@PathVariable UUID userId) {
+        userService.deactivate(userId);
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK,null);
+    }
 }

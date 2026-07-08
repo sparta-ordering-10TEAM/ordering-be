@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -94,5 +95,17 @@ public interface UserApi {
     ResponseEntity<GeneralResponse<Void>> updatePassword(@PathVariable UUID userId,
                                                          @Valid @RequestBody ChangePasswordRequest changePasswordRequest);
 
-
+    @Operation(summary = "회원 탈퇴", description = "사용자가 탈퇴합니다.(논리 삭제)")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "회원 탈퇴 성공",
+                    content = @Content(schema = @Schema())),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "회원 탈퇴 실패 (사용자 없음)",
+                    content = @Content(schema = @Schema(implementation = GeneralResponseCode.class)))
+    })
+    @DeleteMapping
+    ResponseEntity<GeneralResponse<Void>> deleteAccount(@PathVariable UUID userId);
 }

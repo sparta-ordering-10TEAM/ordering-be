@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.util.UUID;
+
 @Entity
 @Table(name = "p_users")
 @Getter
@@ -81,5 +83,10 @@ public class User extends BaseUpdatableEntity {
         if (role != null) {
             this.role = role;
         }
+    }
+
+    @Override
+    public void softDelete(UUID deletedBy) {
+        super.softDelete(deletedBy);
     }
 }
