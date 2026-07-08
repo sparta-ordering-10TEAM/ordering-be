@@ -29,6 +29,6 @@ public class OrderController {
                                                                            @AuthenticationPrincipal UUID userId
                                                            ) {
         OrderCreateResponse response = orderService.create(request, userId);
-        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.CREATED, response);
     }
 }
