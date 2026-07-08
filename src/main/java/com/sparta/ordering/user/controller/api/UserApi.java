@@ -82,7 +82,7 @@ public interface UserApi {
     @Operation(summary = "비밀번호 변경", description = "비밀번호를 변경합니다.")
     @ApiResponses({
             @ApiResponse(
-                    responseCode = "204",
+                    responseCode = "200",
                     description = "비밀번호 변경 성공",
                     content = @Content(schema = @Schema())),
             @ApiResponse(
@@ -98,7 +98,7 @@ public interface UserApi {
     @Operation(summary = "회원 탈퇴", description = "사용자가 탈퇴합니다.(논리 삭제)")
     @ApiResponses({
             @ApiResponse(
-                    responseCode = "204",
+                    responseCode = "200",
                     description = "회원 탈퇴 성공",
                     content = @Content(schema = @Schema())),
             @ApiResponse(
