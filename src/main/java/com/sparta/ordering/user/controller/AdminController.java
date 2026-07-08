@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -38,7 +39,7 @@ public class AdminController implements AdminApi {
 
     @Override
     @PatchMapping("/{userId}/role")
-    public ResponseEntity<GeneralResponse<UserResponse>> updateRole(UUID userId, UserRoleUpdateRequest userRoleUpdateRequest) {
+    public ResponseEntity<GeneralResponse<UserResponse>> updateRole(@PathVariable UUID userId, @RequestBody UserRoleUpdateRequest userRoleUpdateRequest) {
         UserResponse result = adminService.updateRole(userId, userRoleUpdateRequest);
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, result);
     }

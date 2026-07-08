@@ -73,7 +73,7 @@ public class User extends BaseUpdatableEntity {
         this.locked = locked;
     }
 
-    public void updatePassword(String newPassword) {
+    public void updatePassword(String password) {
         if (password != null && !password.isBlank()) {
             this.password = password;
         }
