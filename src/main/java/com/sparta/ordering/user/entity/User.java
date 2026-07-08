@@ -23,6 +23,9 @@ public class User extends BaseUpdatableEntity {
     @Column(nullable = false, unique = true)
     private String nickName;
 
+    @Column(nullable = false, unique = true)
+    private String email;
+
     @Column(nullable = false)
     private String phoneNumber;
 
@@ -40,10 +43,11 @@ public class User extends BaseUpdatableEntity {
     private String profileImageUrl;
 
     @Builder
-    public User(String userName, String nickName, String phoneNumber, Role role, String password, boolean locked,
+    public User(String userName, String nickName, String email, String phoneNumber, Role role, String password, boolean locked,
                 String profileImageUrl) {
         this.userName = userName;
         this.nickName = nickName;
+        this.email = email;
         this.phoneNumber = phoneNumber;
         this.role = role == null ? Role.CUSTOMER : role;
         this.password = password;

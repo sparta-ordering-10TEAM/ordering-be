@@ -26,7 +26,8 @@ public class UserService {
 
     public UserResponse create(UserCreateRequest userCreateRequest) {
         // 중복 검사
-        if (userRepository.existsByUserNameAndDeletedAtIsNull(userCreateRequest.userName())) {
+        if (userRepository.existsByUserNameAndDeletedAtIsNull(userCreateRequest.userName()) ||
+                userRepository.existsByEmailAndDeletedAtIsNull(userCreateRequest.email())) {
             throw new ApiException(GeneralResponseCode.ALREADY_EXISTS_USER);
         }
 
