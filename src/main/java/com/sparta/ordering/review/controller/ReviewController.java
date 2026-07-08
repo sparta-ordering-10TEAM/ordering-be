@@ -2,6 +2,7 @@ package com.sparta.ordering.review.controller;
 
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
+import com.sparta.ordering.review.controller.api.ReviewApi;
 import com.sparta.ordering.review.dto.PostReviewRequest;
 import com.sparta.ordering.review.dto.ReviewResponse;
 import com.sparta.ordering.review.dto.UpdateReviewRequest;
@@ -29,9 +30,10 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
-public class ReviewController {
+public class ReviewController implements ReviewApi {
     private final ReviewService reviewService;
 
+    @Override
     @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping("/orders/{orderId}/reviews")
     public ResponseEntity<GeneralResponse<Void>> postReview(
@@ -44,7 +46,8 @@ public class ReviewController {
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, null);
     }
 
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @Override
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/restaurants/{restaurantId}/reviews")
     public ResponseEntity<GeneralResponse<Page<ReviewResponse>>> searchRestaurantReviews(
             @PathVariable UUID restaurantId,
@@ -56,7 +59,8 @@ public class ReviewController {
         );
     }
 
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @Override
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/products/{productId}/reviews")
     public ResponseEntity<GeneralResponse<Page<ReviewResponse>>> searchProductReviews(
             @PathVariable UUID productId,
@@ -68,7 +72,8 @@ public class ReviewController {
         );
     }
 
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @Override
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/restaurants/{restaurantId}/ratings")
     public ResponseEntity<GeneralResponse<Double>> getRestaurantAverageRating(
             @PathVariable UUID restaurantId
@@ -79,6 +84,7 @@ public class ReviewController {
         );
     }
 
+    @Override
     @PreAuthorize("hasRole('CUSTOMER')")
     @PatchMapping("/reviews/{reviewId}")
     public ResponseEntity<GeneralResponse<Void>> updateReview(
@@ -91,6 +97,8 @@ public class ReviewController {
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, null);
     }
 
+    @Override
+    @PreAuthorize("hasRole('CUSTOMER')")
     @DeleteMapping("/reviews/{reviewId}")
     public ResponseEntity<GeneralResponse<Void>> deleteReview(
             @PathVariable UUID reviewId,
