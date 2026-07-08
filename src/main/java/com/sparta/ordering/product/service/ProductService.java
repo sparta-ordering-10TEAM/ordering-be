@@ -10,10 +10,12 @@ import com.sparta.ordering.product.entity.Product;
 import com.sparta.ordering.product.repository.ProductRepository;
 import com.sparta.ordering.restaurant.entity.Restaurant;
 import com.sparta.ordering.restaurant.repository.RestaurantRepository;
+import com.sparta.ordering.user.entity.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -32,9 +34,11 @@ public class ProductService {
     }
 
     @Transactional
-    public ProductResponse createProduct(ProductCreateRequest request) {
+    public ProductResponse createProduct(ProductCreateRequest request, UUID userId, Role role) {
         Restaurant restaurant = restaurantRepository.findByIdAndDeletedAtIsNull(request.restaurantId())
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.RESTAURANT_NOT_FOUND));
+
+        validateOwnerShip(userId, role, restaurant);
 
         Product product = Product.builder()
                 .restaurant(restaurant)
@@ -47,27 +51,36 @@ public class ProductService {
     }
 
     @Transactional
-    public ProductResponse updateProduct(UUID productId, ProductUpdateRequest request) {
+    public ProductResponse updateProduct(UUID productId, ProductUpdateRequest request, UUID userId, Role role) {
         Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.PRODUCT_NOT_FOUND));
+
+        validateOwnerShip(userId, role, product.getRestaurant());
 
         product.update(request.name(), request.description(), request.price());
 
         return ProductResponse.from(product);
     }
 
+
     @Transactional
-    public void softDeleteProduct(UUID productId, UUID userId, boolean isPrivilege) {
+    public void softDeleteProduct(UUID productId, UUID userId, Role role) {
 
         Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.PRODUCT_NOT_FOUND));
 
-        // manager, master 아니고, 해당 식당 주인 아닌 경우
-        if (!isPrivilege && !product.getRestaurant().getUser().getId().equals(userId)) {
-            throw new ApiException(AuthResponseCode.FORBIDDEN);
-        }
+        validateOwnerShip(userId, role, product.getRestaurant());
 
         product.softDelete(userId);
 
+    }
+
+    private static final Set<Role> PRIVILEGED_ROLES = Set.of(Role.MANAGER, Role.MASTER);
+
+    private void validateOwnerShip(UUID userId, Role role, Restaurant restaurant) {
+        boolean isPrivilege = PRIVILEGED_ROLES.contains(role);
+        if (!isPrivilege && !restaurant.getUser().getId().equals(userId)) {
+            throw new ApiException(AuthResponseCode.FORBIDDEN);
+        }
     }
 }

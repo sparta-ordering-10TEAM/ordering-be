@@ -76,7 +76,7 @@ class ProductServiceTest {
         }
 
         @Test
-        @DisplayName("실패-존재하지 않는 상품")
+        @DisplayName("실패 - 존재하지 않는 상품")
         void test2() {
             UUID productId = UUID.randomUUID();
             when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.empty());
@@ -93,11 +93,15 @@ class ProductServiceTest {
     class CreateProduct {
 
         @Test
-        @DisplayName("성공")
+        @DisplayName("성공 - Owner")
         void test1() {
             // given
+            UUID ownerId = UUID.randomUUID();
+            User owner = User.builder().role(Role.OWNER).build();
+            ReflectionTestUtils.setField(owner, "id", ownerId);
+
             UUID restaurantId = UUID.randomUUID();
-            Restaurant restaurant = Restaurant.builder().build();
+            Restaurant restaurant = Restaurant.builder().user(owner).build();
             ReflectionTestUtils.setField(restaurant, "id", restaurantId);
 
             ProductCreateRequest requestDto = new ProductCreateRequest(
@@ -113,11 +117,12 @@ class ProductServiceTest {
                     .build();
             ReflectionTestUtils.setField(savedProduct, "id", productId);
 
+
             when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
             when(productRepository.save(any(Product.class))).thenReturn(savedProduct);
 
             // when
-            ProductResponse responseDto = productService.createProduct(requestDto);
+            ProductResponse responseDto = productService.createProduct(requestDto, ownerId, Role.OWNER);
 
             // then
             assertThat(responseDto.id()).isEqualTo(productId);
@@ -132,6 +137,7 @@ class ProductServiceTest {
         void test2() {
             // given
             UUID restaurantId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
 
             ProductCreateRequest requestDto = new ProductCreateRequest(
                     restaurantId, "상품1", "상품 설명", 8000L
@@ -140,10 +146,76 @@ class ProductServiceTest {
             when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> productService.createProduct(requestDto))
+            assertThatThrownBy(() -> productService.createProduct(requestDto, userId, Role.OWNER))
                     .isInstanceOf(ApiException.class)
                     .extracting("responseCode")
                     .isEqualTo(GeneralResponseCode.RESTAURANT_NOT_FOUND);
+
+        }
+        @Test
+        @DisplayName("성공 - MASTER/MANAGER")
+        void test3() {
+            // given
+            UUID ownerId = UUID.randomUUID();
+            User owner = User.builder().role(Role.OWNER).build();
+            ReflectionTestUtils.setField(owner, "id", ownerId);
+
+            UUID restaurantId = UUID.randomUUID();
+            Restaurant restaurant = Restaurant.builder().user(owner).build();
+            ReflectionTestUtils.setField(restaurant, "id", restaurantId);
+
+            ProductCreateRequest requestDto = new ProductCreateRequest(
+                    restaurantId, "상품1", "상품 설명", 8000L
+            );
+
+            UUID productId = UUID.randomUUID();
+            Product savedProduct = Product.builder()
+                    .restaurant(restaurant)
+                    .name(requestDto.name())
+                    .description(requestDto.description())
+                    .price(requestDto.price())
+                    .build();
+            ReflectionTestUtils.setField(savedProduct, "id", productId);
+
+
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(productRepository.save(any(Product.class))).thenReturn(savedProduct);
+
+            UUID managerId = UUID.randomUUID();
+            // when
+            ProductResponse responseDto = productService.createProduct(requestDto, managerId, Role.MANAGER);
+
+            // then
+            assertThat(responseDto.id()).isEqualTo(productId);
+            assertThat(responseDto.restaurantId()).isEqualTo(restaurantId);
+            assertThat(responseDto.description()).isEqualTo(requestDto.description());
+            assertThat(responseDto.name()).isEqualTo(requestDto.name());
+            assertThat(responseDto.price()).isEqualTo(requestDto.price());
+        }
+        @Test
+        @DisplayName("실패 - 권한 없음")
+        void test4() {
+            // given
+            UUID ownerId = UUID.randomUUID();
+            User owner = User.builder().role(Role.OWNER).build();
+            ReflectionTestUtils.setField(owner, "id", ownerId);
+
+            UUID restaurantId = UUID.randomUUID();
+            Restaurant restaurant = Restaurant.builder().user(owner).build();
+            ReflectionTestUtils.setField(restaurant, "id", restaurantId);
+
+            ProductCreateRequest requestDto = new ProductCreateRequest(
+                    restaurantId, "상품1", "상품 설명", 8000L
+            );
+
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
+
+            UUID customerId = UUID.randomUUID();
+            // when & then
+            assertThatThrownBy(() -> productService.createProduct(requestDto, customerId, Role.CUSTOMER))
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(AuthResponseCode.FORBIDDEN);
 
         }
     }
@@ -152,12 +224,16 @@ class ProductServiceTest {
     class UpdateProduct{
 
         @Test
-        @DisplayName("성공")
+        @DisplayName("성공 - Owner")
         void test1() {
 
             // given
+            UUID ownerId = UUID.randomUUID();
+            User owner = User.builder().role(Role.OWNER).build();
+            ReflectionTestUtils.setField(owner, "id", ownerId);
+
             UUID restaurantId = UUID.randomUUID();
-            Restaurant restaurant = Restaurant.builder().build();
+            Restaurant restaurant = Restaurant.builder().user(owner).build();
             ReflectionTestUtils.setField(restaurant, "id", restaurantId);
 
             UUID productId = UUID.randomUUID();
@@ -174,7 +250,7 @@ class ProductServiceTest {
             when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.of(product));
 
             //when
-            ProductResponse updateProduct = productService.updateProduct(productId, updateDto);
+            ProductResponse updateProduct = productService.updateProduct(productId, updateDto, ownerId, Role.OWNER);
 
             //then
             assertThat(updateProduct.description()).isEqualTo(updateDto.description());
@@ -183,19 +259,83 @@ class ProductServiceTest {
         }
 
         @Test
-        @DisplayName("실패 - 존재 하지 않는 상품")
+        @DisplayName("실패 - 존재하지 않는 상품")
         void test2() {
             // given
             UUID productId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
+
             ProductUpdateRequest updateDto = new ProductUpdateRequest("상품2", "상품 설명2", 8000L);
 
             when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> productService.updateProduct(productId, updateDto))
+            assertThatThrownBy(() -> productService.updateProduct(productId, updateDto, userId, Role.OWNER))
                     .isInstanceOf(ApiException.class)
                     .extracting("responseCode")
                     .isEqualTo(GeneralResponseCode.PRODUCT_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("성공 - MASTER/MANAGER")
+        void test3() {
+            // given
+            UUID ownerId = UUID.randomUUID();
+            User owner = User.builder().role(Role.OWNER).build();
+            ReflectionTestUtils.setField(owner, "id", ownerId);
+
+            UUID restaurantId = UUID.randomUUID();
+            Restaurant restaurant = Restaurant.builder().user(owner).build();
+            ReflectionTestUtils.setField(restaurant, "id", restaurantId);
+
+            UUID productId = UUID.randomUUID();
+            Product product = Product.builder()
+                    .restaurant(restaurant)
+                    .name("상품1")
+                    .description("상품 설명")
+                    .price(8000L)
+                    .build();
+            ReflectionTestUtils.setField(product, "id", productId);
+
+            ProductUpdateRequest updateDto = new ProductUpdateRequest("상품2", "상품 설명2", 8000L);
+
+            when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.of(product));
+
+            UUID managerId = UUID.randomUUID();
+            // when
+            ProductResponse updateProduct = productService.updateProduct(productId, updateDto, managerId, Role.MANAGER);
+
+            // then
+            assertThat(updateProduct.description()).isEqualTo(updateDto.description());
+            assertThat(updateProduct.name()).isEqualTo(updateDto.name());
+            assertThat(updateProduct.price()).isEqualTo(updateDto.price());
+        }
+
+        @Test
+        @DisplayName("실패 - 권한 없음")
+        void test4() {
+            // given
+            UUID ownerId = UUID.randomUUID();
+            User owner = User.builder().role(Role.OWNER).build();
+            ReflectionTestUtils.setField(owner, "id", ownerId);
+
+            Restaurant restaurant = Restaurant.builder().user(owner).build();
+            ReflectionTestUtils.setField(restaurant, "id", UUID.randomUUID());
+
+            UUID productId = UUID.randomUUID();
+            Product product = Product.builder().restaurant(restaurant).build();
+            ReflectionTestUtils.setField(product, "id", productId);
+
+            ProductUpdateRequest updateDto = new ProductUpdateRequest("상품2", "상품 설명2", 8000L);
+
+            when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.of(product));
+
+            UUID otherUserId = UUID.randomUUID();
+            // when & then
+            assertThatThrownBy(() -> productService.updateProduct(productId, updateDto, otherUserId, Role.CUSTOMER))
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(AuthResponseCode.FORBIDDEN);
         }
     }
     @Nested
@@ -203,7 +343,7 @@ class ProductServiceTest {
     class DeleteProduct {
 
         @Test
-        @DisplayName("성공 - 가게 주인")
+        @DisplayName("성공 - Owner")
         void test1() {
 
             // given
@@ -221,7 +361,7 @@ class ProductServiceTest {
             when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.of(product));
 
             // when
-            productService.softDeleteProduct(productId, ownerId, false);
+            productService.softDeleteProduct(productId, ownerId, Role.OWNER);
 
             // then
             assertThat(product.getDeletedBy()).isEqualTo(ownerId);
@@ -229,7 +369,7 @@ class ProductServiceTest {
         }
 
         @Test
-        @DisplayName("성공 - MASTER/MANAGER는 소유자 아니어도 삭제 가능")
+        @DisplayName("성공 - MASTER/MANAGER")
         void test2() {
 
             // given
@@ -248,7 +388,7 @@ class ProductServiceTest {
             when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.of(product));
 
             // when
-            productService.softDeleteProduct(productId, masterId, true);
+            productService.softDeleteProduct(productId, masterId, Role.MASTER);
 
             // then
             assertThat(product.getDeletedBy()).isEqualTo(masterId);
@@ -275,7 +415,7 @@ class ProductServiceTest {
             when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.of(product));
 
             // when & then
-            assertThatThrownBy(() -> productService.softDeleteProduct(productId, otherUserId, false))
+            assertThatThrownBy(() -> productService.softDeleteProduct(productId, otherUserId, Role.CUSTOMER))
                     .isInstanceOf(ApiException.class)
                     .extracting("responseCode")
                     .isEqualTo(AuthResponseCode.FORBIDDEN);
@@ -291,7 +431,7 @@ class ProductServiceTest {
             when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> productService.softDeleteProduct(productId, userId, true))
+            assertThatThrownBy(() -> productService.softDeleteProduct(productId, userId, Role.MASTER))
                     .isInstanceOf(ApiException.class)
                     .extracting("responseCode")
                     .isEqualTo(GeneralResponseCode.PRODUCT_NOT_FOUND);
