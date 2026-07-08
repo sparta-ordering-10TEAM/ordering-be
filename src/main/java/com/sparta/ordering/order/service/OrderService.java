@@ -64,8 +64,7 @@ public class OrderService {
                 .map(OrderCreateRequest.OrderItemRequest::productId)
                 .toList();
 
-        //  ProductRepository에 Soft Delete 제외 다건 조회 메서드가 추가되면 교체 -> findAllByIdInAndDeletedAtIsNull(productIds)
-        List<Product> products = productRepository.findAllById(productIds);
+        List<Product> products = productRepository.findAllByIdInAndDeletedAtIsNull(productIds);
 
         Map<UUID, Product> productMap = products.stream()
                 .collect(Collectors.toMap(Product::getId, product -> product));
