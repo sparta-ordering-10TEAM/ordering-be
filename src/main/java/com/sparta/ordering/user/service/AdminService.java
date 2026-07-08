@@ -2,6 +2,9 @@ package com.sparta.ordering.user.service;
 
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
+import com.sparta.ordering.user.dto.request.UserRoleUpdateRequest;
+import com.sparta.ordering.user.dto.response.UserResponse;
+import com.sparta.ordering.user.entity.Role;
 import com.sparta.ordering.user.entity.User;
 import com.sparta.ordering.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -43,5 +46,16 @@ public class AdminService {
         user.updateLocked(false);
 
         return user.getId();
+    }
+
+    public UserResponse updateRole(UUID userId, UserRoleUpdateRequest userRoleUpdateRequest) {
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
+
+        //TODO: 권한 변경 시 자동으로 로그아웃
+
+        user.updateRole(userRoleUpdateRequest.role());
+
+        return UserResponse.from(user);
     }
 }

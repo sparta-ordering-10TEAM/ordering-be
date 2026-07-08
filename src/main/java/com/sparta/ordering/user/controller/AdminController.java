@@ -3,6 +3,8 @@ package com.sparta.ordering.user.controller;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import com.sparta.ordering.user.controller.api.AdminApi;
+import com.sparta.ordering.user.dto.request.UserRoleUpdateRequest;
+import com.sparta.ordering.user.dto.response.UserResponse;
 import com.sparta.ordering.user.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +33,13 @@ public class AdminController implements AdminApi {
     @PatchMapping("/{userId}/unlock")
     public ResponseEntity<GeneralResponse<UUID>> unlock(@PathVariable UUID userId) {
         UUID result = adminService.unlock(userId);
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, result);
+    }
+
+    @Override
+    @PatchMapping("/{userId}/role")
+    public ResponseEntity<GeneralResponse<UserResponse>> updateRole(UUID userId, UserRoleUpdateRequest userRoleUpdateRequest) {
+        UserResponse result = adminService.updateRole(userId, userRoleUpdateRequest);
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, result);
     }
 }
