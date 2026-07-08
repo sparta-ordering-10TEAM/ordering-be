@@ -25,6 +25,8 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final RestaurantRepository restaurantRepository;
 
+    private static final Set<Role> PRIVILEGED_ROLES = Set.of(Role.MANAGER, Role.MASTER);
+
     @Transactional(readOnly = true)
     public ProductResponse getProduct(UUID productId) {
         Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
@@ -52,7 +54,7 @@ public class ProductService {
 
     @Transactional
     public ProductResponse updateProduct(UUID productId, ProductUpdateRequest request, UUID userId, Role role) {
-        Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
+        Product product = productRepository.findByIdAndDeletedAtIsNullWithRestaurant(productId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.PRODUCT_NOT_FOUND));
 
         validateOwnerShip(userId, role, product.getRestaurant());
@@ -66,7 +68,7 @@ public class ProductService {
     @Transactional
     public void softDeleteProduct(UUID productId, UUID userId, Role role) {
 
-        Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
+        Product product = productRepository.findByIdAndDeletedAtIsNullWithRestaurant(productId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.PRODUCT_NOT_FOUND));
 
         validateOwnerShip(userId, role, product.getRestaurant());
@@ -74,8 +76,6 @@ public class ProductService {
         product.softDelete(userId);
 
     }
-
-    private static final Set<Role> PRIVILEGED_ROLES = Set.of(Role.MANAGER, Role.MASTER);
 
     private void validateOwnerShip(UUID userId, Role role, Restaurant restaurant) {
         boolean isPrivilege = PRIVILEGED_ROLES.contains(role);

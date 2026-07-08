@@ -247,7 +247,7 @@ class ProductServiceTest {
 
             ProductUpdateRequest updateDto = new ProductUpdateRequest("상품2", "상품 설명2", 8000L);
 
-            when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.of(product));
+            when(productRepository.findByIdAndDeletedAtIsNullWithRestaurant(productId)).thenReturn(Optional.of(product));
 
             //when
             ProductResponse updateProduct = productService.updateProduct(productId, updateDto, ownerId, Role.OWNER);
@@ -267,7 +267,7 @@ class ProductServiceTest {
 
             ProductUpdateRequest updateDto = new ProductUpdateRequest("상품2", "상품 설명2", 8000L);
 
-            when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.empty());
+            when(productRepository.findByIdAndDeletedAtIsNullWithRestaurant(productId)).thenReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() -> productService.updateProduct(productId, updateDto, userId, Role.OWNER))
@@ -299,7 +299,7 @@ class ProductServiceTest {
 
             ProductUpdateRequest updateDto = new ProductUpdateRequest("상품2", "상품 설명2", 8000L);
 
-            when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.of(product));
+            when(productRepository.findByIdAndDeletedAtIsNullWithRestaurant(productId)).thenReturn(Optional.of(product));
 
             UUID managerId = UUID.randomUUID();
             // when
@@ -328,7 +328,7 @@ class ProductServiceTest {
 
             ProductUpdateRequest updateDto = new ProductUpdateRequest("상품2", "상품 설명2", 8000L);
 
-            when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.of(product));
+            when(productRepository.findByIdAndDeletedAtIsNullWithRestaurant(productId)).thenReturn(Optional.of(product));
 
             UUID otherUserId = UUID.randomUUID();
             // when & then
@@ -358,7 +358,7 @@ class ProductServiceTest {
             Product product = Product.builder().restaurant(restaurant).build();
             ReflectionTestUtils.setField(product, "id", productId);
 
-            when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.of(product));
+            when(productRepository.findByIdAndDeletedAtIsNullWithRestaurant(productId)).thenReturn(Optional.of(product));
 
             // when
             productService.softDeleteProduct(productId, ownerId, Role.OWNER);
@@ -385,7 +385,7 @@ class ProductServiceTest {
             ReflectionTestUtils.setField(product, "id", productId);
 
             UUID masterId = UUID.randomUUID();
-            when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.of(product));
+            when(productRepository.findByIdAndDeletedAtIsNullWithRestaurant(productId)).thenReturn(Optional.of(product));
 
             // when
             productService.softDeleteProduct(productId, masterId, Role.MASTER);
@@ -412,7 +412,7 @@ class ProductServiceTest {
             ReflectionTestUtils.setField(product, "id", productId);
 
             UUID otherUserId = UUID.randomUUID();
-            when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.of(product));
+            when(productRepository.findByIdAndDeletedAtIsNullWithRestaurant(productId)).thenReturn(Optional.of(product));
 
             // when & then
             assertThatThrownBy(() -> productService.softDeleteProduct(productId, otherUserId, Role.CUSTOMER))
@@ -428,7 +428,7 @@ class ProductServiceTest {
             // given
             UUID productId = UUID.randomUUID();
             UUID userId = UUID.randomUUID();
-            when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.empty());
+            when(productRepository.findByIdAndDeletedAtIsNullWithRestaurant(productId)).thenReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() -> productService.softDeleteProduct(productId, userId, Role.MASTER))
