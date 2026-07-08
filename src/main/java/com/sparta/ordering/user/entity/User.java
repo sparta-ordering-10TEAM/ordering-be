@@ -1,7 +1,6 @@
 package com.sparta.ordering.user.entity;
 
 import com.sparta.ordering.global.entity.BaseUpdatableEntity;
-import com.sparta.ordering.user.dto.request.ProfileUpdateRequest;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -11,6 +10,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+
+import java.util.UUID;
 
 @Entity
 @Table(name = "p_users")
@@ -23,6 +24,9 @@ public class User extends BaseUpdatableEntity {
 
     @Column(nullable = false, unique = true)
     private String nickName;
+
+    @Column(nullable = false, unique = true)
+    private String email;
 
     @Column(nullable = false)
     private String phoneNumber;
@@ -41,10 +45,11 @@ public class User extends BaseUpdatableEntity {
     private String profileImageUrl;
 
     @Builder
-    public User(String userName, String nickName, String phoneNumber, Role role, String password, boolean locked,
+    public User(String userName, String nickName, String email, String phoneNumber, Role role, String password, boolean locked,
                 String profileImageUrl) {
         this.userName = userName;
         this.nickName = nickName;
+        this.email = email;
         this.phoneNumber = phoneNumber;
         this.role = role == null ? Role.CUSTOMER : role;
         this.password = password;
@@ -66,5 +71,22 @@ public class User extends BaseUpdatableEntity {
 
     public void updateLocked(boolean locked) {
         this.locked = locked;
+    }
+
+    public void updatePassword(String password) {
+        if (password != null && !password.isBlank()) {
+            this.password = password;
+        }
+    }
+
+    public void updateRole(Role role) {
+        if (role != null) {
+            this.role = role;
+        }
+    }
+
+    @Override
+    public void softDelete(UUID deletedBy) {
+        super.softDelete(deletedBy);
     }
 }

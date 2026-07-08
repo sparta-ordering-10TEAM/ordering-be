@@ -2,6 +2,7 @@ package com.sparta.ordering.user.controller.api;
 
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
+import com.sparta.ordering.user.dto.request.ChangePasswordRequest;
 import com.sparta.ordering.user.dto.request.ProfileUpdateRequest;
 import com.sparta.ordering.user.dto.request.UserCreateRequest;
 import com.sparta.ordering.user.dto.response.ProfileResponse;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -77,5 +79,33 @@ public interface UserApi {
             @Valid @RequestPart("request") ProfileUpdateRequest profileUpdateRequest,
             @RequestPart(value = "image",required = false) MultipartFile profileImage);
 
+    @Operation(summary = "비밀번호 변경", description = "비밀번호를 변경합니다.")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "비밀번호 변경 성공",
+                    content = @Content(schema = @Schema())),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "비밀번호 변경 실패 (사용자 없음)",
+                    content = @Content(schema = @Schema(implementation = GeneralResponseCode.class))
+            )
+    })
+    @PatchMapping
+    ResponseEntity<GeneralResponse<Void>> updatePassword(@PathVariable UUID userId,
+                                                         @Valid @RequestBody ChangePasswordRequest changePasswordRequest);
 
+    @Operation(summary = "회원 탈퇴", description = "사용자가 탈퇴합니다.(논리 삭제)")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "회원 탈퇴 성공",
+                    content = @Content(schema = @Schema())),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "회원 탈퇴 실패 (사용자 없음)",
+                    content = @Content(schema = @Schema(implementation = GeneralResponseCode.class)))
+    })
+    @DeleteMapping
+    ResponseEntity<GeneralResponse<Void>> deleteAccount(@PathVariable UUID userId);
 }
