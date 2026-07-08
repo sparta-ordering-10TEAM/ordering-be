@@ -1,6 +1,6 @@
-package com.sparta.ordering.aipromptlog.repository;
+package com.sparta.ordering.ai.repository;
 
-import com.sparta.ordering.aipromptlog.entity.AiProductDescription;
+import com.sparta.ordering.ai.entity.AiProductDescription;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
