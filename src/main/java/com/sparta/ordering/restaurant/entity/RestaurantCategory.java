@@ -1,9 +1,19 @@
 package com.sparta.ordering.restaurant.entity;
 
-public enum RestaurantCategory {
-    KOREAN,
-    CHINESE,
-    BUNSIK,
-    CHICKEN,
-    PIZZA
+import com.sparta.ordering.global.entity.BaseUpdatableEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "p_restaurant_category")
+@Getter
+@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
+public class RestaurantCategory extends BaseUpdatableEntity {
+
+    @Column(nullable = false, unique = true, length = 20)
+    private String code;
+
 }

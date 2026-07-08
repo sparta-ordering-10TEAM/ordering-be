@@ -1,7 +1,6 @@
 package com.sparta.ordering.restaurant.dto;
 
 import com.sparta.ordering.restaurant.entity.Restaurant;
-import com.sparta.ordering.restaurant.entity.RestaurantCategory;
 import com.sparta.ordering.restaurant.entity.RestaurantStatus;
 
 import java.math.BigDecimal;
@@ -10,7 +9,7 @@ import java.util.UUID;
 public record RestaurantResponse(
         UUID restaurantId,
         UUID ownerUserId,
-        RestaurantCategory category,
+        String category,
         String name,
         String phone,
         String description,
@@ -28,7 +27,7 @@ public record RestaurantResponse(
         return new RestaurantResponse(
                 restaurant.getId(),
                 restaurant.getUser().getId(),
-                restaurant.getCategory(),
+                restaurant.getCategory().getCode(),
                 restaurant.getName(),
                 restaurant.getPhone(),
                 restaurant.getDescription(),
