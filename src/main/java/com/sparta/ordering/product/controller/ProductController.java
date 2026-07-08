@@ -45,21 +45,30 @@ public class ProductController {
 
     @Operation(summary = "상품 생성", description = "가게에 새 상품을 등록합니다.")
     @PostMapping("/products")
+    @PreAuthorize("hasAnyRole('MASTER', 'MANAGER', 'OWNER')")
     public ResponseEntity<GeneralResponse<ProductResponse>> createProduct(
-            @Valid @RequestBody ProductCreateRequest request
+            @Valid @RequestBody ProductCreateRequest request,
+            @AuthenticationPrincipal UUID userId,
+            Authentication authentication
     ) {
-        // TODO: 권한 체크
-        ProductResponse responseDto = productService.createProduct(request);
+
+        Role role = SecurityUtil.getRole(authentication);
+        ProductResponse responseDto = productService.createProduct(request, userId, role);
+
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, responseDto);
     }
 
     @Operation(summary = "상품 수정", description = "상품을 수정합니다.")
     @PatchMapping("/products/{productId}")
+    @PreAuthorize("hasAnyRole('MASTER', 'MANAGER', 'OWNER')")
     public ResponseEntity<GeneralResponse<ProductResponse>> updateProduct(
-            @PathVariable UUID productId, @Valid @RequestBody ProductUpdateRequest request
+            @PathVariable UUID productId,
+            @Valid @RequestBody ProductUpdateRequest request,
+            @AuthenticationPrincipal UUID userId,
+            Authentication authentication
     ) {
-        // TODO: 권한 체크
-        ProductResponse responseDto = productService.updateProduct(productId, request);
+        Role role = SecurityUtil.getRole(authentication);
+        ProductResponse responseDto = productService.updateProduct(productId, request, userId, role);
 
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, responseDto);
     }
@@ -71,9 +80,9 @@ public class ProductController {
             @AuthenticationPrincipal UUID userId,
             Authentication authentication
     ) {
-        boolean isPrivilege = SecurityUtil.hasAnyRole(authentication, Role.MASTER, Role.MANAGER);
+        Role role = SecurityUtil.getRole(authentication);
 
-        productService.softDeleteProduct(productId, userId, isPrivilege);
+        productService.softDeleteProduct(productId, userId, role);
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, null);
     }
 
