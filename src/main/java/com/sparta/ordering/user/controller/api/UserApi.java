@@ -2,6 +2,7 @@ package com.sparta.ordering.user.controller.api;
 
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
+import com.sparta.ordering.user.dto.request.ChangePasswordRequest;
 import com.sparta.ordering.user.dto.request.ProfileUpdateRequest;
 import com.sparta.ordering.user.dto.request.UserCreateRequest;
 import com.sparta.ordering.user.dto.response.ProfileResponse;
@@ -76,6 +77,22 @@ public interface UserApi {
             @PathVariable UUID userId,
             @Valid @RequestPart("request") ProfileUpdateRequest profileUpdateRequest,
             @RequestPart(value = "image",required = false) MultipartFile profileImage);
+
+    @Operation(summary = "비밀번호 변경", description = "비밀번호를 변경합니다.")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "비밀번호 변경 성공",
+                    content = @Content(schema = @Schema())),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "비밀번호 변경 실패 (사용자 없음)",
+                    content = @Content(schema = @Schema(implementation = GeneralResponseCode.class))
+            )
+    })
+    @PatchMapping
+    ResponseEntity<GeneralResponse<Void>> updatePassword(@PathVariable UUID userId,
+                                                         @Valid @RequestBody ChangePasswordRequest changePasswordRequest);
 
 
 }

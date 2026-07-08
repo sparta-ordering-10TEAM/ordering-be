@@ -1,7 +1,6 @@
 package com.sparta.ordering.user.entity;
 
 import com.sparta.ordering.global.entity.BaseUpdatableEntity;
-import com.sparta.ordering.user.dto.request.ProfileUpdateRequest;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -66,5 +65,11 @@ public class User extends BaseUpdatableEntity {
 
     public void updateLocked(boolean locked) {
         this.locked = locked;
+    }
+
+    public void updatePassword(String newPassword) {
+        if (password != null && !password.isBlank()) {
+            this.password = password;
+        }
     }
 }

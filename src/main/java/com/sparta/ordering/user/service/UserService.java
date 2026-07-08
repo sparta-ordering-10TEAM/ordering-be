@@ -2,6 +2,7 @@ package com.sparta.ordering.user.service;
 
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
+import com.sparta.ordering.user.dto.request.ChangePasswordRequest;
 import com.sparta.ordering.user.dto.request.ProfileUpdateRequest;
 import com.sparta.ordering.user.dto.request.UserCreateRequest;
 import com.sparta.ordering.user.dto.response.ProfileResponse;
@@ -63,5 +64,13 @@ public class UserService {
 
         user.updateProfile(profileUpdateRequest.nickName(), profileUpdateRequest.phoneNumber(),null);
         return ProfileResponse.from(user);
+    }
+
+    public void updatePassword(UUID userId, ChangePasswordRequest changePasswordRequest) {
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
+
+        String newPassword = passwordEncoder.encode(changePasswordRequest.password());
+        user.updatePassword(newPassword);
     }
 }
