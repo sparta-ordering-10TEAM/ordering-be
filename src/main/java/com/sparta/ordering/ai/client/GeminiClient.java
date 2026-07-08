@@ -45,12 +45,10 @@ public class GeminiClient {
     private String extractText(GeminiResponse response) {
         return Optional.ofNullable(response)
                 .map(GeminiResponse::candidates)
-                .filter(candidates -> !candidates.isEmpty())
-                .map(candidates -> candidates.get(0))
+                .flatMap(c -> c.stream().findFirst())
                 .map(GeminiResponse.Candidate::content)
                 .map(GeminiResponse.Content::parts)
-                .filter(parts -> !parts.isEmpty())
-                .map(parts -> parts.get(0))
+                .flatMap(p -> p.stream().findFirst())
                 .map(GeminiResponse.Part::text)
                 .orElseThrow(() -> new ApiException(ExternalResponseCode.GEMINI_API_INVALID_RESPONSE));
     }

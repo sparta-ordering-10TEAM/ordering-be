@@ -1,5 +1,6 @@
 package com.sparta.ordering.ai.service;
 
+import com.sparta.ordering.ai.client.GeminiClient;
 import com.sparta.ordering.ai.dto.AiProductDescriptionResponse;
 import com.sparta.ordering.ai.entity.AiProductDescription;
 import com.sparta.ordering.ai.repository.AiProductDescriptionRepository;
@@ -20,6 +21,7 @@ import java.util.UUID;
 public class AiProductDescriptionService {
     private final AiProductDescriptionRepository aiProductDescriptionRepository;
     private final ProductRepository productRepository;
+    private final GeminiClient geminiClient;
 
     @Transactional(readOnly = true)
     public Page<AiProductDescriptionResponse> search(UUID productId, UUID userId, Pageable pageable) {
@@ -29,6 +31,10 @@ public class AiProductDescriptionService {
 
         return aiProductDescriptionRepository.findByProductIdAndDeletedAtIsNull(productId, pageable)
                 .map(AiProductDescriptionResponse::fromEntity);
+    }
+
+    public String generateDescription(String prompt){
+        return geminiClient.generateDescription(prompt);
     }
 
     @Transactional(readOnly = true)
