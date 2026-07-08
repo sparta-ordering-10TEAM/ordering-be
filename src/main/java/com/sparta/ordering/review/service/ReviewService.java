@@ -32,14 +32,14 @@ public class ReviewService {
             throw new ApiException(GeneralResponseCode.INVALID_REQUEST);
         }
 
-        Order order = orderRepository.findByIdAndUser_IdAndDeletedAtIsNull(orderId, userId)
+        Order order = orderRepository.findByIdAndUserIdForUpdate(orderId, userId)  // Order에 대한 비관락
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
 
         if (order.getOrderStatus() != OrderStatus.COMPLETED) {
             throw new ApiException(GeneralResponseCode.ORDER_NOT_COMPLETED); // 완료되지 않은 주문에 대한 리뷰 작성 검증
         }
 
-        if(reviewRepository.existsByOrder_IdAndCustomer_IdAndDeletedAtIsNull(orderId, userId)){
+        if (reviewRepository.existsByOrder_IdAndCustomer_IdAndDeletedAtIsNull(orderId, userId)) {
             throw new ApiException(GeneralResponseCode.ALREADY_REVIEWED); // 리뷰 중복체크
         }
 
