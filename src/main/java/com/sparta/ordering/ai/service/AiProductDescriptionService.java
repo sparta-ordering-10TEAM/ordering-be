@@ -21,8 +21,14 @@ public class AiProductDescriptionService {
     private final AiProductDescriptionRepository aiProductDescriptionRepository;
     private final ProductRepository productRepository;
 
+    @Transactional(readOnly = true)
     public Page<AiProductDescriptionResponse> search(UUID productId, UUID userId, Pageable pageable) {
-        return null;
+        if(productRepository.existsByIdAndRestaurant_User_IdAndDeletedAtIsNull(productId, userId)){
+            throw new ApiException(GeneralResponseCode.PRODUCT_NOT_FOUND); // Product 소유권 검증
+        }
+
+        return aiProductDescriptionRepository.findByProductIdAndDeletedAtIsNull(productId, pageable)
+                .map(AiProductDescriptionResponse::fromEntity);
     }
 
     @Transactional(readOnly = true)
@@ -45,9 +51,21 @@ public class AiProductDescriptionService {
         aiProductDescriptionRepository.save(aiProductDescription);
     }
 
+    @Transactional
     public void update(UUID aiDescriptionId, UUID userId, String description) {
+        AiProductDescription aiProductDescription = aiProductDescriptionRepository
+                .findByIdAndProduct_Restaurant_User_IdAndDeletedAtIsNull(aiDescriptionId, userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.AI_PRODUCT_DESCRIPTION_NOT_FOUND));
+
+        aiProductDescription.update(description);
     }
 
+    @Transactional
     public void delete(UUID aiDescriptionId, UUID userId) {
+        AiProductDescription aiProductDescription = aiProductDescriptionRepository
+                .findByIdAndProduct_Restaurant_User_IdAndDeletedAtIsNull(aiDescriptionId, userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.AI_PRODUCT_DESCRIPTION_NOT_FOUND));
+
+        aiProductDescription.softDelete(userId);
     }
 }

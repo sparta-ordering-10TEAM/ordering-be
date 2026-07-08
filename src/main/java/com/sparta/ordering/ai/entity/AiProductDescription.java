@@ -32,4 +32,10 @@ public class AiProductDescription extends BaseUpdatableEntity {
         this.prompt = prompt;
         this.description = description;
     }
+
+    public void update(String description) {
+        if (description != null) {
+            this.description = description;
+        }
+    }
 }
