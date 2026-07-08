@@ -8,4 +8,6 @@ import java.util.UUID;
 
 public interface OrderRepository extends JpaRepository<Order, UUID> {
     Optional<Order> findByIdAndUser_IdAndDeletedAtIsNull(UUID id, UUID userId);
+
+    boolean existsByOrderNumber(String orderNumber);
 }

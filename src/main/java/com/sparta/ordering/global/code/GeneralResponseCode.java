@@ -18,6 +18,8 @@ public enum GeneralResponseCode implements ApiResponseCode {
     ORDER_TOTAL_PRICE_INVALID(HttpStatus.BAD_REQUEST, "주문 금액이 올바르지 않습니다."),
     ORDER_NUMBER_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "주문번호 생성에 실패했습니다."),
     ORDER_ONLY_CUSTOMER(HttpStatus.FORBIDDEN, "고객만 주문할 수 있습니다."),
+    ORDER_RESTAURANT_NOT_OPEN(HttpStatus.BAD_REQUEST, "영업 중인 식당에만 주문할 수 있습니다."),
+    ORDER_PRODUCT_RESTAURANT_MISMATCH(HttpStatus.BAD_REQUEST, "해당 식당의 상품만 주문할 수 있습니다."),
 
     // Review
     ALREADY_REVIEWED(HttpStatus.CONFLICT, "이미 리뷰를 작성한 주문입니다."),
