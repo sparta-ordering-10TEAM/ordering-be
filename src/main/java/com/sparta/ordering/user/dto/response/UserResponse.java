@@ -18,7 +18,7 @@ public class UserResponse {
     private final Role role;
     private final boolean locked;
 
-    public static UserResponse of(User user) {
+    public static UserResponse from(User user) {
         return new UserResponse(
                 user.getId(),
                 user.getCreatedAt(),

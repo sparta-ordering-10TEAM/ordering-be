@@ -2,6 +2,7 @@ package com.sparta.ordering.user.service;
 
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
+import com.sparta.ordering.user.dto.request.ChangePasswordRequest;
 import com.sparta.ordering.user.dto.request.ProfileUpdateRequest;
 import com.sparta.ordering.user.dto.request.UserCreateRequest;
 import com.sparta.ordering.user.dto.response.ProfileResponse;
@@ -14,8 +15,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
 import java.util.Optional;
 import java.util.UUID;
 
@@ -24,8 +28,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,14 +44,14 @@ class UserServiceTest {
     @Mock
     private UserRepository userRepository;
 
-    @Mock
-    private PasswordEncoder passwordEncoder;
+    @Spy
+    private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Test
     @DisplayName("회원가입 성공")
     void sign_up() {
         // given
-        UserCreateRequest request = new UserCreateRequest("test", "testName", "Test123!", "010-1111-1111");
+        UserCreateRequest request = new UserCreateRequest("test", "testName", "test@email.com", "Test123!", "010-1111-1111");
 
         given(passwordEncoder.encode("Test123!")).willReturn("encoded");
         when(userRepository.existsByUserNameAndDeletedAtIsNull(request.userName())).thenReturn(false);
@@ -73,7 +80,7 @@ class UserServiceTest {
     @DisplayName("회원가입 실패")
     void validate_sign_up() {
         // given
-        UserCreateRequest request = new UserCreateRequest("test", "testName", "Test123!", "010-1111-1111");
+        UserCreateRequest request = new UserCreateRequest("test", "testName", "test@email.com", "Test123!", "010-1111-1111");
 
         when(userRepository.existsByUserNameAndDeletedAtIsNull(request.userName())).thenReturn(true);
 
@@ -119,7 +126,7 @@ class UserServiceTest {
         when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.empty());
 
         // when & then
-        ApiException ex = assertThrows(ApiException.class, () -> userService.updateProfile(userId,request,null));
+        ApiException ex = assertThrows(ApiException.class, () -> userService.updateProfile(userId, request, null));
         assertEquals(GeneralResponseCode.USER_NOT_FOUND, ex.getResponseCode());
     }
 
@@ -144,5 +151,71 @@ class UserServiceTest {
         assertThat(result.getNickName()).isEqualTo("test");
     }
 
+    @Test
+    @DisplayName("비밀번호 변경 성공")
+    void update_password() {
+        // given
+        UUID userId = UUID.randomUUID();
 
+        User user = User.builder()
+                .nickName("test")
+                .password(passwordEncoder.encode("originalPassword"))
+                .build();
+        ReflectionTestUtils.setField(user, "id", userId);
+
+        ChangePasswordRequest request = new ChangePasswordRequest("newPassword");
+        when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
+
+        // when
+        userService.updatePassword(userId, request);
+
+        // then
+        assertThat(passwordEncoder.matches("newPassword", user.getPassword())).isTrue();
+    }
+
+    @Test
+    @DisplayName("비밀번호 변경 실패")
+    void validate_update_password() {
+        // given
+        UUID userId = UUID.randomUUID();
+
+        when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.empty());
+        ChangePasswordRequest request = new ChangePasswordRequest("newPassword");
+
+        // when & then
+        ApiException ex = assertThrows(ApiException.class, () -> userService.updatePassword(userId, request));
+        assertEquals(GeneralResponseCode.USER_NOT_FOUND, ex.getResponseCode());
+    }
+
+    @Test
+    @DisplayName("회원 논리 삭제 성공")
+    void softDeleteUser() {
+        UUID userId = UUID.randomUUID();
+        User user = spy(User.builder()
+                .nickName("test")
+                .password(passwordEncoder.encode("originalPassword"))
+                .build());
+        ReflectionTestUtils.setField(user, "id", userId);
+        when(userRepository.findByIdAndDeletedAtIsNull(userId))
+                .thenReturn(Optional.of(user));
+
+        userService.deactivate(userId);
+
+        verify(user, times(1)).softDelete(userId);
+        assertThat(user.getDeletedAt()).isNotNull();
+        assertThat(user.getDeletedBy()).isEqualTo(userId);
+    }
+
+    @Test
+    @DisplayName("비밀번호 변경 실패")
+    void validate_soft_delete_user() {
+        // given
+        UUID userId = UUID.randomUUID();
+
+        when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.empty());
+
+        // when & then
+        ApiException ex = assertThrows(ApiException.class, () -> userService.deactivate(userId));
+        assertEquals(GeneralResponseCode.USER_NOT_FOUND, ex.getResponseCode());
+    }
 }
