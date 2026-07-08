@@ -1,13 +1,27 @@
 package com.sparta.ordering.order.repository;
 
 import com.sparta.ordering.order.entity.Order;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.Optional;
 import java.util.UUID;
 
 public interface OrderRepository extends JpaRepository<Order, UUID> {
+
     Optional<Order> findByIdAndUser_IdAndDeletedAtIsNull(UUID id, UUID userId);
 
     boolean existsByOrderNumber(String orderNumber);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            SELECT o FROM Order o
+            WHERE o.id = :id
+            AND o.user.id = :userId
+            AND o.deletedAt IS NULL
+            """)
+    Optional<Order> findByIdAndUserIdForUpdate(UUID id, UUID userId);
+
 }

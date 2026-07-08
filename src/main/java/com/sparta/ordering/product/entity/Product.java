@@ -13,6 +13,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Entity
 @Table(name = "p_products")
 @Getter
@@ -44,5 +46,9 @@ public class Product extends BaseUpdatableEntity {
         if (name != null) this.name = name;
         if (description != null) this.description = description;
         if (price != null) this.price = price;
+    }
+
+    public void softDelete(UUID deletedBy) {
+        super.softDelete(deletedBy);
     }
 }
