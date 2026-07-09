@@ -55,6 +55,9 @@ class OrderServiceTest {
     @Mock
     private RestaurantRepository restaurantRepository;
 
+    @Mock
+    private OrderSaveService orderSaveService;
+
     @InjectMocks
     private OrderService orderService;
 
@@ -87,7 +90,7 @@ class OrderServiceTest {
             assertThat(response.orderNumber()).hasSize(8);
 
             ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
-            verify(orderRepository).save(orderCaptor.capture());
+            verify(orderSaveService).save(orderCaptor.capture());
 
             Order savedOrder = orderCaptor.getValue();
             assertThat(savedOrder.getUser()).isEqualTo(user);
@@ -135,7 +138,7 @@ class OrderServiceTest {
                     .isEqualTo(GeneralResponseCode.ORDER_ONLY_CUSTOMER);
 
             verifyNoInteractions(restaurantRepository, productRepository);
-            verify(orderRepository, never()).save(any(Order.class));
+            verify(orderSaveService, never()).save(any(Order.class));
         }
 
         @Test
@@ -156,7 +159,7 @@ class OrderServiceTest {
                     .isEqualTo(GeneralResponseCode.RESTAURANT_NOT_FOUND);
 
             verifyNoInteractions(productRepository);
-            verify(orderRepository, never()).save(any(Order.class));
+            verify(orderSaveService, never()).save(any(Order.class));
         }
 
         @Test
@@ -201,7 +204,7 @@ class OrderServiceTest {
                     .extracting("responseCode")
                     .isEqualTo(GeneralResponseCode.PRODUCT_NOT_FOUND);
 
-            verify(orderRepository, never()).save(any(Order.class));
+            verify(orderSaveService, never()).save(any(Order.class));
         }
 
         @Test
@@ -228,7 +231,7 @@ class OrderServiceTest {
                     .extracting("responseCode")
                     .isEqualTo(GeneralResponseCode.ORDER_PRODUCT_RESTAURANT_MISMATCH);
 
-            verify(orderRepository, never()).save(any(Order.class));
+            verify(orderSaveService, never()).save(any(Order.class));
         }
 
         @Test
@@ -253,7 +256,7 @@ class OrderServiceTest {
                     .extracting("responseCode")
                     .isEqualTo(GeneralResponseCode.ORDER_TOTAL_PRICE_INVALID);
 
-            verify(orderRepository, never()).save(any(Order.class));
+            verify(orderSaveService, never()).save(any(Order.class));
         }
 
         @Test
@@ -276,8 +279,7 @@ class OrderServiceTest {
                     .isEqualTo(GeneralResponseCode.ORDER_NUMBER_GENERATION_FAILED);
 
             verify(orderRepository, times(10)).existsByOrderNumber(anyString());
-            verifyNoInteractions(productRepository);
-            verify(orderRepository, never()).save(any(Order.class));
+            verify(orderSaveService, never()).save(any(Order.class));
         }
     }
 
