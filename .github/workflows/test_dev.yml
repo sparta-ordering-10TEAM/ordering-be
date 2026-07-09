@@ -5,7 +5,7 @@ on:
     branches: [ dev ]
 
 jobs:
-  build-test-main:
+  build-test-dev:
     runs-on: ubuntu-latest
     environment: ordering-be
 
