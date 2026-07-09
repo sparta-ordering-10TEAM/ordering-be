@@ -322,6 +322,38 @@ class ReviewServiceTest {
         }
 
         @Test
+        @DisplayName("성공 - 평점만 수정 (코멘트는 null로 들어와 기존 값 보존)")
+        void successOnlyRating() {
+            UUID reviewId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
+
+            Review review = spy(Review.builder().rating(3).comment("그냥 그래요").build());
+            when(reviewRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(reviewId, userId))
+                    .thenReturn(Optional.of(review));
+
+            reviewService.updateReview(5, null, reviewId, userId);
+
+            assertThat(review.getRating()).isEqualTo(5);
+            assertThat(review.getComment()).isEqualTo("그냥 그래요");
+        }
+
+        @Test
+        @DisplayName("성공 - 코멘트만 수정 (평점은 null로 들어와 기존 값 보존)")
+        void successOnlyComment() {
+            UUID reviewId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
+
+            Review review = spy(Review.builder().rating(3).comment("그냥 그래요").build());
+            when(reviewRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(reviewId, userId))
+                    .thenReturn(Optional.of(review));
+
+            reviewService.updateReview(null, "수정된 평점 최고!", reviewId, userId);
+
+            assertThat(review.getRating()).isEqualTo(3);
+            assertThat(review.getComment()).isEqualTo("수정된 평점 최고!");
+        }
+
+        @Test
         @DisplayName("실패 - 리뷰를 찾을 수 없거나 다른 유저의 리뷰")
         void failReviewNotFound() {
             UUID reviewId = UUID.randomUUID();

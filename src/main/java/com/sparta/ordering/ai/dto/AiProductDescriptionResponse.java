@@ -1,6 +1,6 @@
-package com.sparta.ordering.aipromptlog.dto;
+package com.sparta.ordering.ai.dto;
 
-import com.sparta.ordering.aipromptlog.entity.AiProductDescription;
+import com.sparta.ordering.ai.entity.AiProductDescription;
 
 import java.time.Instant;
 import java.util.UUID;

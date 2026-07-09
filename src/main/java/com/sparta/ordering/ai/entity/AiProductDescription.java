@@ -1,4 +1,4 @@
-package com.sparta.ordering.aipromptlog.entity;
+package com.sparta.ordering.ai.entity;
 
 import com.sparta.ordering.global.entity.BaseUpdatableEntity;
 import com.sparta.ordering.product.entity.Product;
@@ -31,5 +31,11 @@ public class AiProductDescription extends BaseUpdatableEntity {
         this.product = product;
         this.prompt = prompt;
         this.description = description;
+    }
+
+    public void update(String description) {
+        if (description != null) {
+            this.description = description;
+        }
     }
 }

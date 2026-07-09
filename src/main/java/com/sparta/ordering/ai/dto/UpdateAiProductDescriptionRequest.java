@@ -1,4 +1,4 @@
-package com.sparta.ordering.aipromptlog.dto;
+package com.sparta.ordering.ai.dto;
 
 import jakarta.validation.constraints.NotBlank;
 
