@@ -44,8 +44,8 @@ public class AiProductDescriptionService {
     }
 
     @Transactional
-    public void saveDescription(UUID productId, String prompt, String description) {
-        Product product = productRepository.findById(productId)
+    public void saveDescription(UUID productId, String prompt, String description, UUID userId) {
+        Product product = productRepository.findByIdAndRestaurant_User_IdAndDeletedAtIsNull(productId, userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.PRODUCT_NOT_FOUND));
 
         AiProductDescription aiProductDescription = AiProductDescription.builder()

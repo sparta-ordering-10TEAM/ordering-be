@@ -22,6 +22,6 @@ public class AiProductDescriptionFacade {
         String description = aiProductDescriptionService.generateDescription(refinedPrompt);
 
         // AI 상품 설명 저장 (짧은 Write 트랜잭션)
-        aiProductDescriptionService.saveDescription(productId, refinedPrompt, description);
+        aiProductDescriptionService.saveDescription(productId, refinedPrompt, description, userId);
     }
 }
