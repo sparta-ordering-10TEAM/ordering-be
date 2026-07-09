@@ -50,7 +50,7 @@ public class RestaurantController {
     }
 
     @PreAuthorize("hasRole('OWNER')")
-    @GetMapping("/owner/restaurants")
+    @GetMapping("/users/me/restaurants")
     public ResponseEntity<GeneralResponse<Page<RestaurantResponse>>> getOwnerRestaurants(
             @AuthenticationPrincipal UUID userId,
             @PageableDefault Pageable pageable
