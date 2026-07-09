@@ -2,6 +2,7 @@ package com.sparta.ordering.user.service;
 
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
+import com.sparta.ordering.global.util.PageableUtils;
 import com.sparta.ordering.user.dto.request.UserRoleUpdateRequest;
 import com.sparta.ordering.user.dto.response.AdminUserDetailResponse;
 import com.sparta.ordering.user.dto.response.UserResponse;
@@ -73,10 +74,7 @@ public class AdminService {
     }
 
     public Page<AdminUserDetailResponse> searchUsers(String userName, Role role, Boolean locked, Pageable pageable) {
-        int size = pageable.getPageSize();
-        if (size != 10 && size != 30 && size != 50) {
-            pageable = PageRequest.of(pageable.getPageNumber(), 10, pageable.getSort());
-        }
+        pageable = PageableUtils.normalizePageSize(pageable);
         Specification<User> spec = UserSpecification.withSearchCondition(userName, role, locked);
         return userRepository.findAll(spec, pageable)
                 .map(AdminUserDetailResponse::from);
