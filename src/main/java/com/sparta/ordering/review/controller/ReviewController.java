@@ -47,7 +47,6 @@ public class ReviewController implements ReviewApi {
     }
 
     @Override
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/restaurants/{restaurantId}/reviews")
     public ResponseEntity<GeneralResponse<Page<ReviewResponse>>> searchRestaurantReviews(
             @PathVariable UUID restaurantId,
@@ -60,7 +59,6 @@ public class ReviewController implements ReviewApi {
     }
 
     @Override
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/products/{productId}/reviews")
     public ResponseEntity<GeneralResponse<Page<ReviewResponse>>> searchProductReviews(
             @PathVariable UUID productId,
@@ -73,7 +71,6 @@ public class ReviewController implements ReviewApi {
     }
 
     @Override
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/restaurants/{restaurantId}/ratings")
     public ResponseEntity<GeneralResponse<Double>> getRestaurantAverageRating(
             @PathVariable UUID restaurantId
