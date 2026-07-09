@@ -3,8 +3,10 @@ package com.sparta.ordering.product.service;
 import com.sparta.ordering.global.code.AuthResponseCode;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
+import com.sparta.ordering.global.util.PageableUtils;
 import com.sparta.ordering.product.dto.ProductCreateRequest;
 import com.sparta.ordering.product.dto.ProductResponse;
+import com.sparta.ordering.product.dto.ProductSearchRequest;
 import com.sparta.ordering.product.dto.ProductUpdateRequest;
 import com.sparta.ordering.product.entity.Product;
 import com.sparta.ordering.product.repository.ProductRepository;
@@ -12,6 +14,8 @@ import com.sparta.ordering.restaurant.entity.Restaurant;
 import com.sparta.ordering.restaurant.repository.RestaurantRepository;
 import com.sparta.ordering.user.entity.Role;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,13 +30,25 @@ public class ProductService {
     private final RestaurantRepository restaurantRepository;
 
     private static final Set<Role> PRIVILEGED_ROLES = Set.of(Role.MANAGER, Role.MASTER);
+    private static final Set<String> ALLOWED_SORT_FIELD = Set.of("name", "price", "createdAt");
 
     @Transactional(readOnly = true)
     public ProductResponse getProduct(UUID productId) {
-        Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
+        Product product = productRepository.findByIdAndDeletedAtIsNullAndRestaurant_DeletedAtIsNull(productId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.PRODUCT_NOT_FOUND));
 
         return ProductResponse.from(product);
+    }
+
+
+    @Transactional(readOnly = true)
+    public Page<ProductResponse> getProducts(ProductSearchRequest request, UUID restaurantId, Pageable pageable) {
+        PageableUtils.validateSort(pageable, ALLOWED_SORT_FIELD);
+        Pageable normalizedPageable = PageableUtils.normalizePageSize(pageable);
+
+        Page<Product> products = productRepository.searchProducts(restaurantId, request.name(), request.minPrice(), request.maxPrice(), normalizedPageable);
+
+        return products.map(ProductResponse::from);
     }
 
     @Transactional
