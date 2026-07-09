@@ -5,6 +5,7 @@ import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.restaurant.dto.RestaurantCreateRequest;
 import com.sparta.ordering.restaurant.dto.RestaurantResponse;
+import com.sparta.ordering.restaurant.dto.RestaurantUpdateRequest;
 import com.sparta.ordering.restaurant.entity.Restaurant;
 import com.sparta.ordering.restaurant.entity.RestaurantCategory;
 import com.sparta.ordering.restaurant.entity.RestaurantStatus;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -29,6 +31,8 @@ public class RestaurantService {
     private final RestaurantRepository restaurantRepository;
     private final RestaurantCategoryRepository restaurantCategoryRepository;
     private final UserRepository userRepository;
+
+    private static final Set<Role> PRIVILEGED_ROLES = Set.of(Role.MANAGER, Role.MASTER);
 
     @Transactional(readOnly = true)
     public Page<RestaurantResponse> getRestaurants(String category, Pageable pageable) {
@@ -83,6 +87,38 @@ public class RestaurantService {
         return RestaurantResponse.from(savedRestaurant);
     }
 
+    @Transactional
+    public RestaurantResponse updateRestaurant(
+            UUID restaurantId,
+            RestaurantUpdateRequest request,
+            UUID userId
+    ) {
+        Restaurant restaurant = getActiveRestaurant(restaurantId);
+        User requestUser = userRepository.findByIdAndDeletedAtIsNull(userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
+
+        validateUpdatePermission(requestUser, restaurant);
+
+        RestaurantCategory category = (request.category() != null) ? getActiveCategory(request.category()): null;
+
+        restaurant.update(
+                category,
+                request.name(),
+                request.phone(),
+                request.description(),
+                request.address(),
+                request.addressDetail(),
+                request.zipCode(),
+                request.minOrderAmount(),
+                request.deliveryFee(),
+                request.latitude(),
+                request.longitude(),
+                request.deliveryRadiusKm()
+        );
+
+        return RestaurantResponse.from(restaurant);
+    }
+
     private Page<Restaurant> findRestaurants(String category, Pageable pageable) {
         if (StringUtils.hasText(category)) {
             RestaurantCategory restaurantCategory = getActiveCategory(category);
@@ -101,5 +137,15 @@ public class RestaurantService {
     private Restaurant getActiveRestaurant(UUID restaurantId) {
         return restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.RESTAURANT_NOT_FOUND));
+    }
+
+    private void validateUpdatePermission(User user, Restaurant restaurant) {
+        if (PRIVILEGED_ROLES.contains(user.getRole())) {
+            return;
+        }
+        if (user.getRole() == Role.OWNER && restaurant.isOwnedBy(user)) {
+            return;
+        }
+        throw new ApiException(AuthResponseCode.FORBIDDEN);
     }
 }
