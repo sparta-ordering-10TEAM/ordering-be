@@ -10,24 +10,32 @@ import java.util.UUID;
 
 @Getter
 @Builder
-public class UserResponse {
+public class AdminUserDetailResponse {
     private final UUID id;
     private final Instant createdAt;
     private final String userName;
     private final String nickName;
     private final String email;
+    private final String phoneNumber;
     private final Role role;
     private final boolean locked;
+    private final Instant deletedAt;
+    private final UUID deletedBy;
+    private final Instant updatedAt;
 
-    public static UserResponse from(User user) {
-        return new UserResponse(
+    public static AdminUserDetailResponse from(User user) {
+        return new AdminUserDetailResponse(
                 user.getId(),
                 user.getCreatedAt(),
                 user.getUserName(),
                 user.getNickName(),
                 user.getEmail(),
+                user.getPhoneNumber(),
                 user.getRole(),
-                user.isLocked()
+                user.isLocked(),
+                user.getDeletedAt(),
+                user.getDeletedBy(),
+                user.getUpdatedAt()
         );
     }
 }

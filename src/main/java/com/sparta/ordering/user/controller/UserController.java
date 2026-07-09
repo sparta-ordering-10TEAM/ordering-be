@@ -61,7 +61,7 @@ public class UserController implements UserApi {
     @Override
     @PatchMapping("/{userId}/password")
     public ResponseEntity<GeneralResponse<Void>> updatePassword(@PathVariable UUID userId,
-                                                                @RequestBody ChangePasswordRequest changePasswordRequest) {
+                                                                @RequestBody @Valid ChangePasswordRequest changePasswordRequest) {
         userService.updatePassword(userId, changePasswordRequest);
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK,null);
     }
