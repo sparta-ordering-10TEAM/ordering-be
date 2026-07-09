@@ -3,7 +3,6 @@ package com.sparta.ordering.cart.entity;
 import com.sparta.ordering.global.entity.BaseUpdatableEntity;
 import com.sparta.ordering.restaurant.entity.Restaurant;
 import com.sparta.ordering.user.entity.User;
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -31,6 +30,10 @@ public class Cart extends BaseUpdatableEntity {
     @Builder
     public Cart(User user, Restaurant restaurant) {
         this.user = user;
+        this.restaurant = restaurant;
+    }
+
+    public void changeRestaurant(Restaurant restaurant) {
         this.restaurant = restaurant;
     }
 }
