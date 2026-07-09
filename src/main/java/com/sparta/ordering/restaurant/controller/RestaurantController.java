@@ -50,6 +50,18 @@ public class RestaurantController {
     }
 
     @PreAuthorize("hasRole('OWNER')")
+    @GetMapping("/owner/restaurants")
+    public ResponseEntity<GeneralResponse<Page<RestaurantResponse>>> getOwnerRestaurants(
+            @AuthenticationPrincipal UUID userId,
+            @PageableDefault Pageable pageable
+    ) {
+        return GeneralResponse.toResponseEntity(
+                GeneralResponseCode.OK,
+                restaurantService.getOwnerRestaurants(userId, pageable)
+        );
+    }
+
+    @PreAuthorize("hasRole('OWNER')")
     @PostMapping("/restaurants")
     public ResponseEntity<GeneralResponse<RestaurantResponse>> createRestaurant(
             @Valid @RequestBody RestaurantCreateRequest request,
