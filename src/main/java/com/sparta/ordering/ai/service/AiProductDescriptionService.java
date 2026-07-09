@@ -25,7 +25,7 @@ public class AiProductDescriptionService {
 
     @Transactional(readOnly = true)
     public Page<AiProductDescriptionResponse> search(UUID productId, UUID userId, Pageable pageable) {
-        if(productRepository.existsByIdAndRestaurant_User_IdAndDeletedAtIsNull(productId, userId)){
+        if(!productRepository.existsByIdAndRestaurant_User_IdAndDeletedAtIsNull(productId, userId)){
             throw new ApiException(GeneralResponseCode.PRODUCT_NOT_FOUND); // Product 소유권 검증
         }
 
