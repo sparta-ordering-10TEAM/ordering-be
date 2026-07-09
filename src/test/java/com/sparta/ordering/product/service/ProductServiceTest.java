@@ -73,7 +73,8 @@ class ProductServiceTest {
                     .build();
             ReflectionTestUtils.setField(product, "id", productId);
 
-            when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.of(product));
+            when(productRepository.findByIdAndDeletedAtIsNullAndRestaurant_DeletedAtIsNull(productId))
+                    .thenReturn(Optional.of(product));
 
             // when
             ProductResponse response = productService.getProduct(productId);
@@ -90,7 +91,21 @@ class ProductServiceTest {
         @DisplayName("실패 - 존재하지 않는 상품")
         void test2() {
             UUID productId = UUID.randomUUID();
-            when(productRepository.findByIdAndDeletedAtIsNull(productId)).thenReturn(Optional.empty());
+            when(productRepository.findByIdAndDeletedAtIsNullAndRestaurant_DeletedAtIsNull(productId))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> productService.getProduct(productId))
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(GeneralResponseCode.PRODUCT_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("실패 - 삭제된 음식점의 상품")
+        void test3() {
+            UUID productId = UUID.randomUUID();
+            when(productRepository.findByIdAndDeletedAtIsNullAndRestaurant_DeletedAtIsNull(productId))
+                    .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> productService.getProduct(productId))
                     .isInstanceOf(ApiException.class)

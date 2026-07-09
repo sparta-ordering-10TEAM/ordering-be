@@ -34,7 +34,7 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public ProductResponse getProduct(UUID productId) {
-        Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
+        Product product = productRepository.findByIdAndDeletedAtIsNullAndRestaurant_DeletedAtIsNull(productId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.PRODUCT_NOT_FOUND));
 
         return ProductResponse.from(product);
