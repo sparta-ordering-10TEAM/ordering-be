@@ -17,4 +17,6 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, UUID> {
     Page<Restaurant> findByDeletedAtIsNull(Pageable pageable);
 
     Page<Restaurant> findByCategoryAndDeletedAtIsNull(RestaurantCategory category, Pageable pageable);
+
+    Page<Restaurant> findByUser_IdAndDeletedAtIsNull(UUID userId, Pageable pageable);
 }

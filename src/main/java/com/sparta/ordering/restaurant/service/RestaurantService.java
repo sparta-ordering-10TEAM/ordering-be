@@ -43,6 +43,12 @@ public class RestaurantService {
         return RestaurantResponse.from(restaurant);
     }
 
+    @Transactional(readOnly = true)
+    public Page<RestaurantResponse> getOwnerRestaurants(UUID userId, Pageable pageable) {
+        return restaurantRepository.findByUser_IdAndDeletedAtIsNull(userId, pageable)
+                .map(RestaurantResponse::from);
+    }
+
     @Transactional
     public RestaurantResponse createRestaurant(RestaurantCreateRequest request, UUID userId) {
         User owner = userRepository.findByIdAndDeletedAtIsNull(userId)
