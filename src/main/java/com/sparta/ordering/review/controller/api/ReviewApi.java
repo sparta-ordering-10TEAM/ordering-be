@@ -1,14 +1,13 @@
-package com.sparta.ordering.review.controller;
+package com.sparta.ordering.review.controller.api;
 
-import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
-import com.sparta.ordering.review.controller.api.ReviewApi;
 import com.sparta.ordering.review.dto.PostReviewRequest;
 import com.sparta.ordering.review.dto.ReviewResponse;
 import com.sparta.ordering.review.dto.UpdateReviewRequest;
-import com.sparta.ordering.review.service.ReviewService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -23,89 +22,82 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
-@RestController
-@RequiredArgsConstructor
+@Tag(name = "Review", description = "리뷰 관리 API")
 @RequestMapping("/api")
-public class ReviewController implements ReviewApi {
-    private final ReviewService reviewService;
-
-    @Override
+public interface ReviewApi {
+    @Operation(
+            summary = "리뷰 생성",
+            description = "완료된 주문에 대해 평점과 리뷰 코멘트를 등록합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping("/orders/{orderId}/reviews")
-    public ResponseEntity<GeneralResponse<Void>> postReview(
+    ResponseEntity<GeneralResponse<Void>> postReview(
             @PathVariable UUID orderId,
             @RequestBody @Valid PostReviewRequest request,
             @AuthenticationPrincipal UUID userId
-    ) {
-        reviewService.postReview(request.rating(), request.comment(), orderId, userId);
+    );
 
-        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, null);
-    }
-
-    @Override
+    @Operation(
+            summary = "가게 리뷰 목록 조회",
+            description = "특정 식당의 전체 리뷰 목록을 페이징 조회합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/restaurants/{restaurantId}/reviews")
-    public ResponseEntity<GeneralResponse<Page<ReviewResponse>>> searchRestaurantReviews(
+    ResponseEntity<GeneralResponse<Page<ReviewResponse>>> searchRestaurantReviews(
             @PathVariable UUID restaurantId,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
-    ) {
-        return GeneralResponse.toResponseEntity(
-                GeneralResponseCode.OK,
-                reviewService.searchRestaurantReviews(restaurantId, pageable)
-        );
-    }
+    );
 
-    @Override
+    @Operation(
+            summary = "상품 리뷰 목록 조회",
+            description = "특정 상품의 리뷰 목록을 페이징 조회합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/products/{productId}/reviews")
-    public ResponseEntity<GeneralResponse<Page<ReviewResponse>>> searchProductReviews(
+    ResponseEntity<GeneralResponse<Page<ReviewResponse>>> searchProductReviews(
             @PathVariable UUID productId,
             @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
-    ) {
-        return GeneralResponse.toResponseEntity(
-                GeneralResponseCode.OK,
-                reviewService.searchProductReviews(productId, pageable)
-        );
-    }
+    );
 
-    @Override
+    @Operation(
+            summary = "가게 평균 평점 조회",
+            description = "특정 식당의 누적 리뷰 평균 평점을 조회합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/restaurants/{restaurantId}/ratings")
-    public ResponseEntity<GeneralResponse<Double>> getRestaurantAverageRating(
+    ResponseEntity<GeneralResponse<Double>> getRestaurantAverageRating(
             @PathVariable UUID restaurantId
-    ) {
-        return GeneralResponse.toResponseEntity(
-                GeneralResponseCode.OK,
-                reviewService.getRestaurantAverageRating(restaurantId)
-        );
-    }
+    );
 
-    @Override
+    @Operation(
+            summary = "리뷰 수정",
+            description = "자신이 작성한 리뷰의 평점과 내용을 수정합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @PreAuthorize("hasRole('CUSTOMER')")
     @PatchMapping("/reviews/{reviewId}")
-    public ResponseEntity<GeneralResponse<Void>> updateReview(
+    ResponseEntity<GeneralResponse<Void>> updateReview(
             @PathVariable UUID reviewId,
             @RequestBody @Valid UpdateReviewRequest request,
             @AuthenticationPrincipal UUID userId
-    ) {
-        reviewService.updateReview(request.rating(), request.comment(), reviewId, userId);
+    );
 
-        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, null);
-    }
-
-    @Override
+    @Operation(
+            summary = "리뷰 삭제",
+            description = "자신이 작성한 리뷰를 삭제(Soft Delete)합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @PreAuthorize("hasRole('CUSTOMER')")
     @DeleteMapping("/reviews/{reviewId}")
-    public ResponseEntity<GeneralResponse<Void>> deleteReview(
+    ResponseEntity<GeneralResponse<Void>> deleteReview(
             @PathVariable UUID reviewId,
             @AuthenticationPrincipal UUID userId
-    ) {
-        reviewService.softDeleteReview(reviewId, userId);
-
-        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, null);
-    }
+    );
 }

@@ -1,9 +1,11 @@
-package com.sparta.ordering.aipromptlog.controller;
+package com.sparta.ordering.ai.controller;
 
-import com.sparta.ordering.aipromptlog.dto.AiProductDescriptionResponse;
-import com.sparta.ordering.aipromptlog.dto.GenerateAiProductDescriptionRequest;
-import com.sparta.ordering.aipromptlog.dto.UpdateAiProductDescriptionRequest;
-import com.sparta.ordering.aipromptlog.service.AiProductDescriptionService;
+import com.sparta.ordering.ai.controller.api.AiProductDescriptionApi;
+import com.sparta.ordering.ai.dto.AiProductDescriptionResponse;
+import com.sparta.ordering.ai.dto.GenerateAiProductDescriptionRequest;
+import com.sparta.ordering.ai.dto.UpdateAiProductDescriptionRequest;
+import com.sparta.ordering.ai.facade.AiProductDescriptionFacade;
+import com.sparta.ordering.ai.service.AiProductDescriptionService;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import jakarta.validation.Valid;
@@ -29,9 +31,11 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
-public class AiProductDescriptionController {
+public class AiProductDescriptionController implements AiProductDescriptionApi {
     private final AiProductDescriptionService aiProductDescriptionService;
+    private final AiProductDescriptionFacade aiProductDescriptionFacade;
 
+    @Override
     @PreAuthorize("hasRole('OWNER')")
     @GetMapping("/products/{productId}/ai-descriptions")
     public ResponseEntity<GeneralResponse<Page<AiProductDescriptionResponse>>> searchAiProductDescription(
@@ -45,6 +49,7 @@ public class AiProductDescriptionController {
         );
     }
 
+    @Override
     @PreAuthorize("hasRole('OWNER')")
     @PostMapping("/products/{productId}/ai-descriptions")
     public ResponseEntity<GeneralResponse<Void>> generateAiProductDescription(
@@ -52,7 +57,8 @@ public class AiProductDescriptionController {
             @AuthenticationPrincipal UUID userId,
             @RequestBody @Valid GenerateAiProductDescriptionRequest request
     ) {
-        aiProductDescriptionService.generate(productId, userId, request.prompt());
+        // Facade로 위임하여 트랜잭션 경계 분리 호출
+        aiProductDescriptionFacade.generate(productId, userId, request.prompt());
 
         return GeneralResponse.toResponseEntity(
                 GeneralResponseCode.OK,
@@ -60,6 +66,7 @@ public class AiProductDescriptionController {
         );
     }
 
+    @Override
     @PreAuthorize("hasRole('OWNER')")
     @PatchMapping("/ai-descriptions/{aiDescriptionId}")
     public ResponseEntity<GeneralResponse<Void>> updateAiProductDescription(
@@ -75,6 +82,7 @@ public class AiProductDescriptionController {
         );
     }
 
+    @Override
     @PreAuthorize("hasRole('OWNER')")
     @DeleteMapping("/ai-descriptions/{aiDescriptionId}")
     public ResponseEntity<GeneralResponse<Void>> deleteAiProductDescription(
