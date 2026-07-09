@@ -64,7 +64,7 @@ public interface ProductApi {
     @GetMapping("/restaurants/{restaurantId}/products")
     ResponseEntity<GeneralResponse<Page<ProductResponse>>> getProducts(
             @PathVariable UUID restaurantId,
-            ProductSearchRequest request,
+            @Valid ProductSearchRequest request,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     );
 

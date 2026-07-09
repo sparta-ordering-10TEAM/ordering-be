@@ -49,7 +49,7 @@ public class ProductController implements ProductApi {
     @GetMapping("/restaurants/{restaurantId}/products")
     public ResponseEntity<GeneralResponse<Page<ProductResponse>>> getProducts(
             @PathVariable UUID restaurantId,
-            ProductSearchRequest request,
+            @Valid ProductSearchRequest request,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<ProductResponse> responses = productService.getProducts(request, restaurantId, pageable);
