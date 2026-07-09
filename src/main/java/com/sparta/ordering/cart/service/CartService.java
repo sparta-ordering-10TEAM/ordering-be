@@ -33,7 +33,7 @@ public class CartService {
     @Transactional(readOnly = true)
     public CartResponse getMyCart(UUID userId) {
         return cartRepository.findByUser_Id(userId)
-                .map(cart -> toCartResponse(cart, cartItemRepository.findByCart_IdAndDeletedAtIsNull(cart.getId())))
+                .map(cart -> toCartResponse(cart, cartItemRepository.findByCart_IdAndDeletedAtIsNullWithProduct(cart.getId())))
                 .orElseGet(CartResponse::empty);
     }
 
@@ -56,7 +56,7 @@ public class CartService {
         addOrIncreaseCartItem(cart, product, request.quantity());
 
         // cartResponse 반환
-        List<CartItem> cartItems = cartItemRepository.findByCart_IdAndDeletedAtIsNull(cart.getId());
+        List<CartItem> cartItems = cartItemRepository.findByCart_IdAndDeletedAtIsNullWithProduct(cart.getId());
         return toCartResponse(cart, cartItems);
     }
 
