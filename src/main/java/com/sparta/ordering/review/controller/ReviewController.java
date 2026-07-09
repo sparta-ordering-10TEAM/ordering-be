@@ -50,7 +50,7 @@ public class ReviewController implements ReviewApi {
     @GetMapping("/restaurants/{restaurantId}/reviews")
     public ResponseEntity<GeneralResponse<Page<ReviewResponse>>> searchRestaurantReviews(
             @PathVariable UUID restaurantId,
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return GeneralResponse.toResponseEntity(
                 GeneralResponseCode.OK,
@@ -62,7 +62,7 @@ public class ReviewController implements ReviewApi {
     @GetMapping("/products/{productId}/reviews")
     public ResponseEntity<GeneralResponse<Page<ReviewResponse>>> searchProductReviews(
             @PathVariable UUID productId,
-            @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return GeneralResponse.toResponseEntity(
                 GeneralResponseCode.OK,
