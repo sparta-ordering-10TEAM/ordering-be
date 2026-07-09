@@ -16,6 +16,7 @@ import com.sparta.ordering.user.entity.Role;
 import com.sparta.ordering.user.entity.User;
 import com.sparta.ordering.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,12 +33,15 @@ public class OrderService {
     private static final String ORDER_NUMBER_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int ORDER_NUMBER_LENGTH = 8;
     private static final int ORDER_NUMBER_RETRY_COUNT = 10;
+    private static final int ORDER_SAVE_RETRY_COUNT = 3;
+    private static final String ORDER_NUMBER_CONSTRAINT_KEY = "order_number";
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final RestaurantRepository restaurantRepository;
+    private final OrderSaveService orderSaveService;
 
     @Transactional
     public OrderCreateResponse create(OrderCreateRequest request, UUID userId) {
@@ -56,10 +60,6 @@ public class OrderService {
             throw new ApiException(GeneralResponseCode.ORDER_RESTAURANT_NOT_OPEN);
         }
 
-        String orderNumber = generateOrderNumber();
-
-        Order newOrder = Order.create(orderNumber, restaurant, user, request.deliveryAddress(), request.requestMessage());
-
         List<UUID> productIds = request.orderItems().stream()
                 .map(OrderCreateRequest.OrderItemRequest::productId)
                 .toList();
@@ -68,6 +68,45 @@ public class OrderService {
 
         Map<UUID, Product> productMap = products.stream()
                 .collect(Collectors.toMap(Product::getId, product -> product));
+
+        return saveWithRetry(request, user, restaurant, productMap);
+    }
+
+    private OrderCreateResponse saveWithRetry(OrderCreateRequest request,
+                                                   User user,
+                                                   Restaurant restaurant,
+                                                   Map<UUID, Product> productMap) {
+        for (int i=0; i<ORDER_SAVE_RETRY_COUNT; i++) {
+            Order newOrder = createNewOrder(request, user, restaurant, productMap);
+
+            try {
+                orderSaveService.save(newOrder);
+                return OrderCreateResponse.from(newOrder);
+            } catch (DataIntegrityViolationException e) {
+                if (isOrderNumberUniqueViolation(e)) {
+                    continue;
+                }
+                throw e;
+            }
+
+        }
+
+        throw new ApiException(GeneralResponseCode.ORDER_NUMBER_GENERATION_FAILED);
+    }
+
+    private Order createNewOrder(OrderCreateRequest request,
+                                 User user,
+                                 Restaurant restaurant,
+                                 Map<UUID, Product> productMap
+    ) {
+        String orderNumber = generateOrderNumber();
+
+        Order newOrder = Order.create(orderNumber,
+                restaurant,
+                user,
+                request.deliveryAddress(),
+                request.requestMessage()
+        );
 
         for (OrderCreateRequest.OrderItemRequest orderItem : request.orderItems()) {
             Product product = productMap.get(orderItem.productId());
@@ -88,9 +127,13 @@ public class OrderService {
             throw new ApiException(GeneralResponseCode.ORDER_TOTAL_PRICE_INVALID);
         }
 
-        orderRepository.save(newOrder);
+        return newOrder;
+    }
 
-        return OrderCreateResponse.from(newOrder);
+    private boolean isOrderNumberUniqueViolation(DataIntegrityViolationException e) {
+        String message = e.getMostSpecificCause().getMessage();
+
+        return message != null && message.contains(ORDER_NUMBER_CONSTRAINT_KEY);
     }
 
     private String generateOrderNumber() {
@@ -114,5 +157,4 @@ public class OrderService {
         }
         return sb.toString();
     }
-
 }
