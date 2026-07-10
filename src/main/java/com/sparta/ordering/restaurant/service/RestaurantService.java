@@ -97,7 +97,7 @@ public class RestaurantService {
         User requestUser = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
-        validateUpdatePermission(requestUser, restaurant);
+        validateModificationPermission(requestUser, restaurant);
 
         RestaurantCategory category = (request.category() != null) ? getActiveCategory(request.category()): null;
 
@@ -117,6 +117,17 @@ public class RestaurantService {
         );
 
         return RestaurantResponse.from(restaurant);
+    }
+
+    @Transactional
+    public void deleteRestaurant(UUID restaurantId, UUID userId) {
+        Restaurant restaurant = getActiveRestaurant(restaurantId);
+        User requestUser = userRepository.findByIdAndDeletedAtIsNull(userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
+
+        validateModificationPermission(requestUser, restaurant);
+
+        restaurant.softDelete(userId);
     }
 
     private Page<Restaurant> findRestaurants(String category, Pageable pageable) {
@@ -139,7 +150,7 @@ public class RestaurantService {
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.RESTAURANT_NOT_FOUND));
     }
 
-    private void validateUpdatePermission(User user, Restaurant restaurant) {
+    private void validateModificationPermission(User user, Restaurant restaurant) {
         if (PRIVILEGED_ROLES.contains(user.getRole())) {
             return;
         }

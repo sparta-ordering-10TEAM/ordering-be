@@ -14,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.UUID;
 
-@Tag(name = "AI Product Description", description = "AI 상품 설명 관리 API")
+@Tag(name = "AI 상품 설명", description = "AI 상품 설명 관리 API")
 public interface AiProductDescriptionApi {
 
     @Operation(

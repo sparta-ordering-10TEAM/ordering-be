@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  ordering-db:
+    image: postgres:16-alpine
+    container_name: ordering-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ordering-net
+
+  ordering-be:
+    image: ${DOCKERHUB_USERNAME}/${IMAGE_NAME}:latest
+    container_name: ordering-be
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      ordering-db:
+        condition: service_healthy
+    networks:
+      - ordering-net
+
+networks:
+  ordering-net:
+    external: true
+
+volumes:
+  db-data:
