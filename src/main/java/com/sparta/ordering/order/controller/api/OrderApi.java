@@ -42,11 +42,11 @@ public interface OrderApi {
 
     @Operation(
             summary = "주문 목록 조회",
-            description = "내 주문 목록을 페이징 조회합니다.",
+            description = "주문 목록을 페이징 조회합니다.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @PreAuthorize("hasRole('CUSTOMER')")
-    @GetMapping("/me/orders")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
+    @GetMapping("/orders")
     ResponseEntity<GeneralResponse<Page<OrderListResponse>>> getOrders(
             @AuthenticationPrincipal UUID userId,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
@@ -54,10 +54,10 @@ public interface OrderApi {
 
     @Operation(
             summary = "주문 상세 조회",
-            description = "주문 ID로 내 주문 상세 정보와 주문상품 목록을 조회합니다.",
+            description = "주문 ID로 주문 상세 정보와 주문상품 목록을 조회합니다.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/orders/{orderId}")
     ResponseEntity<GeneralResponse<OrderDetailResponse>> getOrder(
             @PathVariable UUID orderId,

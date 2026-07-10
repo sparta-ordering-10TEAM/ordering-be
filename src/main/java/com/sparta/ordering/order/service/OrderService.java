@@ -85,7 +85,14 @@ public class OrderService {
         PageableUtils.validateSort(pageable, Set.of("createdAt"));
         Pageable normalizedPageable = PageableUtils.normalizePageSize(pageable);
 
-        Page<Order> orders = orderRepository.findAllByUserIdWithRestaurant(userId, normalizedPageable);
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
+
+        Page<Order> orders = switch (user.getRole()) {
+            case CUSTOMER -> orderRepository.findAllByUserIdWithRestaurant(userId, normalizedPageable);
+            case OWNER -> orderRepository.findAllByOwnerIdWithRestaurant(userId, normalizedPageable);
+            case MANAGER, MASTER -> orderRepository.findAllWithRestaurant(normalizedPageable);
+        };
 
         if (orders.isEmpty()) {
             return Page.empty(normalizedPageable);

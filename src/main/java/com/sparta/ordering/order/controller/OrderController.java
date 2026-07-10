@@ -9,10 +9,11 @@ import com.sparta.ordering.order.dto.OrderDetailResponse;
 import com.sparta.ordering.order.dto.OrderListResponse;
 import com.sparta.ordering.order.service.OrderService;
 import jakarta.validation.Valid;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -43,15 +44,17 @@ public class OrderController implements OrderApi {
     }
 
     @Override
-    @PreAuthorize("hasRole('CUSTOMER')")
-    @GetMapping("/me/orders")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
+    @GetMapping("/orders")
     public ResponseEntity<GeneralResponse<Page<OrderListResponse>>> getOrders(@AuthenticationPrincipal UUID userId,
-                                                                              Pageable pageable) {
+                                                                              @PageableDefault(size = 10,
+                                                                                      sort = "createdAt",
+                                                                                      direction = Sort.Direction.DESC)Pageable pageable) {
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, orderService.getOrders(userId, pageable));
     }
 
     @Override
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/orders/{orderId}")
     public ResponseEntity<GeneralResponse<OrderDetailResponse>> getOrder(@AuthenticationPrincipal UUID userId,
                                                                          @PathVariable UUID orderId) {

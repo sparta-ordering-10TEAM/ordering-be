@@ -35,6 +35,24 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     Page<Order> findAllByUserIdWithRestaurant(UUID userId, Pageable pageable);
 
     @Query("""
+           SELECT o FROM Order o
+           JOIN FETCH o.restaurant r
+           WHERE r.user.id = :ownerId
+           AND o.deletedAt IS NULL
+           AND r.deletedAt IS NULL
+           """
+    )
+    Page<Order> findAllByOwnerIdWithRestaurant(UUID ownerId, Pageable pageable);
+
+    @Query("""
+           SELECT o FROM Order o
+           JOIN FETCH o.restaurant
+           WHERE o.deletedAt IS NULL
+           """
+    )
+    Page<Order> findAllWithRestaurant(Pageable pageable);
+
+    @Query("""
            SELECT DISTINCT o FROM Order o
            JOIN FETCH o.restaurant
            LEFT JOIN FETCH o.orderItems oi
