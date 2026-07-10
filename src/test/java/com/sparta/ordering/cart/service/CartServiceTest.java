@@ -23,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import javax.swing.text.html.Option;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -315,5 +316,63 @@ class CartServiceTest {
 
         }
 
+    }
+    @Nested
+    @DisplayName("장바구니 상품 삭제")
+    class RemoveItem {
+
+        @Test
+        @DisplayName("성공 - 마지막 아이템 restaurant null")
+        void test1() {
+
+            // given
+            UUID userId = UUID.randomUUID();
+
+            Restaurant restaurant = Restaurant.builder().build();
+            UUID restaurantId = UUID.randomUUID();
+            ReflectionTestUtils.setField(restaurant, "id", restaurantId);
+
+            UUID cartId = UUID.randomUUID();
+            Cart cart = Cart.builder().restaurant(restaurant).build();
+            ReflectionTestUtils.setField(cart, "id", cartId);
+
+            UUID cartItemId = UUID.randomUUID();
+            CartItem cartItem = CartItem.builder().cart(cart).build();
+            ReflectionTestUtils.setField(cartItem, "id", cartItemId);
+
+
+            when(cartItemRepository.findByIdAndCart_User_IdAndDeletedAtIsNullWithCart(cartItemId, userId))
+                    .thenReturn(Optional.of(cartItem));
+
+            when(cartItemRepository.findByCart_IdAndDeletedAtIsNullWithProduct(cartId))
+                    .thenReturn(List.of());
+
+            // when
+            CartResponse response = cartService.removeItem(userId, cartItemId);
+
+            // then
+            assertThat(response.items()).isEmpty();
+            assertThat(response.restaurantId()).isNull();
+            assertThat(cart.getRestaurant()).isNull();
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 장바구니 아이템")
+        void test3() {
+
+            // given
+            UUID userId = UUID.randomUUID();
+            UUID cartItemId = UUID.randomUUID();
+
+            when(cartItemRepository.findByIdAndCart_User_IdAndDeletedAtIsNullWithCart(cartItemId, userId))
+                    .thenReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> cartService.removeItem(userId, cartItemId))
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(GeneralResponseCode.CART_ITEM_NOT_FOUND);
+
+        }
     }
 }

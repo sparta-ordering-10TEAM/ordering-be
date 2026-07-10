@@ -15,6 +15,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Entity
 @Table(name = "p_cart_items")
 @Getter
@@ -46,5 +48,13 @@ public class CartItem extends BaseUpdatableEntity {
             throw new ApiException(GeneralResponseCode.CART_ITEM_QUANTITY_EXCEEDED);
         }
         this.quantity += amount;
+    }
+
+    public void changeQuantity(int quantity) {
+        this.quantity = quantity;
+    }
+
+    public void softDelete(UUID deletedBy) {
+        super.softDelete(deletedBy);
     }
 }

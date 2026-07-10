@@ -1,5 +1,6 @@
 package com.sparta.ordering.cart.service;
 
+import com.sparta.ordering.cart.dto.CartItemQuantityRequest;
 import com.sparta.ordering.cart.dto.CartItemRequest;
 import com.sparta.ordering.cart.dto.CartItemResponse;
 import com.sparta.ordering.cart.dto.CartResponse;
@@ -92,6 +93,36 @@ public class CartService {
                                     .build()
                     );
                 });
+    }
+
+    @Transactional
+    public CartResponse updateItemQuantity(UUID userId, UUID cartItemId, CartItemQuantityRequest request) {
+        CartItem cartItem = cartItemRepository.findByIdAndCart_User_IdAndDeletedAtIsNullWithCart(cartItemId, userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.CART_ITEM_NOT_FOUND));
+
+        cartItem.changeQuantity(request.quantity());
+        List<CartItem> cartItems = cartItemRepository.findByCart_IdAndDeletedAtIsNullWithProduct(cartItem.getCart().getId());
+        return toCartResponse(cartItem.getCart(), cartItems);
+    }
+
+    @Transactional
+    public CartResponse removeItem(UUID userId, UUID cartItemId) {
+
+        // 카트 아이템 소유자 검증 + 삭제된 아이템 제외 (cart는 fetch join으로 함께 조회)
+        CartItem cartItem = cartItemRepository.findByIdAndCart_User_IdAndDeletedAtIsNullWithCart(cartItemId, userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.CART_ITEM_NOT_FOUND));
+
+        // soft delete 수행
+        cartItem.softDelete(userId);
+
+        // 아이템 삭제 후 카트가 비어있으면 Restaurant null 로 초기화
+        Cart cart = cartItem.getCart();
+        List<CartItem> itemList = cartItemRepository.findByCart_IdAndDeletedAtIsNullWithProduct(cart.getId());
+        if (itemList.isEmpty()) {
+            cart.changeRestaurant(null);
+        }
+
+        return toCartResponse(cartItem.getCart(), itemList);
     }
 
     private CartResponse toCartResponse(Cart cart, List<CartItem> cartItems) {
