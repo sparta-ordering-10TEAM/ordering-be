@@ -1,7 +1,6 @@
 package com.sparta.ordering.auth.security.session;
 
 import com.sparta.ordering.auth.security.properties.JwtProperties;
-import com.sparta.ordering.user.entity.User;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.JwtException;
@@ -11,6 +10,7 @@ import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
@@ -34,23 +34,27 @@ public class JwtSessionService {
         ACCESS, REFRESH
     }
 
-    //액세스 토큰 발급
-    public String issueAccessToken(User user){
-        return createTokenWithClaims(
-                user,
-                jwtProperties.getAccessToken().getValiditySeconds(),
-                TokenType.ACCESS
+    @Transactional
+    public JwtSession createJwtSession(UUID userId) {
+        Instant accessTokenExpirationTime = Instant.now()
+                .plusSeconds(jwtProperties.getAccessToken().getValiditySeconds());
+        Instant refreshTokenExpirationTime = Instant.now()
+                .plusSeconds(jwtProperties.getRefreshToken().getValiditySeconds());
+
+        String accessToken = createTokenWithClaims(userId, accessTokenExpirationTime, TokenType.ACCESS);
+        String refreshToken = createTokenWithClaims(userId, refreshTokenExpirationTime, TokenType.REFRESH);
+
+        JwtSession jwtSession = jwtSessionRepository.save(
+                new JwtSession(
+                        userId,
+                        accessToken,
+                        refreshToken,
+                        accessTokenExpirationTime
+                )
         );
+        return jwtSession;
     }
 
-    //리프레시 토큰 발급
-    public String issueRefreshToken(User user){
-        return createTokenWithClaims(
-                user,
-                jwtProperties.getRefreshToken().getValiditySeconds(),
-                TokenType.REFRESH
-        );
-    }
 
     // 토큰 유효성 인증
     public boolean validateToken(String token) {
@@ -92,20 +96,18 @@ public class JwtSessionService {
     }
 
     //토큰 생성
-    private String createTokenWithClaims(User user, long validitySeconds, TokenType tokenType) {
+    private String createTokenWithClaims(UUID userId, Instant expirationTime, TokenType tokenType) {
         Instant now = clock.instant();
-        Instant expirationTime = now.plusSeconds(validitySeconds);
 
         JwtBuilder builder = Jwts.builder()
                 .header()
                 .add("typ", "JWT")
                 .and()
                 .issuer(jwtProperties.getIssuer())
-                .subject(user.getId().toString())
+                .subject(userId.toString())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expirationTime))
-                .claim("type", tokenType.name())
-                .claim("role", user.getRole().name());
+                .claim("type", tokenType.name());
 
         return builder.signWith(getSignKey(), Jwts.SIG.HS256)
                 .compact();
