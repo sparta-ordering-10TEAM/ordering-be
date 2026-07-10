@@ -116,8 +116,19 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public OrderDetailResponse getOrder(UUID userId, UUID orderId) {
-        Order order = orderRepository.findByUserIdWithRestaurantAndOrderItems(userId, orderId)
-                .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
+
+        Order order = switch (user.getRole()) {
+            case CUSTOMER -> orderRepository.findByUserIdWithRestaurantAndOrderItems(userId, orderId)
+                    .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
+
+            case OWNER -> orderRepository.findByOwnerIdWithRestaurantAndOrderItems(userId, orderId)
+                    .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
+
+            case MANAGER, MASTER -> orderRepository.findByIdWithRestaurantAndOrderItems(orderId)
+                    .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
+        };
 
         return OrderDetailResponse.from(order);
     }

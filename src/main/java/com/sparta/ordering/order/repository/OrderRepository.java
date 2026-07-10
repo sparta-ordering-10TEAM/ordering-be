@@ -62,4 +62,26 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
            AND (oi IS NULL OR oi.deletedAt IS NULL)
            """)
     Optional<Order> findByUserIdWithRestaurantAndOrderItems(UUID userId, UUID orderId);
+
+    @Query("""
+           SELECT DISTINCT o FROM Order o
+           JOIN FETCH o.restaurant r
+           LEFT JOIN FETCH o.orderItems oi
+           WHERE o.id = :orderId
+           AND r.user.id = :ownerId
+           AND o.deletedAt IS NULL
+           AND r.deletedAt IS NULL
+           AND (oi IS NULL OR oi.deletedAt IS NULL)
+           """)
+    Optional<Order> findByOwnerIdWithRestaurantAndOrderItems(UUID ownerId, UUID orderId);
+
+    @Query("""
+           SELECT DISTINCT o FROM Order o
+           JOIN FETCH o.restaurant
+           LEFT JOIN FETCH o.orderItems oi
+           WHERE o.id = :orderId
+           AND o.deletedAt IS NULL
+           AND (oi IS NULL OR oi.deletedAt IS NULL)
+           """)
+    Optional<Order> findByIdWithRestaurantAndOrderItems(UUID orderId);
 }
