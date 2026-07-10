@@ -3,7 +3,10 @@ spring:
     name: ordering-service
   profiles:
     active: dev
-
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update
@@ -13,6 +16,19 @@ spring:
         format_sql: true
         use_sql_comments: true
         impl.uuid_binary_compatibility: true # PostgreSQL UUID 매핑 최적화용 (남겨두는 것 권장)
+  http:
+    client:
+      connect-timeout: 3s  # 연결 지연 타임아웃 (3초)
+      read-timeout: 5s     # 응답 지연 타임아웃 (5초)
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-expiration: ${JWT_ACCESS_EXPIRATION}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION}
+
+gemini:
+  url: ${GEMINI_URL}
+  api-key: ${GEMINI_API_KEY}
 
 logging:
   level:

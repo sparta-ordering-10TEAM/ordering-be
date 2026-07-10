@@ -1,8 +1,16 @@
 package com.sparta.ordering.user.repository;
 
 import com.sparta.ordering.user.entity.User;
+
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface UserRepository extends JpaRepository<User, UUID> {
+public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificationExecutor<User> {
+
+    boolean existsByUserNameAndDeletedAtIsNull(String userName);
+    boolean existsByNickNameAndDeletedAtIsNull(String nickName);
+    boolean existsByEmailAndDeletedAtIsNull(String email);
+    Optional<User> findByIdAndDeletedAtIsNull(UUID userId);
 }

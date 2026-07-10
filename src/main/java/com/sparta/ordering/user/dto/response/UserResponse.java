@@ -1,0 +1,33 @@
+package com.sparta.ordering.user.dto.response;
+
+import com.sparta.ordering.user.entity.Role;
+import com.sparta.ordering.user.entity.User;
+import lombok.Builder;
+import lombok.Getter;
+
+import java.time.Instant;
+import java.util.UUID;
+
+@Getter
+@Builder
+public class UserResponse {
+    private final UUID id;
+    private final Instant createdAt;
+    private final String userName;
+    private final String nickName;
+    private final String email;
+    private final Role role;
+    private final boolean locked;
+
+    public static UserResponse from(User user) {
+        return new UserResponse(
+                user.getId(),
+                user.getCreatedAt(),
+                user.getUserName(),
+                user.getNickName(),
+                user.getEmail(),
+                user.getRole(),
+                user.isLocked()
+        );
+    }
+}
