@@ -74,7 +74,6 @@ public class AdminService {
     }
 
     public Page<AdminUserDetailResponse> searchUsers(String userName, Role role, Boolean locked, Pageable pageable) {
-        pageable = PageableUtils.normalizePageSize(pageable);
         Specification<User> spec = UserSpecification.withSearchCondition(userName, role, locked);
         return userRepository.findAll(spec, pageable)
                 .map(AdminUserDetailResponse::from);

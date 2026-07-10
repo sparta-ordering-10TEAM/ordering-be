@@ -193,21 +193,4 @@ class AdminServiceTest {
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent().get(0).getUserName()).isEqualTo("kimtest");
     }
-
-    @Test
-    @DisplayName("회원 목록 조회 - 허용되지 않은 페이지 크기는 10으로 교정")
-    void search_users_normalize_page_size() {
-        // given
-        Pageable invalidPageable = PageRequest.of(0, 20);
-        Page<User> emptyPage = new PageImpl<>(List.of(), PageRequest.of(0, 10), 0);
-
-        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        when(userRepository.findAll(any(Specification.class), pageableCaptor.capture())).thenReturn(emptyPage);
-
-        // when
-        adminService.searchUsers(null, null, null, invalidPageable);
-
-        // then
-        assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(10);
-    }
 }
