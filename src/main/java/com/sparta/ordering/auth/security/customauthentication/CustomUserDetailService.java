@@ -18,7 +18,11 @@ public class CustomUserDetailService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return userRepository.findByUserNameAndDeletedAtIsNull(username)
-                .map(user -> new CustomUserDetails(user))
+                .map(user -> new CustomUserDetails(
+                        user.getId(),
+                        user.getUserName(),
+                        user.getPassword(),
+                        user.getRole()))
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
     }
 }

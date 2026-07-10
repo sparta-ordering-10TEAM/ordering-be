@@ -14,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 public class CustomAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
@@ -31,7 +32,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
 
         //인증된 사용자 정보
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        User user = userDetails.getUser();
+        UUID userId = userDetails.getUserId();
 
         //TODO: 토큰 발급
 
