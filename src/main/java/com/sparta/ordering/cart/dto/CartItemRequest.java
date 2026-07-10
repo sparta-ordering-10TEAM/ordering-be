@@ -10,6 +10,7 @@ public record CartItemRequest (
         UUID productId,
 
         @Positive(message = "수량은 1개 이상이어야 합니다.")
-        int quantity
+        @NotNull(message = "수량은 필수입니다.")
+        Integer quantity
 ) {
 }
