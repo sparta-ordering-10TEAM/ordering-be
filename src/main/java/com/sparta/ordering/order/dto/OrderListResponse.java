@@ -17,14 +17,14 @@ public record OrderListResponse(
         List<OrderItemResponse> orderItems,
         Instant createdAt
 ) {
-    public static OrderListResponse from(Order order) {
+    public static OrderListResponse from(Order order, List<OrderItem> orderItems) {
         return new OrderListResponse(
                 order.getId(),
                 order.getRestaurant().getId(),
                 order.getRestaurant().getName(),
                 order.getTotalPrice(),
                 order.getOrderStatus(),
-                order.getOrderItems().stream()
+                orderItems.stream()
                         .map(OrderItemResponse::from)
                         .toList(),
                 order.getCreatedAt()
