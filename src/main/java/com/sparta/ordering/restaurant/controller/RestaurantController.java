@@ -4,6 +4,7 @@ import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import com.sparta.ordering.restaurant.dto.RestaurantCreateRequest;
 import com.sparta.ordering.restaurant.dto.RestaurantResponse;
+import com.sparta.ordering.restaurant.dto.RestaurantUpdateRequest;
 import com.sparta.ordering.restaurant.service.RestaurantService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +14,9 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -50,6 +53,18 @@ public class RestaurantController {
     }
 
     @PreAuthorize("hasRole('OWNER')")
+    @GetMapping("/users/me/restaurants")
+    public ResponseEntity<GeneralResponse<Page<RestaurantResponse>>> getOwnerRestaurants(
+            @AuthenticationPrincipal UUID userId,
+            @PageableDefault Pageable pageable
+    ) {
+        return GeneralResponse.toResponseEntity(
+                GeneralResponseCode.OK,
+                restaurantService.getOwnerRestaurants(userId, pageable)
+        );
+    }
+
+    @PreAuthorize("hasRole('OWNER')")
     @PostMapping("/restaurants")
     public ResponseEntity<GeneralResponse<RestaurantResponse>> createRestaurant(
             @Valid @RequestBody RestaurantCreateRequest request,
@@ -59,5 +74,29 @@ public class RestaurantController {
                 GeneralResponseCode.CREATED,
                 restaurantService.createRestaurant(request, userId)
         );
+    }
+
+    @PreAuthorize("hasAnyRole('MANAGER', 'MASTER', 'OWNER')")
+    @PatchMapping("/restaurants/{restaurantId}")
+    public ResponseEntity<GeneralResponse<RestaurantResponse>> updateRestaurant(
+            @PathVariable UUID restaurantId,
+            @Valid @RequestBody RestaurantUpdateRequest request,
+            @AuthenticationPrincipal UUID userId
+    ) {
+        return GeneralResponse.toResponseEntity(
+                GeneralResponseCode.OK,
+                restaurantService.updateRestaurant(restaurantId, request, userId)
+        );
+    }
+
+    @PreAuthorize("hasAnyRole('MANAGER', 'MASTER', 'OWNER')")
+    @DeleteMapping("/restaurants/{restaurantId}")
+    public ResponseEntity<GeneralResponse<Void>> deleteRestaurant(
+            @PathVariable UUID restaurantId,
+            @AuthenticationPrincipal UUID userId
+    ) {
+        restaurantService.deleteRestaurant(restaurantId, userId);
+
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, null);
     }
 }
