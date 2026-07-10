@@ -1,0 +1,12 @@
+package com.sparta.ordering.cart.dto;
+
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+
+public record CartItemQuantityRequest (
+        @Positive(message = "수량은 1개 이상이어야 합니다.")
+        @NotNull
+        Integer quantity
+
+){
+}
