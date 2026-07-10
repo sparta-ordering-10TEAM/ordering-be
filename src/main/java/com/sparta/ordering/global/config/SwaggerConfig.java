@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
 
 @OpenAPIDefinition(
         servers = {
+                @Server(url = "https://order.kthowns.cloud", description = "배포 서버"),
                 @Server(url = "http://localhost:8080", description = "로컬 서버")
         })
 @Configuration
