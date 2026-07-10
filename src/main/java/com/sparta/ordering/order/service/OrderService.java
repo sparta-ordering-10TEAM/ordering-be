@@ -2,7 +2,6 @@ package com.sparta.ordering.order.service;
 
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
-import com.sparta.ordering.global.util.PageableUtils;
 import com.sparta.ordering.order.dto.OrderCreateRequest;
 import com.sparta.ordering.order.dto.OrderCreateResponse;
 import com.sparta.ordering.order.dto.OrderDetailResponse;
@@ -29,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -82,20 +80,18 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public Page<OrderListResponse> getOrders(UUID userId, Pageable pageable) {
-        PageableUtils.validateSort(pageable, Set.of("createdAt"));
-        Pageable normalizedPageable = PageableUtils.normalizePageSize(pageable);
 
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
         Page<Order> orders = switch (user.getRole()) {
-            case CUSTOMER -> orderRepository.findAllByUserIdWithRestaurant(userId, normalizedPageable);
-            case OWNER -> orderRepository.findAllByOwnerIdWithRestaurant(userId, normalizedPageable);
-            case MANAGER, MASTER -> orderRepository.findAllWithRestaurant(normalizedPageable);
+            case CUSTOMER -> orderRepository.findAllByUserIdWithRestaurant(userId, pageable);
+            case OWNER -> orderRepository.findAllByOwnerIdWithRestaurant(userId, pageable);
+            case MANAGER, MASTER -> orderRepository.findAllWithRestaurant(pageable);
         };
 
         if (orders.isEmpty()) {
-            return Page.empty(normalizedPageable);
+            return Page.empty(pageable);
         }
 
         List<UUID> orderIds = orders.getContent().stream()
