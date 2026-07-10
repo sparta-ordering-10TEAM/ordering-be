@@ -107,7 +107,8 @@ public class JwtSessionService {
                 .subject(userId.toString())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expirationTime))
-                .claim("type", tokenType.name());
+                .claim("type", tokenType.name())
+                .claim("userId", userId.toString());
 
         return builder.signWith(getSignKey(), Jwts.SIG.HS256)
                 .compact();
