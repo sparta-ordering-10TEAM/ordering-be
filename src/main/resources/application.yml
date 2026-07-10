@@ -32,9 +32,15 @@ springdoc:
   use-fqn: true
 
 jwt:
+  issuer: ordering
   secret: ${JWT_SECRET}
-  access-expiration: ${JWT_ACCESS_EXPIRATION}
-  refresh-expiration: ${JWT_REFRESH_EXPIRATION}
+  access-token:
+    validity-seconds: ${JWT_ACCESS_EXPIRATION}
+  refresh-token:
+    validity-seconds: ${JWT_REFRESH_EXPIRATION}
+
+time:
+  zone-id: ${TIME_ZONE_ID:Asia/Seoul}
 
 gemini:
   url: ${GEMINI_URL}
