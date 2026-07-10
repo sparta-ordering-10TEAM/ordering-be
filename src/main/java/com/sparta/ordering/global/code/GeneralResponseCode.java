@@ -35,7 +35,7 @@ public enum GeneralResponseCode implements ApiResponseCode {
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 상품을 찾을 수 없습니다."),
 
     // Cart
-    CART_DIFFERENT_RESTAURANT(HttpStatus.CONFLICT, "장바구니에는 같은 식당의 상품만 담을 수 있습니다."),
+    CART_DIFFERENT_RESTAURANT(HttpStatus.BAD_REQUEST, "장바구니에는 같은 식당의 상품만 담을 수 있습니다."),
 
     //USER
     USER_ALREADY_LOCKED(HttpStatus.CONFLICT, "이미 잠긴 계정입니다."),
