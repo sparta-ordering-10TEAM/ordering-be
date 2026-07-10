@@ -26,6 +26,9 @@ public class JwtSessionService {
     private final JwtSessionRepository jwtSessionRepository;
     private final JwtProperties jwtProperties;
     private final Clock clock;
+    /*getSigningKey() 메서드가 호출될 때마다 새로운 SecretKey 인스턴스를 생성하고 있어 성능에 영향을 줄 가능성 존재
+    -> 서명키를 캐시하도록 수정:*/
+    private SecretKey signingKey;
 
     public enum TokenType{
         ACCESS, REFRESH
@@ -68,16 +71,24 @@ public class JwtSessionService {
 
     // 토큰에서 사용자 ID 추출
     public UUID extractUserId(String token) {
-        JwtParser parser = Jwts.parser()
-                .verifyWith(getSignKey())
-                .build();
+        try {
+            JwtParser parser = Jwts.parser()
+                    .verifyWith(getSignKey())
+                    .build();
 
-        String subject = parser
-                .parseSignedClaims(token)
-                .getPayload()
-                .getSubject();
+            String subject = parser
+                    .parseSignedClaims(token)
+                    .getPayload()
+                    .getSubject();
 
-        return UUID.fromString(subject);
+            return UUID.fromString(subject);
+        } catch (JwtException e) {
+            log.error("Failed to extract user ID from token", e);
+            throw new IllegalArgumentException("Invalid JWT token", e);
+        }catch (IllegalArgumentException e) {
+            log.error("Invalid UUID format in token subject", e);
+            throw new IllegalArgumentException("Invalid user ID format in token", e);
+        }
     }
 
     //토큰 생성
@@ -102,7 +113,10 @@ public class JwtSessionService {
 
     //서명키 생성
     private SecretKey getSignKey() {
-        byte[] keyBytes = jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8);
-        return Keys.hmacShaKeyFor(keyBytes);
+        if (this.signingKey == null) {
+            byte[] keyBytes = jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8);
+            return Keys.hmacShaKeyFor(keyBytes);
+        }
+        return this.signingKey;
     }
 }
