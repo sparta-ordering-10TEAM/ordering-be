@@ -2,6 +2,7 @@ package com.sparta.ordering.cart.repository;
 
 import com.sparta.ordering.cart.entity.CartItem;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
@@ -27,4 +28,13 @@ public interface CartItemRepository extends JpaRepository<CartItem, UUID> {
            """
     )
     Optional<CartItem> findByIdAndCart_User_IdAndDeletedAtIsNullWithCart(UUID cartItemId, UUID userId);
+
+    @Modifying
+    @Query("""
+                UPDATE CartItem ci
+                SET ci.deletedAt = CURRENT_TIMESTAMP, ci.deletedBy = :deletedBy
+                WHERE ci.cart.id = :cartId AND ci.deletedAt IS NULL
+           """
+    )
+    void softDeleteAllByCartId(UUID cartId, UUID deletedBy);
 }

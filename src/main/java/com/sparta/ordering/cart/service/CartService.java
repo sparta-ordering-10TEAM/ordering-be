@@ -125,6 +125,20 @@ public class CartService {
         return toCartResponse(cartItem.getCart(), itemList);
     }
 
+    @Transactional
+    public CartResponse clearCart(UUID userId) {
+
+        // 카트 소유자 검증
+        Cart cart = cartRepository.findByUser_Id(userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.CART_NOT_FOUND));
+
+        // 장바구니 비우기
+        cartItemRepository.softDeleteAllByCartId(cart.getId(), userId);
+        cart.changeRestaurant(null);
+
+        return CartResponse.from(cart, List.of());
+    }
+
     private CartResponse toCartResponse(Cart cart, List<CartItem> cartItems) {
         List<CartItemResponse> itemResponses = cartItems.stream()
                 .map(CartItemResponse::from)

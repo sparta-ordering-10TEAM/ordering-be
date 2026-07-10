@@ -23,14 +23,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import javax.swing.text.html.Option;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CartServiceTest {
@@ -373,6 +374,50 @@ class CartServiceTest {
                     .extracting("responseCode")
                     .isEqualTo(GeneralResponseCode.CART_ITEM_NOT_FOUND);
 
+        }
+    }
+    @Nested
+    @DisplayName("장바구니 비우기")
+    class ClearCart {
+
+        @Test
+        @DisplayName("성공")
+        void test1() {
+
+            // given
+            UUID userId = UUID.randomUUID();
+
+            Restaurant restaurant = Restaurant.builder().build();
+            ReflectionTestUtils.setField(restaurant, "id", UUID.randomUUID());
+
+            UUID cartId = UUID.randomUUID();
+            Cart cart = Cart.builder().restaurant(restaurant).build();
+            ReflectionTestUtils.setField(cart, "id", cartId);
+
+            when(cartRepository.findByUser_Id(userId)).thenReturn(Optional.of(cart));
+
+            // when
+            CartResponse response = cartService.clearCart(userId);
+
+            // then
+            verify(cartItemRepository).softDeleteAllByCartId(cartId, userId);
+            assertThat(response.restaurantId()).isNull();
+            assertThat(response.cartId()).isEqualTo(cartId);
+            assertThat(response.items()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 카트")
+        void test2() {
+            // given
+            UUID userId = UUID.randomUUID();
+            when(cartRepository.findByUser_Id(userId)).thenReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> cartService.clearCart(userId))
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(GeneralResponseCode.CART_NOT_FOUND);
         }
     }
 }

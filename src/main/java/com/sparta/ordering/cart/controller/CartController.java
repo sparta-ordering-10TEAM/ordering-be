@@ -69,4 +69,13 @@ public class CartController {
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 
+    @DeleteMapping("/cart")
+    public ResponseEntity<GeneralResponse<CartResponse>> clearCart(
+            @AuthenticationPrincipal UUID userId
+    ) {
+        CartResponse response = cartService.clearCart(userId);
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
+    }
+
+
 }
