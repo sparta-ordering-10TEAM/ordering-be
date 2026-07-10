@@ -32,7 +32,7 @@ public class ReviewService {
             throw new ApiException(GeneralResponseCode.INVALID_REQUEST);
         }
 
-        Order order = orderRepository.findByIdAndUserIdForUpdate(orderId, userId)  // Order에 대한 비관락
+        Order order = orderRepository.findByIdAndUser_IdAndDeletedAtIsNull(orderId, userId) // 주문 조회 및 소유권 검증
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
 
         if (order.getOrderStatus() != OrderStatus.COMPLETED) {
