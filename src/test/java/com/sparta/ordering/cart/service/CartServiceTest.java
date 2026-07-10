@@ -148,7 +148,7 @@ class CartServiceTest {
 
             when(productRepository.findByIdAndDeletedAtIsNullAndRestaurant_DeletedAtIsNull(productId))
                     .thenReturn(Optional.of(product));
-            when(cartRepository.findByUser_Id(userId)).thenReturn(Optional.empty());
+            when(cartRepository.findByUser_IdForUpdate(userId)).thenReturn(Optional.empty());
             when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
             when(cartRepository.save(any(Cart.class))).thenAnswer(invocation -> {
                 Cart cart = invocation.getArgument(0);
@@ -204,7 +204,7 @@ class CartServiceTest {
 
             when(productRepository.findByIdAndDeletedAtIsNullAndRestaurant_DeletedAtIsNull(productId))
                     .thenReturn(Optional.of(product));
-            when(cartRepository.findByUser_Id(userId)).thenReturn(Optional.of(cart));
+            when(cartRepository.findByUser_IdForUpdate(userId)).thenReturn(Optional.of(cart));
             when(cartItemRepository.findByCart_IdAndProduct_IdAndDeletedAtIsNull(cartId, productId))
                     .thenReturn(Optional.of(existingItem));
             when(cartItemRepository.findByCart_IdAndDeletedAtIsNullWithProduct(cartId))
@@ -263,7 +263,7 @@ class CartServiceTest {
 
             when(productRepository.findByIdAndDeletedAtIsNullAndRestaurant_DeletedAtIsNull(productId))
                     .thenReturn(Optional.of(product));
-            when(cartRepository.findByUser_Id(userId)).thenReturn(Optional.of(cart));
+            when(cartRepository.findByUser_IdForUpdate(userId)).thenReturn(Optional.of(cart));
 
             // when & then
             assertThatThrownBy(() -> cartService.addItem(userId, request))
@@ -271,5 +271,49 @@ class CartServiceTest {
                     .extracting("responseCode")
                     .isEqualTo(GeneralResponseCode.CART_DIFFERENT_RESTAURANT);
         }
+        @Test
+        @DisplayName("실패 - 수량이 99개 초과")
+        void test5() {
+            // given
+            UUID userId = UUID.randomUUID();
+
+            Restaurant restaurant = Restaurant.builder().build();
+            ReflectionTestUtils.setField(restaurant, "id", UUID.randomUUID());
+
+            UUID cartId = UUID.randomUUID();
+            Cart cart = Cart.builder().restaurant(restaurant).build();
+            ReflectionTestUtils.setField(cart, "id", cartId);
+
+            UUID productId = UUID.randomUUID();
+            Product product = Product.builder()
+                    .restaurant(restaurant)
+                    .name("상품3")
+                    .price(3000L)
+                    .build();
+            ReflectionTestUtils.setField(product, "id", productId);
+
+            CartItem existingItem = CartItem.builder()
+                    .cart(cart)
+                    .product(product)
+                    .quantity(3)
+                    .build();
+            ReflectionTestUtils.setField(existingItem, "id", UUID.randomUUID());
+
+            CartItemRequest request = new CartItemRequest(productId, 97);
+
+            when(productRepository.findByIdAndDeletedAtIsNullAndRestaurant_DeletedAtIsNull(productId))
+                    .thenReturn(Optional.of(product));
+            when(cartRepository.findByUser_IdForUpdate(userId)).thenReturn(Optional.of(cart));
+            when(cartItemRepository.findByCart_IdAndProduct_IdAndDeletedAtIsNull(cartId, productId))
+                    .thenReturn(Optional.of(existingItem));
+
+            // when & then
+            assertThatThrownBy(() -> cartService.addItem(userId, request))
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(GeneralResponseCode.CART_ITEM_QUANTITY_EXCEEDED);
+
+        }
+
     }
 }

@@ -36,6 +36,7 @@ public enum GeneralResponseCode implements ApiResponseCode {
 
     // Cart
     CART_DIFFERENT_RESTAURANT(HttpStatus.BAD_REQUEST, "장바구니에는 같은 식당의 상품만 담을 수 있습니다."),
+    CART_ITEM_QUANTITY_EXCEEDED(HttpStatus.BAD_REQUEST, "장바구니 상품은 최대 99개까지 담을 수 있습니다."),
 
     //USER
     USER_ALREADY_LOCKED(HttpStatus.CONFLICT, "이미 잠긴 계정입니다."),
