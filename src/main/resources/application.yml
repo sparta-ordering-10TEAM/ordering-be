@@ -21,6 +21,16 @@ spring:
       connect-timeout: 3s  # 연결 지연 타임아웃 (3초)
       read-timeout: 5s     # 응답 지연 타임아웃 (5초)
 
+springdoc:
+  api-docs:
+    path: /api/api-spec
+    enabled: true
+  swagger-ui:
+    path: /api/api-docs
+    enabled: true
+  override-with-generic-response: false
+  use-fqn: true
+
 jwt:
   secret: ${JWT_SECRET}
   access-expiration: ${JWT_ACCESS_EXPIRATION}
