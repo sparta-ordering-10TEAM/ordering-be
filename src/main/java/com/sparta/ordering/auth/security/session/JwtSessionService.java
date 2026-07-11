@@ -1,6 +1,11 @@
 package com.sparta.ordering.auth.security.session;
 
 import com.sparta.ordering.auth.security.properties.JwtProperties;
+import com.sparta.ordering.global.code.GeneralResponseCode;
+import com.sparta.ordering.global.exception.ApiException;
+import com.sparta.ordering.user.entity.User;
+import com.sparta.ordering.user.repository.UserRepository;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.JwtException;
@@ -29,6 +34,7 @@ public class JwtSessionService {
     /*getSigningKey() 메서드가 호출될 때마다 새로운 SecretKey 인스턴스를 생성하고 있어 성능에 영향을 줄 가능성 존재
     -> 서명키를 캐시하도록 수정:*/
     private SecretKey signingKey;
+    private final UserRepository userRepository;
 
     public enum TokenType{
         ACCESS, REFRESH
@@ -41,8 +47,11 @@ public class JwtSessionService {
         Instant refreshTokenExpirationTime = Instant.now()
                 .plusSeconds(jwtProperties.getRefreshToken().getValiditySeconds());
 
-        String accessToken = createTokenWithClaims(userId, accessTokenExpirationTime, TokenType.ACCESS);
-        String refreshToken = createTokenWithClaims(userId, refreshTokenExpirationTime, TokenType.REFRESH);
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
+
+        String accessToken = createTokenWithClaims(user, accessTokenExpirationTime, TokenType.ACCESS);
+        String refreshToken = createTokenWithClaims(user, refreshTokenExpirationTime, TokenType.REFRESH);
 
         JwtSession jwtSession = jwtSessionRepository.save(
                 new JwtSession(
@@ -80,12 +89,12 @@ public class JwtSessionService {
                     .verifyWith(getSignKey())
                     .build();
 
-            String subject = parser
+            Claims claims = parser
                     .parseSignedClaims(token)
-                    .getPayload()
-                    .getSubject();
+                    .getPayload();
 
-            return UUID.fromString(subject);
+            String userId = claims.get("userId", String.class);
+            return UUID.fromString(userId);
         } catch (JwtException e) {
             log.error("Failed to extract user ID from token", e);
             throw new IllegalArgumentException("Invalid JWT token", e);
@@ -96,7 +105,7 @@ public class JwtSessionService {
     }
 
     //토큰 생성
-    private String createTokenWithClaims(UUID userId, Instant expirationTime, TokenType tokenType) {
+    private String createTokenWithClaims(User user, Instant expirationTime, TokenType tokenType) {
         Instant now = clock.instant();
 
         JwtBuilder builder = Jwts.builder()
@@ -104,11 +113,14 @@ public class JwtSessionService {
                 .add("typ", "JWT")
                 .and()
                 .issuer(jwtProperties.getIssuer())
-                .subject(userId.toString())
+                .subject(user.getEmail())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expirationTime))
                 .claim("type", tokenType.name())
-                .claim("userId", userId.toString());
+                .claim("userId", user.getId().toString())
+                .claim("name",user.getUserName())
+                .claim("role",user.getRole())
+                .claim("email",user.getEmail());
 
         return builder.signWith(getSignKey(), Jwts.SIG.HS256)
                 .compact();
