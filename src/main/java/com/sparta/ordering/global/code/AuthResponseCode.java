@@ -11,6 +11,10 @@ public enum AuthResponseCode implements ApiResponseCode {
 
     FORBIDDEN(HttpStatus.FORBIDDEN, "인가되지 않은 요청입니다."),
 
+    JWT_SESSION_NOT_FOUND(HttpStatus.UNAUTHORIZED, "로그인 정보가 만료되었거나 무효합니다."),
+
+    INVALID_JWT(HttpStatus.UNAUTHORIZED, "JWT 토큰이 손상되었거나 유효하지 않습니다."),
+
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "알 수 없는 오류가 발생했습니다.");
 
     private final HttpStatus status;

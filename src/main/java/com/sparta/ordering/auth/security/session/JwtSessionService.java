@@ -1,6 +1,7 @@
 package com.sparta.ordering.auth.security.session;
 
 import com.sparta.ordering.auth.security.properties.JwtProperties;
+import com.sparta.ordering.global.code.AuthResponseCode;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.user.entity.User;
@@ -98,18 +99,18 @@ public class JwtSessionService {
             return UUID.fromString(userId);
         } catch (JwtException e) {
             log.error("Failed to extract user ID from token", e);
-            throw new IllegalArgumentException("Invalid JWT token", e);
+            throw new ApiException(AuthResponseCode.INVALID_JWT);
         }catch (IllegalArgumentException e) {
             log.error("Invalid UUID format in token subject", e);
-            throw new IllegalArgumentException("Invalid user ID format in token", e);
+            throw new ApiException(AuthResponseCode.INVALID_JWT);
         }
     }
 
+    // 리프레스 토큰으로 강제 로그아웃
     @Transactional
     public void invalidateToken(String refreshToken) {
         JwtSession jwtSession = jwtSessionRepository.findByRefreshToken(refreshToken)
-                //TODO: 커스텀 예외로 변경
-                .orElseThrow(() -> new IllegalArgumentException());
+                .orElseThrow(() -> new ApiException(AuthResponseCode.JWT_SESSION_NOT_FOUND));
 
         // TODO:토큰을 블랙리스트에 추가
 
@@ -142,7 +143,7 @@ public class JwtSessionService {
     private SecretKey getSignKey() {
         if (this.signingKey == null) {
             byte[] keyBytes = jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8);
-            return Keys.hmacShaKeyFor(keyBytes);
+            signingKey = Keys.hmacShaKeyFor(keyBytes);
         }
         return this.signingKey;
     }
