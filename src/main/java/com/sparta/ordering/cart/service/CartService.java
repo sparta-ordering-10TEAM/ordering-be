@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -62,15 +63,20 @@ public class CartService {
     }
 
     private void addOrIncreaseCartItem(Cart cart, Product product, int quantity) {
-        cartItemRepository.findByCart_IdAndProduct_IdAndDeletedAtIsNull(cart.getId(), product.getId())
-                .ifPresentOrElse(
-                        item -> item.increaseQuantity(quantity),
-                        () -> cartItemRepository.save(CartItem.builder()
-                                .cart(cart)
-                                .product(product)
-                                .quantity(quantity)
-                                .build())
-                );
+        Optional<CartItem> existingItem = cartItemRepository.findByCart_IdAndProduct_IdAndDeletedAtIsNull(cart.getId(), product.getId());
+
+        if (existingItem.isPresent()) {
+            int updatedRow = cartItemRepository.increaseQuantityAtomic(existingItem.get().getId(), quantity);
+            if (updatedRow == 0) {
+                throw new ApiException(GeneralResponseCode.CART_ITEM_QUANTITY_EXCEEDED);
+            }
+        } else {
+            cartItemRepository.save(CartItem.builder()
+                    .cart(cart)
+                    .product(product)
+                    .quantity(quantity)
+                    .build());
+        }
     }
 
     private void validateSameRestaurant(Cart cart, Restaurant restaurant) {

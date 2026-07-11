@@ -37,4 +37,13 @@ public interface CartItemRepository extends JpaRepository<CartItem, UUID> {
            """
     )
     void softDeleteAllByCartId(UUID cartId, UUID deletedBy);
+
+    @Modifying(clearAutomatically = true)
+    @Query("""
+                UPDATE CartItem ci
+                SET ci.quantity = ci.quantity + :quantity
+                WHERE ci.id = :cartItemId AND ci.quantity + :quantity <= 99
+            """
+    )
+    int increaseQuantityAtomic(UUID cartItemId, Integer quantity);
 }

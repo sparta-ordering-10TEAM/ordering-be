@@ -200,7 +200,8 @@ class CartServiceTest {
                     .product(product)
                     .quantity(3)
                     .build();
-            ReflectionTestUtils.setField(existingItem, "id", UUID.randomUUID());
+            UUID cartItemId = UUID.randomUUID();
+            ReflectionTestUtils.setField(existingItem, "id", cartItemId);
 
             CartItemRequest request = new CartItemRequest(productId, 1);
 
@@ -209,6 +210,8 @@ class CartServiceTest {
             when(cartRepository.findByUser_IdForUpdate(userId)).thenReturn(Optional.of(cart));
             when(cartItemRepository.findByCart_IdAndProduct_IdAndDeletedAtIsNull(cartId, productId))
                     .thenReturn(Optional.of(existingItem));
+            when(cartItemRepository.increaseQuantityAtomic(cartItemId, request.quantity()))
+                    .thenReturn(1);
             when(cartItemRepository.findByCart_IdAndDeletedAtIsNullWithProduct(cartId))
                     .thenReturn(List.of(existingItem));
 
@@ -217,7 +220,7 @@ class CartServiceTest {
 
             // then
             assertThat(response.items()).hasSize(1);
-            assertThat(response.items().get(0).quantity()).isEqualTo(4);
+            verify(cartItemRepository).increaseQuantityAtomic(cartItemId, request.quantity());
         }
 
         @Test
