@@ -57,4 +57,14 @@ public class JwtSession {
         this.refreshToken = refreshToken;
         this.expirationTime = expirationTime;
     }
+
+    public boolean isExpired() {
+        return this.expirationTime.isBefore(Instant.now());
+    }
+
+    public void update(String accessToken, String refreshToken, Instant expirationTime) {
+        this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
+        this.expirationTime = expirationTime;
+    }
 }
