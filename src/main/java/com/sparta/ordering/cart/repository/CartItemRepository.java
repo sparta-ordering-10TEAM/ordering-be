@@ -32,7 +32,7 @@ public interface CartItemRepository extends JpaRepository<CartItem, UUID> {
     @Modifying
     @Query("""
                 UPDATE CartItem ci
-                SET ci.deletedAt = CURRENT_TIMESTAMP, ci.deletedBy = :deletedBy
+                SET ci.deletedAt = CURRENT_TIMESTAMP, ci.deletedBy = :deletedBy, ci.uniqueVersion = ci.id
                 WHERE ci.cart.id = :cartId AND ci.deletedAt IS NULL
            """
     )
