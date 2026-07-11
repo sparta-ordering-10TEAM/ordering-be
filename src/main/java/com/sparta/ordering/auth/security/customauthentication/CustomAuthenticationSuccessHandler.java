@@ -35,6 +35,9 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         UUID userId = userDetails.getUserId();
 
+        // 기존에 로그인된 계정이 있을 경우, 강제로 로그아웃 처리
+        jwtSessionService.invalidateToken(userId);
+
         // 토큰 발급
         JwtSession jwtSession = jwtSessionService.createJwtSession(userId);
 

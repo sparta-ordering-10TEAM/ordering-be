@@ -66,9 +66,8 @@ public class JwtSessionService {
         return jwtSession;
     }
 
-
-    // 토큰 유효성 인증
-    public boolean validateToken(String token) {
+    // 토큰 유효성 검증
+    public boolean isValidToken(String token) {
         try{
             JwtParser parser = Jwts.parser()
                     .verifyWith(getSignKey())
@@ -82,6 +81,11 @@ public class JwtSessionService {
             log.warn("JWT validation failed: {}", e.getMessage());
         }
         return false;
+    }
+
+    // 로그인 상태 확인
+    public boolean isSignedIn(String token) {
+        return jwtSessionRepository.existsByAccessToken(token);
     }
 
     // 토큰에서 사용자 ID 추출
@@ -109,12 +113,25 @@ public class JwtSessionService {
     // 리프레스 토큰으로 강제 로그아웃
     @Transactional
     public void invalidateToken(String refreshToken) {
-        JwtSession jwtSession = jwtSessionRepository.findByRefreshToken(refreshToken)
-                .orElseThrow(() -> new ApiException(AuthResponseCode.JWT_SESSION_NOT_FOUND));
+        jwtSessionRepository.findByRefreshToken(refreshToken)
+                .ifPresentOrElse(jwtSession -> {
+                   // TODO:토큰을 블랙리스트에 추가
+                    jwtSessionRepository.delete(jwtSession);
+                        },
+                        ()->log.info("No active JwtSession found for refreshToken: {}", refreshToken)
+                );
+    }
 
-        // TODO:토큰을 블랙리스트에 추가
-
-        jwtSessionRepository.delete(jwtSession);
+    // userId로 강제 로그아웃
+    @Transactional
+    public void invalidateToken(UUID userId) {
+        jwtSessionRepository.findByUserId(userId)
+                .ifPresentOrElse(jwtSession -> {
+                   // TODO:토큰을 블랙리스트에 추가
+                    jwtSessionRepository.delete(jwtSession);
+                        },
+                        ()->log.info("No active JwtSession found for userId: {}", userId)
+                );
     }
 
     //토큰 생성
