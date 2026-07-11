@@ -134,6 +134,14 @@ public class JwtSessionService {
                 );
     }
 
+    // 리프레시 토큰으로 액세스 토큰 조회
+    public String findAccessToken(String refreshToken) {
+        log.info("리프레시 토큰: {}", refreshToken);
+        JwtSession jwtSession = jwtSessionRepository.findByRefreshToken(refreshToken)
+                .orElseThrow(() -> new ApiException(AuthResponseCode.JWT_SESSION_NOT_FOUND));
+        return jwtSession.getAccessToken();
+    }
+
     //토큰 생성
     private String createTokenWithClaims(User user, Instant expirationTime, TokenType tokenType) {
         Instant now = clock.instant();
