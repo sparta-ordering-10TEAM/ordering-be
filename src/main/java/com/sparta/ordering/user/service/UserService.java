@@ -39,6 +39,7 @@ public class UserService {
                 User.builder()
                         .userName(userCreateRequest.userName())
                         .nickName(userCreateRequest.nickName())
+                        .email(userCreateRequest.email())
                         .phoneNumber(userCreateRequest.phoneNumber())
                         .password(passwordEncoder.encode(userCreateRequest.password()))
                         .locked(false)

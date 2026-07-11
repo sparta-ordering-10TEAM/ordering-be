@@ -5,6 +5,8 @@ import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindingResult;
@@ -20,8 +22,36 @@ import java.util.HashMap;
 @Slf4j
 @RestControllerAdvice(annotations = RestController.class)
 public class GlobalExceptionHandler {
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(
+            DataIntegrityViolationException e, HttpServletRequest request
+    ) {
+        log.error("errorCode : {}, uri : {}, message : {}",
+                e, request.getRequestURI(), e.getMessage());
+
+        String message = e.getMessage();
+        GeneralResponseCode code = GeneralResponseCode.INVALID_REQUEST;
+
+        // Review 생성 중복 조건
+        if (message.contains("uk_review_order_customer")) {
+            code = GeneralResponseCode.ALREADY_REVIEWED;
+        }
+
+        return ErrorResponse.toResponseEntity(code, null);
+    }
+
+    @ExceptionHandler(PropertyReferenceException.class) // Pageable 잘못된 Sort 값에 대한 예외처리
+    public ResponseEntity<ErrorResponse> handlePropertyReferenceException(
+            PropertyReferenceException e, HttpServletRequest request
+    ) {
+        log.error("errorCode : {}, uri : {}, message : {}",
+                e, request.getRequestURI(), e.getMessage());
+
+        return ErrorResponse.toResponseEntity(GeneralResponseCode.INVALID_REQUEST, null);
+    }
+
     @ExceptionHandler(ApiException.class)
-    public ResponseEntity<ErrorResponse> apiException(
+    public ResponseEntity<ErrorResponse> handleApiExceptionHandle(
             ApiException e, HttpServletRequest request
     ) {
         log.error("errorCode : {}, uri : {}, message : {}",
@@ -31,7 +61,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> methodArgumentNotValidException(
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(
             MethodArgumentNotValidException e, HttpServletRequest request
     ) {
         BindingResult bindingResult = e.getBindingResult();
@@ -48,7 +78,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> accessDeniedException(
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
             AccessDeniedException e, HttpServletRequest request
     ) {
         log.error("errorCode : {}, uri : {}, message : {}",
@@ -58,7 +88,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> exception(
+    public ResponseEntity<ErrorResponse> handleException(
             Exception e, HttpServletRequest request
     ) {
         log.error("errorCode : {}, uri : {}, message : {}",

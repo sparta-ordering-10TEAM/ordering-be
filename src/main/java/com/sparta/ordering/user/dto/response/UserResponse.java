@@ -15,6 +15,7 @@ public class UserResponse {
     private final Instant createdAt;
     private final String userName;
     private final String nickName;
+    private final String email;
     private final Role role;
     private final boolean locked;
 
@@ -24,6 +25,7 @@ public class UserResponse {
                 user.getCreatedAt(),
                 user.getUserName(),
                 user.getNickName(),
+                user.getEmail(),
                 user.getRole(),
                 user.isLocked()
         );

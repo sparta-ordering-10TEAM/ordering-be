@@ -46,7 +46,6 @@ public interface ReviewApi {
             description = "특정 식당의 전체 리뷰 목록을 페이징 조회합니다.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/restaurants/{restaurantId}/reviews")
     ResponseEntity<GeneralResponse<Page<ReviewResponse>>> searchRestaurantReviews(
             @PathVariable UUID restaurantId,
@@ -58,7 +57,6 @@ public interface ReviewApi {
             description = "특정 상품의 리뷰 목록을 페이징 조회합니다.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/products/{productId}/reviews")
     ResponseEntity<GeneralResponse<Page<ReviewResponse>>> searchProductReviews(
             @PathVariable UUID productId,
@@ -70,7 +68,6 @@ public interface ReviewApi {
             description = "특정 식당의 누적 리뷰 평균 평점을 조회합니다.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/restaurants/{restaurantId}/ratings")
     ResponseEntity<GeneralResponse<Double>> getRestaurantAverageRating(
             @PathVariable UUID restaurantId
@@ -81,7 +78,6 @@ public interface ReviewApi {
             description = "자신이 작성한 리뷰의 평점과 내용을 수정합니다.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @PreAuthorize("hasRole('CUSTOMER')")
     @PatchMapping("/reviews/{reviewId}")
     ResponseEntity<GeneralResponse<Void>> updateReview(
             @PathVariable UUID reviewId,
@@ -94,7 +90,6 @@ public interface ReviewApi {
             description = "자신이 작성한 리뷰를 삭제(Soft Delete)합니다.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @PreAuthorize("hasRole('CUSTOMER')")
     @DeleteMapping("/reviews/{reviewId}")
     ResponseEntity<GeneralResponse<Void>> deleteReview(
             @PathVariable UUID reviewId,

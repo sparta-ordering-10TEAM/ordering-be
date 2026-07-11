@@ -23,7 +23,7 @@ import java.util.UUID;
         name = "p_reviews",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_review_order_user",
+                        name = "uk_review_order_customer",
                         columnNames = {"order_id", "customer_id", "unique_version"}
                 )
         }

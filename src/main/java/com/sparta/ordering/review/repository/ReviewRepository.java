@@ -38,6 +38,8 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
             " AND r.deletedAt IS NULL")
     double calcRestaurantAverageRating(UUID restaurantId);
 
+    Optional<Review> findByIdAndDeletedAtIsNull(UUID id);
+
     Optional<Review> findByIdAndCustomer_IdAndDeletedAtIsNull(UUID id, UUID customerId);
 
     boolean existsByOrder_IdAndCustomer_IdAndDeletedAtIsNull(UUID orderId, UUID customerId);
