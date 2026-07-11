@@ -150,7 +150,7 @@ class CartServiceTest {
 
             when(productRepository.findByIdAndDeletedAtIsNullAndRestaurant_DeletedAtIsNull(productId))
                     .thenReturn(Optional.of(product));
-            when(cartRepository.findByUser_IdForUpdate(userId)).thenReturn(Optional.empty());
+            when(cartRepository.findByUser_Id(userId)).thenReturn(Optional.empty());
             when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
             when(cartRepository.save(any(Cart.class))).thenAnswer(invocation -> {
                 Cart cart = invocation.getArgument(0);
@@ -207,7 +207,7 @@ class CartServiceTest {
 
             when(productRepository.findByIdAndDeletedAtIsNullAndRestaurant_DeletedAtIsNull(productId))
                     .thenReturn(Optional.of(product));
-            when(cartRepository.findByUser_IdForUpdate(userId)).thenReturn(Optional.of(cart));
+            when(cartRepository.findByUser_Id(userId)).thenReturn(Optional.of(cart));
             when(cartItemRepository.findByCart_IdAndProduct_IdAndDeletedAtIsNull(cartId, productId))
                     .thenReturn(Optional.of(existingItem));
             when(cartItemRepository.increaseQuantityAtomic(cartItemId, request.quantity()))
@@ -268,7 +268,7 @@ class CartServiceTest {
 
             when(productRepository.findByIdAndDeletedAtIsNullAndRestaurant_DeletedAtIsNull(productId))
                     .thenReturn(Optional.of(product));
-            when(cartRepository.findByUser_IdForUpdate(userId)).thenReturn(Optional.of(cart));
+            when(cartRepository.findByUser_Id(userId)).thenReturn(Optional.of(cart));
 
             // when & then
             assertThatThrownBy(() -> cartService.addItem(userId, request))
@@ -308,7 +308,7 @@ class CartServiceTest {
 
             when(productRepository.findByIdAndDeletedAtIsNullAndRestaurant_DeletedAtIsNull(productId))
                     .thenReturn(Optional.of(product));
-            when(cartRepository.findByUser_IdForUpdate(userId)).thenReturn(Optional.of(cart));
+            when(cartRepository.findByUser_Id(userId)).thenReturn(Optional.of(cart));
             when(cartItemRepository.findByCart_IdAndProduct_IdAndDeletedAtIsNull(cartId, productId))
                     .thenReturn(Optional.of(existingItem));
 

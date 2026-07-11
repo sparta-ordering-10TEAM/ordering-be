@@ -88,7 +88,7 @@ public class CartService {
     }
 
     private Cart getOrCreateCart(UUID userId, Restaurant restaurant) {
-        return cartRepository.findByUser_IdForUpdate(userId)
+        return cartRepository.findByUser_Id(userId)
                 .orElseGet(() -> {
                     User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                             .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
