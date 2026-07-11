@@ -1,5 +1,6 @@
 package com.sparta.ordering.auth.security.session;
 
+import com.sparta.ordering.auth.dto.TokenRotationResult;
 import com.sparta.ordering.auth.security.properties.JwtProperties;
 import com.sparta.ordering.global.code.AuthResponseCode;
 import com.sparta.ordering.global.code.GeneralResponseCode;
@@ -43,7 +44,7 @@ public class JwtSessionService {
 
     @Transactional
     public JwtSession createJwtSession(UUID userId) {
-        Instant now = Instant.now();
+        Instant now = clock.instant();
         Instant accessTokenExpirationTime = now
                 .plusSeconds(jwtProperties.getAccessToken().getValiditySeconds());
         Instant refreshTokenExpirationTime = now
@@ -136,10 +137,35 @@ public class JwtSessionService {
 
     // 리프레시 토큰으로 액세스 토큰 조회
     public String findAccessToken(String refreshToken) {
-        log.info("리프레시 토큰: {}", refreshToken);
         JwtSession jwtSession = jwtSessionRepository.findByRefreshToken(refreshToken)
                 .orElseThrow(() -> new ApiException(AuthResponseCode.JWT_SESSION_NOT_FOUND));
         return jwtSession.getAccessToken();
+    }
+
+    // 리프레시 토큰으로 액세스, 리프레시 토큰 재발급
+    @Transactional
+    public TokenRotationResult rotateToken(String refreshToken) {
+        if (!isValidToken(refreshToken)) {
+            throw new ApiException(AuthResponseCode.INVALID_JWT);
+        }
+
+        JwtSession jwtSession = jwtSessionRepository.findByRefreshToken(refreshToken)
+                .orElseThrow(() -> new ApiException(AuthResponseCode.JWT_SESSION_NOT_FOUND));
+
+        User user = userRepository.findByIdAndDeletedAtIsNull(jwtSession.getUserId())
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
+
+        Instant now = clock.instant();
+        Instant newAccessTokenExpirationTime = now
+                .plusSeconds(jwtProperties.getAccessToken().getValiditySeconds());
+        Instant newRefreshTokenExpirationTime = now
+                .plusSeconds(jwtProperties.getRefreshToken().getValiditySeconds());
+
+        String newAccessToken = createTokenWithClaims(user, newAccessTokenExpirationTime, TokenType.ACCESS);
+        String newRefreshToken = createTokenWithClaims(user, newRefreshTokenExpirationTime, TokenType.REFRESH);
+
+        jwtSession.update(newAccessToken, newRefreshToken, newAccessTokenExpirationTime);
+        return new TokenRotationResult(newAccessToken, newRefreshToken);
     }
 
     //토큰 생성
