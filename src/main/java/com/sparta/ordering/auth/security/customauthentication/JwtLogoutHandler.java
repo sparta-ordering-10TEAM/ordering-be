@@ -25,7 +25,7 @@ public class JwtLogoutHandler implements LogoutHandler {
 
         if (cookies != null) {
             for (Cookie cookie : cookies) {
-                if (cookie.getName().equals("refresh-token")) {
+                if (cookie.getName().equals("refresh_token")) {
                     refreshToken = cookie.getValue();
                     break;
                 }

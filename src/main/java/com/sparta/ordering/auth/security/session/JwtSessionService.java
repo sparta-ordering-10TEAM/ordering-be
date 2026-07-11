@@ -42,9 +42,10 @@ public class JwtSessionService {
 
     @Transactional
     public JwtSession createJwtSession(UUID userId) {
-        Instant accessTokenExpirationTime = Instant.now()
+        Instant now = Instant.now();
+        Instant accessTokenExpirationTime = now
                 .plusSeconds(jwtProperties.getAccessToken().getValiditySeconds());
-        Instant refreshTokenExpirationTime = Instant.now()
+        Instant refreshTokenExpirationTime = now
                 .plusSeconds(jwtProperties.getRefreshToken().getValiditySeconds());
 
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)

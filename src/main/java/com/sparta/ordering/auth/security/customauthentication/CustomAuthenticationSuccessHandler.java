@@ -44,10 +44,11 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
 
         // response body에 액세스 토큰, response header에 리프레시 토큰 삽입
         Cookie refreshTokenCookie = new Cookie("refresh_token", jwtSession.getRefreshToken());
-        refreshTokenCookie.setHttpOnly(false);
-        refreshTokenCookie.setSecure(false);
+        refreshTokenCookie.setHttpOnly(true);   // 리프레시 토큰은 서버에서만 사용하므로 자바 스크립트에서 접근 x -> true로 서렂ㅇ
+        refreshTokenCookie.setSecure(false); // https가 아닌 http 환경에서 개발, 배포하므로 false
         refreshTokenCookie.setPath("/");
         refreshTokenCookie.setMaxAge(30 * 24 * 60 * 60); // 쿠키 만료 시간 30일
+        refreshTokenCookie.setAttribute("SameSite", "Strict");
         response.addCookie(refreshTokenCookie);
         objectMapper.writeValue(response.getWriter(), jwtSession.getAccessToken());
     }

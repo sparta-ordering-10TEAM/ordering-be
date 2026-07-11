@@ -55,7 +55,7 @@ public class SecurityConfig {
                 .logout(logout -> logout
                         .logoutUrl("/api/auth/sign-out")
                         .logoutSuccessUrl("/")//홈으로
-                        .deleteCookies("refresh-token")//쿠키 삭제
+                        .deleteCookies("refresh_token")//쿠키 삭제 - CustomAuthenticationSuccessHandler에서는 쿠키 이름을 "refresh_token"(언더스코어)으로 설정
                         .addLogoutHandler(jwtLogoutHandler) // JwtSession삭제 & 토큰 블랙리스트 추가 핸들러
                 );
         return http.build();
