@@ -104,6 +104,17 @@ public class JwtSessionService {
         }
     }
 
+    @Transactional
+    public void invalidateToken(String refreshToken) {
+        JwtSession jwtSession = jwtSessionRepository.findByRefreshToken(refreshToken)
+                //TODO: 커스텀 예외로 변경
+                .orElseThrow(() -> new IllegalArgumentException());
+
+        // TODO:토큰을 블랙리스트에 추가
+
+        jwtSessionRepository.delete(jwtSession);
+    }
+
     //토큰 생성
     private String createTokenWithClaims(User user, Instant expirationTime, TokenType tokenType) {
         Instant now = clock.instant();

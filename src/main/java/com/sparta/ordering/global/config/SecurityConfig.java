@@ -5,7 +5,7 @@ import com.sparta.ordering.auth.security.customauthentication.CustomAuthenticati
 import com.sparta.ordering.auth.security.customauthentication.CustomAuthenticationFilter;
 import com.sparta.ordering.auth.security.customauthentication.CustomAuthenticationSuccessHandler;
 import com.sparta.ordering.auth.security.customauthentication.CustomUserDetailService;
-import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
+import com.sparta.ordering.auth.security.customauthentication.JwtLogoutHandler;
 import com.sparta.ordering.auth.security.session.JwtSessionService;
 import com.sparta.ordering.global.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
@@ -13,8 +13,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.ProviderManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -38,7 +36,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    CustomAuthenticationFilter customAuthenticationFilter,
-                                                   JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
+                                                   JwtAuthenticationFilter jwtAuthenticationFilter,
+                                                   JwtLogoutHandler jwtLogoutHandler) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
@@ -52,7 +51,13 @@ public class SecurityConfig {
                 .addFilterAt(customAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(jwtAuthenticationFilter, CustomAuthenticationFilter.class)
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .logout(logout -> logout
+                        .logoutUrl("/api/auth/sign-out")
+                        .logoutSuccessUrl("/")//홈으로
+                        .deleteCookies("refresh-token")//쿠키 삭제
+                        .addLogoutHandler(jwtLogoutHandler) // JwtSession삭제 & 토큰 블랙리스트 추가 핸들러
+                );
         return http.build();
     }
 
