@@ -64,6 +64,7 @@ public class CartItem extends BaseUpdatableEntity {
         this.quantity = quantity;
     }
 
+    @Override
     public void softDelete(UUID deletedBy) {
         super.softDelete(deletedBy);
         this.uniqueVersion = this.getId();

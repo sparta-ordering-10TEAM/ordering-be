@@ -34,6 +34,7 @@ public class CartService {
 
     @Transactional(readOnly = true)
     public CartResponse getMyCart(UUID userId) {
+        // 장바구니 없는 경우 빈 장바구니 반환
         return cartRepository.findByUser_Id(userId)
                 .map(cart -> toCartResponse(cart, cartItemRepository.findByCart_IdAndDeletedAtIsNullWithProduct(cart.getId())))
                 .orElseGet(CartResponse::empty);
@@ -62,6 +63,7 @@ public class CartService {
         return toCartResponse(cart, cartItems);
     }
 
+    // 기존 아이템이 있으면 수량 증가(원자적 UPDATE), 없으면 새로 생성
     private void addOrIncreaseCartItem(Cart cart, Product product, int quantity) {
         Optional<CartItem> existingItem = cartItemRepository.findByCart_IdAndProduct_IdAndDeletedAtIsNull(cart.getId(), product.getId());
 
@@ -79,6 +81,7 @@ public class CartService {
         }
     }
 
+    // 장바구니가 비어있으면 식당을 지정, 이미 있으면 같은 식당의 상품인지 검증
     private void validateSameRestaurant(Cart cart, Restaurant restaurant) {
         if (cart.getRestaurant() == null) {
             cart.changeRestaurant(restaurant);
@@ -87,11 +90,13 @@ public class CartService {
         }
     }
 
+    // 유저의 장바구니를 조회하고, 없으면 새로 생성
     private Cart getOrCreateCart(UUID userId, Restaurant restaurant) {
         return cartRepository.findByUser_Id(userId)
                 .orElseGet(() -> {
                     User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                             .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
+
                     return cartRepository.save(
                             Cart.builder()
                                     .user(user)
@@ -138,7 +143,7 @@ public class CartService {
         Cart cart = cartRepository.findByUser_Id(userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.CART_NOT_FOUND));
 
-        // 장바구니 비우기
+        // 장바구니 비우기 (벌크 연산)
         cartItemRepository.softDeleteAllByCartId(cart.getId(), userId);
         cart.changeRestaurant(null);
 
