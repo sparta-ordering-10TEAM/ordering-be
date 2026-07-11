@@ -56,14 +56,11 @@ public class CartItem extends BaseUpdatableEntity {
         this.uniqueVersion = UUID.fromString("00000000-0000-0000-0000-000000000000");
     }
 
-    public void increaseQuantity(int amount) {
-        if (this.quantity + amount > MAX_QUANTITY) {
-            throw new ApiException(GeneralResponseCode.CART_ITEM_QUANTITY_EXCEEDED);
-        }
-        this.quantity += amount;
-    }
 
     public void changeQuantity(int quantity) {
+        if (quantity > MAX_QUANTITY) {
+            throw new ApiException(GeneralResponseCode.CART_ITEM_QUANTITY_EXCEEDED);
+        }
         this.quantity = quantity;
     }
 

@@ -1,5 +1,6 @@
 package com.sparta.ordering.cart.service;
 
+import com.sparta.ordering.cart.dto.CartItemQuantityRequest;
 import com.sparta.ordering.cart.dto.CartItemRequest;
 import com.sparta.ordering.cart.dto.CartResponse;
 import com.sparta.ordering.cart.entity.Cart;
@@ -321,6 +322,87 @@ class CartServiceTest {
         }
 
     }
+
+    @Nested
+    @DisplayName("카트 아이템 수량 업데이트")
+    class UpdateQuantity{
+        @Test
+        @DisplayName("성공")
+        void test1() {
+
+            // given
+            UUID userId = UUID.randomUUID();
+
+            Cart cart = Cart.builder().build();
+            UUID cartId = UUID.randomUUID();
+            ReflectionTestUtils.setField(cart, "id", cartId);
+
+            Product product = Product.builder().build();
+            UUID productId = UUID.randomUUID();
+            ReflectionTestUtils.setField(product, "id", productId);
+
+            UUID cartItemId = UUID.randomUUID();
+            CartItem cartItem = CartItem.builder()
+                    .product(product)
+                    .cart(cart)
+                    .quantity(1)
+                    .build();
+            ReflectionTestUtils.setField(cartItem, "id", cartItemId);
+
+            int quantity = 10;
+            CartItemQuantityRequest request = new CartItemQuantityRequest(quantity);
+            when(cartItemRepository.findByIdAndCart_User_IdAndDeletedAtIsNullWithCart(cartItemId, userId))
+                    .thenReturn(Optional.of(cartItem));
+
+            when(cartItemRepository.findByCart_IdAndDeletedAtIsNullWithProduct(cartId))
+                    .thenReturn(List.of(cartItem));
+
+            // when
+            CartResponse response = cartService.updateItemQuantity(userId, cartItemId, request);
+
+            // then
+            assertThat(response.items().get(0).quantity()).isEqualTo(quantity);
+            assertThat(response.cartId()).isEqualTo(cartId);
+        }
+
+        @Test
+        @DisplayName("실패 - 수량 99 초과")
+        void test2() {
+            // given
+            UUID userId = UUID.randomUUID();
+            UUID cartItemId = UUID.randomUUID();
+            CartItem cartItem = CartItem.builder().build();
+
+            CartItemQuantityRequest request = new CartItemQuantityRequest(100);
+            when(cartItemRepository.findByIdAndCart_User_IdAndDeletedAtIsNullWithCart(cartItemId, userId))
+                    .thenReturn(Optional.of(cartItem));
+
+            // when && then
+            assertThatThrownBy(() -> cartService.updateItemQuantity(userId, cartItemId, request))
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(GeneralResponseCode.CART_ITEM_QUANTITY_EXCEEDED);
+        }
+
+        @Test
+        @DisplayName("실패  존재하지 않는 카트 아이템")
+        void test3() {
+            // given
+            UUID userId = UUID.randomUUID();
+            UUID cartItemId = UUID.randomUUID();
+
+            CartItemQuantityRequest request = new CartItemQuantityRequest(10);
+            when(cartItemRepository.findByIdAndCart_User_IdAndDeletedAtIsNullWithCart(cartItemId, userId))
+                    .thenReturn(Optional.empty());
+
+            // when
+            assertThatThrownBy(() -> cartService.updateItemQuantity(userId, cartItemId, request))
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(GeneralResponseCode.CART_ITEM_NOT_FOUND);
+        }
+    }
+
     @Nested
     @DisplayName("장바구니 상품 삭제")
     class RemoveItem {
