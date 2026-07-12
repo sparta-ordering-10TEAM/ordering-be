@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -44,8 +46,9 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/users").permitAll() //회원가입
-                        // TODO: 일단은 모든 요청 허용
+                        .requestMatchers(HttpMethod.POST, "/api/users/sign-up").permitAll()
+                        .requestMatchers("/api/auth/sign-in", "/api/auth/reset-password", "/api/auth/refresh").permitAll()
+                        .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .addFilterAt(customAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
@@ -54,9 +57,9 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .logout(logout -> logout
                         .logoutUrl("/api/auth/sign-out")
-                        .logoutSuccessUrl("/")//홈으로
-                        .deleteCookies("refresh_token")//쿠키 삭제 - CustomAuthenticationSuccessHandler에서는 쿠키 이름을 "refresh_token"(언더스코어)으로 설정
-                        .addLogoutHandler(jwtLogoutHandler) // JwtSession삭제 & 토큰 블랙리스트 추가 핸들러
+                        .logoutSuccessUrl("/")
+                        .deleteCookies("refresh_token")
+                        .addLogoutHandler(jwtLogoutHandler)
                 );
         return http.build();
     }
@@ -73,7 +76,6 @@ public class SecurityConfig {
         AuthenticationManagerBuilder authenticationManagerBuilder =
                 http.getSharedObject(AuthenticationManagerBuilder.class);
 
-        //  setUserDetailsService 대신 빌더의 userDetailsService()를 사용합니다.
         authenticationManagerBuilder
                 .userDetailsService(customUserDetailService)
                 .passwordEncoder(passwordEncoder());
@@ -89,12 +91,12 @@ public class SecurityConfig {
             AuthenticationManager authenticationManager) {
 
         CustomAuthenticationFilter filter = new CustomAuthenticationFilter(objectMapper);
-        // handler 설정
+
         filter.setAuthenticationSuccessHandler(authenticationSuccessHandler);
         filter.setAuthenticationFailureHandler(authenticationFailureHandler);
-        // /api/auth/sign-in 경로에 적용
+
         filter.setFilterProcessesUrl("/api/auth/sign-in");
-        // authenticationManager 지정
+
         filter.setAuthenticationManager(authenticationManager);
         return filter;
     }
@@ -108,6 +110,13 @@ public class SecurityConfig {
     @Bean
     public AuthenticationFailureHandler customAuthenticationFailureHandler(ObjectMapper objectMapper) {
         return new CustomAuthenticationFailureHandler(objectMapper);
+    }
+
+    @Bean
+    public RoleHierarchy roleHierarchy() {
+        return RoleHierarchyImpl.fromHierarchy(
+                "ROLE_MASTER > ROLE_MANAGER > ROLE_OWNER\n"+
+                "ROLE_MASTER > ROLE_MANAGER > ROLE_CUSTOMER");
     }
 
 }
