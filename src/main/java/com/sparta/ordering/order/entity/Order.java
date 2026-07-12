@@ -36,8 +36,8 @@ public class Order extends BaseUpdatableEntity {
     private Restaurant restaurant;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "customer_id", nullable = false)
+    private User customer;
 
     @Column(name = "total_price", nullable = false)
     private Long totalPrice;
@@ -56,21 +56,21 @@ public class Order extends BaseUpdatableEntity {
     @OneToMany(mappedBy = "order", cascade = CascadeType.PERSIST)
     private List<OrderItem> orderItems = new ArrayList<>();
 
-    private Order(String orderNumber, Restaurant restaurant, User user, String deliveryAddress,
+    private Order(String orderNumber, Restaurant restaurant, User customer, String deliveryAddress,
                   String requestMessage
     ) {
         this.orderNumber = orderNumber;
         this.restaurant = restaurant;
-        this.user = user;
+        this.customer = customer;
         this.totalPrice = 0L;
         this.deliveryAddress = deliveryAddress;
         this.requestMessage = requestMessage;
         this.orderStatus = OrderStatus.REQUESTED;
     }
 
-    public static Order create(String orderNumber, Restaurant restaurant, User user, String deliveryAddress,
+    public static Order create(String orderNumber, Restaurant restaurant, User customer, String deliveryAddress,
                                String requestMessage) {
-        return new Order(orderNumber, restaurant, user, deliveryAddress, requestMessage);
+        return new Order(orderNumber, restaurant, customer, deliveryAddress, requestMessage);
     }
 
     public void addOrderItem(OrderItem orderItem) {

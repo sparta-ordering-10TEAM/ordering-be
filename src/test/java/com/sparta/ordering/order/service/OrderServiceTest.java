@@ -93,7 +93,7 @@ class OrderServiceTest {
             verify(orderSaveService).save(orderCaptor.capture());
 
             Order savedOrder = orderCaptor.getValue();
-            assertThat(savedOrder.getUser()).isEqualTo(user);
+            assertThat(savedOrder.getCustomer()).isEqualTo(user);
             assertThat(savedOrder.getRestaurant()).isEqualTo(restaurant);
             assertThat(savedOrder.getTotalPrice()).isEqualTo(36000L);
             assertThat(savedOrder.getOrderItems()).hasSize(1);
