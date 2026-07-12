@@ -1,8 +1,6 @@
 package com.sparta.ordering.auth.service;
 
 import com.sparta.ordering.auth.dto.ResetPasswordRequest;
-import com.sparta.ordering.auth.security.session.JwtSessionRepository;
-import com.sparta.ordering.auth.security.session.JwtSessionService;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.user.entity.User;
@@ -10,6 +8,8 @@ import com.sparta.ordering.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,8 +25,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final JwtSessionService jwtSessionService;
-    private final JwtSessionRepository jwtSessionRepository;
+    private final JavaMailSender javaMailSender;
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final SecureRandom secureRandom = new SecureRandom();
@@ -41,19 +40,18 @@ public class AuthService {
 
     @Transactional
     public void resetPassword(ResetPasswordRequest request) {
+        String email = request.email();
 
         //TODO: 이메일 전송 로직 추가
-        User user = userRepository.findByEmailAndDeletedAtIsNull(request.email())
+        User user = userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
-        //임시 비밀번호
         String tempPassword = generateTempPassword();
+
+        sendTempPasswordEmail(email, tempPassword);
+
         String encodedTempPassword = passwordEncoder.encode(tempPassword);
-
-        //DB업데이트
         user.setTempPassword(encodedTempPassword, Instant.now().plusSeconds(PASSWORD_VALIDITY_SECONDS));
-
-        log.info("임시 비밀번호: {}", tempPassword);
     }
 
     //8자리 대소문자, 숫자, 특수문자가 각각 최소 1개 이상 포함
@@ -74,5 +72,29 @@ public class AuthService {
             sb.append(ch);
         }
         return sb.toString();
+    }
+
+    private void sendTempPasswordEmail(String toEmail, String tempPassword) {
+        String content = """
+        안녕하세요.
+        "연봉10조 배달" 서비스입니다.
+                
+        요청하신 임시 비밀번호는 아래와 같습니다.
+        --------------
+        %s
+        --------------
+                
+        임시 비밀번호는 발급 시점으로부터 10분 간 유효합니다.
+        로그인 후 반드시 비밀번호를 변경해주세요.
+                
+        감사합니다.        
+        """.formatted(tempPassword);
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(toEmail);
+        message.setSubject("[연봉10조 배달] 임시 비밀번호 안내");
+        message.setText(content);
+
+        javaMailSender.send(message);
     }
 }
