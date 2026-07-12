@@ -70,6 +70,7 @@ public class CartController {
     }
 
     @DeleteMapping("/cart")
+    @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<GeneralResponse<CartResponse>> clearCart(
             @AuthenticationPrincipal UUID userId
     ) {
