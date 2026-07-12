@@ -1,5 +1,6 @@
 package com.sparta.ordering.cart.service;
 
+import com.sparta.ordering.cart.CartPolicy;
 import com.sparta.ordering.cart.dto.CartItemQuantityRequest;
 import com.sparta.ordering.cart.dto.CartItemRequest;
 import com.sparta.ordering.cart.dto.CartItemResponse;
@@ -68,9 +69,9 @@ public class CartService {
         Optional<CartItem> existingItem = cartItemRepository.findByCart_IdAndProduct_IdAndDeletedAtIsNull(cart.getId(), product.getId());
 
         if (existingItem.isPresent()) {
-            int updatedRow = cartItemRepository.increaseQuantityAtomic(existingItem.get().getId(), quantity);
+            int updatedRow = cartItemRepository.increaseQuantityAtomic(existingItem.get().getId(), quantity, CartPolicy.MAX_QUANTITY);
             if (updatedRow == 0) {
-                throw new ApiException(GeneralResponseCode.CART_ITEM_QUANTITY_EXCEEDED);
+                throw new ApiException(GeneralResponseCode.CART_ITEM_QUANTITY_INVALID);
             }
         } else {
             cartItemRepository.save(CartItem.builder()

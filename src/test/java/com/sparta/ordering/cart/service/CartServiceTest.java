@@ -1,5 +1,6 @@
 package com.sparta.ordering.cart.service;
 
+import com.sparta.ordering.cart.CartPolicy;
 import com.sparta.ordering.cart.dto.CartItemQuantityRequest;
 import com.sparta.ordering.cart.dto.CartItemRequest;
 import com.sparta.ordering.cart.dto.CartResponse;
@@ -211,7 +212,7 @@ class CartServiceTest {
             when(cartRepository.findByUser_Id(userId)).thenReturn(Optional.of(cart));
             when(cartItemRepository.findByCart_IdAndProduct_IdAndDeletedAtIsNull(cartId, productId))
                     .thenReturn(Optional.of(existingItem));
-            when(cartItemRepository.increaseQuantityAtomic(cartItemId, request.quantity()))
+            when(cartItemRepository.increaseQuantityAtomic(cartItemId, request.quantity(), CartPolicy.MAX_QUANTITY))
                     .thenReturn(1);
             when(cartItemRepository.findByCart_IdAndDeletedAtIsNullWithProduct(cartId))
                     .thenReturn(List.of(existingItem));
@@ -221,7 +222,7 @@ class CartServiceTest {
 
             // then
             assertThat(response.items()).hasSize(1);
-            verify(cartItemRepository).increaseQuantityAtomic(cartItemId, request.quantity());
+            verify(cartItemRepository).increaseQuantityAtomic(cartItemId, request.quantity(), CartPolicy.MAX_QUANTITY);
         }
 
         @Test
@@ -317,7 +318,7 @@ class CartServiceTest {
             assertThatThrownBy(() -> cartService.addItem(userId, request))
                     .isInstanceOf(ApiException.class)
                     .extracting("responseCode")
-                    .isEqualTo(GeneralResponseCode.CART_ITEM_QUANTITY_EXCEEDED);
+                    .isEqualTo(GeneralResponseCode.CART_ITEM_QUANTITY_INVALID);
 
         }
 
@@ -381,7 +382,7 @@ class CartServiceTest {
             assertThatThrownBy(() -> cartService.updateItemQuantity(userId, cartItemId, request))
                     .isInstanceOf(ApiException.class)
                     .extracting("responseCode")
-                    .isEqualTo(GeneralResponseCode.CART_ITEM_QUANTITY_EXCEEDED);
+                    .isEqualTo(GeneralResponseCode.CART_ITEM_QUANTITY_INVALID);
         }
 
         @Test

@@ -42,8 +42,8 @@ public interface CartItemRepository extends JpaRepository<CartItem, UUID> {
     @Query("""
                 UPDATE CartItem ci
                 SET ci.quantity = ci.quantity + :quantity
-                WHERE ci.id = :cartItemId AND ci.quantity + :quantity <= 99
+                WHERE ci.id = :cartItemId AND ci.quantity + :quantity <= :maxQuantity
             """
     )
-    int increaseQuantityAtomic(UUID cartItemId, Integer quantity);
+    int increaseQuantityAtomic(UUID cartItemId, Integer quantity, int maxQuantity);
 }

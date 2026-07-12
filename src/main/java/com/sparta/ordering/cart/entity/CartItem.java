@@ -1,5 +1,6 @@
 package com.sparta.ordering.cart.entity;
 
+import com.sparta.ordering.cart.CartPolicy;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.entity.BaseUpdatableEntity;
 import com.sparta.ordering.global.exception.ApiException;
@@ -32,7 +33,6 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CartItem extends BaseUpdatableEntity {
 
-    private static final int MAX_QUANTITY = 99;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cart_id", nullable = false)
@@ -58,8 +58,8 @@ public class CartItem extends BaseUpdatableEntity {
 
 
     public void changeQuantity(int quantity) {
-        if (quantity > MAX_QUANTITY) {
-            throw new ApiException(GeneralResponseCode.CART_ITEM_QUANTITY_EXCEEDED);
+        if (quantity > CartPolicy.MAX_QUANTITY || quantity < 1) {
+            throw new ApiException(GeneralResponseCode.CART_ITEM_QUANTITY_INVALID);
         }
         this.quantity = quantity;
     }
