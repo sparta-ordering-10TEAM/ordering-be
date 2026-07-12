@@ -42,6 +42,9 @@ jwt:
 time:
   zone-id: ${TIME_ZONE_ID:Asia/Seoul}
 
+resetpassword:
+  validity-seconds: 600 # 10분
+
 gemini:
   url: ${GEMINI_URL}
   api-key: ${GEMINI_API_KEY}

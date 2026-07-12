@@ -1,5 +1,6 @@
 package com.sparta.ordering.auth.controller;
 
+import com.sparta.ordering.auth.dto.ResetPasswordRequest;
 import com.sparta.ordering.auth.dto.TokenRotationResult;
 import com.sparta.ordering.auth.security.session.JwtSessionService;
 import com.sparta.ordering.auth.service.AuthService;
@@ -7,12 +8,14 @@ import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -47,5 +50,11 @@ public class AuthController {
                 .build();
         response.addHeader("Set-Cookie", cookie.toString());
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, result.accessToken());
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<GeneralResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, null);
     }
 }

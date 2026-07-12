@@ -23,7 +23,8 @@ public class CustomUserDetailService implements UserDetailsService {
                         user.getUserName(),
                         user.getPassword(),
                         user.getRole(),
-                        user.isLocked()))
+                        user.isLocked(),
+                        user.getTempPasswordExpirationTime()))
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
     }
 }
