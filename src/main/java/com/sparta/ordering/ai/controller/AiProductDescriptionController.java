@@ -5,9 +5,11 @@ import com.sparta.ordering.ai.dto.AiProductDescriptionResponse;
 import com.sparta.ordering.ai.dto.GenerateAiProductDescriptionRequest;
 import com.sparta.ordering.ai.dto.UpdateAiProductDescriptionRequest;
 import com.sparta.ordering.ai.facade.AiProductDescriptionFacade;
+import com.sparta.ordering.ai.service.AdminAiProductDescriptionService;
 import com.sparta.ordering.ai.service.AiProductDescriptionService;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
+import com.sparta.ordering.user.entity.Role;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -16,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,18 +37,40 @@ import java.util.UUID;
 public class AiProductDescriptionController implements AiProductDescriptionApi {
     private final AiProductDescriptionService aiProductDescriptionService;
     private final AiProductDescriptionFacade aiProductDescriptionFacade;
+    private final AdminAiProductDescriptionService adminAiProductDescriptionService;
 
     @Override
-    @PreAuthorize("hasRole('OWNER')")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/products/{productId}/ai-descriptions")
     public ResponseEntity<GeneralResponse<Page<AiProductDescriptionResponse>>> searchAiProductDescription(
             @PathVariable UUID productId,
             @AuthenticationPrincipal UUID userId,
-            @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+            Authentication authentication
     ) {
+        boolean isAdmin = isAdmin(authentication);
+
         return GeneralResponse.toResponseEntity(
                 GeneralResponseCode.OK,
-                aiProductDescriptionService.search(productId, userId, pageable)
+                isAdmin ? adminAiProductDescriptionService.search(productId, userId, pageable)
+                        : aiProductDescriptionService.search(productId, userId, pageable)
+        );
+    }
+
+    @Override
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
+    @GetMapping("/ai-descriptions/{aiDescriptionId}")
+    public ResponseEntity<GeneralResponse<AiProductDescriptionResponse>> getAiProductDescription(
+            @PathVariable UUID aiDescriptionId,
+            @AuthenticationPrincipal UUID userId,
+            Authentication authentication
+    ) {
+        boolean isAdmin = isAdmin(authentication);
+
+        return GeneralResponse.toResponseEntity(
+                GeneralResponseCode.OK,
+                isAdmin ? adminAiProductDescriptionService.getAiProductDescription(aiDescriptionId, userId)
+                        : aiProductDescriptionService.getAiProductDescription(aiDescriptionId, userId)
         );
     }
 
@@ -83,13 +108,20 @@ public class AiProductDescriptionController implements AiProductDescriptionApi {
     }
 
     @Override
-    @PreAuthorize("hasRole('OWNER')")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
     @DeleteMapping("/ai-descriptions/{aiDescriptionId}")
     public ResponseEntity<GeneralResponse<Void>> deleteAiProductDescription(
             @PathVariable UUID aiDescriptionId,
-            @AuthenticationPrincipal UUID userId
+            @AuthenticationPrincipal UUID userId,
+            Authentication authentication
     ) {
-        aiProductDescriptionService.delete(aiDescriptionId, userId);
+        boolean isAdmin = isAdmin(authentication);
+
+        if (isAdmin) {
+            adminAiProductDescriptionService.delete(aiDescriptionId, userId);
+        } else {
+            aiProductDescriptionService.delete(aiDescriptionId, userId);
+        }
 
         return GeneralResponse.toResponseEntity(
                 GeneralResponseCode.OK,
@@ -97,16 +129,10 @@ public class AiProductDescriptionController implements AiProductDescriptionApi {
         );
     }
 
-    @Override
-    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
-    @GetMapping("/ai-descriptions/{aiDescriptionId}")
-    public ResponseEntity<GeneralResponse<AiProductDescriptionResponse>> getAiProductDescription(
-            @PathVariable UUID aiDescriptionId,
-            @AuthenticationPrincipal UUID userId
-    ) {
-        return GeneralResponse.toResponseEntity(
-                GeneralResponseCode.OK,
-                aiProductDescriptionService.getAiProductDescription(aiDescriptionId, userId)
-        );
+    private boolean isAdmin(Authentication auth) {
+        return auth.getAuthorities().stream()
+                .map(a -> a.getAuthority().replace("ROLE_", ""))
+                .map(Role::valueOf)
+                .anyMatch(Role::isAdmin);
     }
 }

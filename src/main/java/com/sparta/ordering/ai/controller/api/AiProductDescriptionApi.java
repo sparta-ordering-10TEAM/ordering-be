@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 
 import java.util.UUID;
 
@@ -25,7 +26,19 @@ public interface AiProductDescriptionApi {
     ResponseEntity<GeneralResponse<Page<AiProductDescriptionResponse>>> searchAiProductDescription(
             UUID productId,
             UUID userId,
-            Pageable pageable
+            Pageable pageable,
+            Authentication authentication
+    );
+
+    @Operation(
+            summary = "AI 상품 설명 단건 조회",
+            description = "특정 AI 상품 설명의 상세 내용을 조회합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    ResponseEntity<GeneralResponse<AiProductDescriptionResponse>> getAiProductDescription(
+            UUID aiDescriptionId,
+            UUID userId,
+            Authentication authentication
     );
 
     @Operation(
@@ -57,16 +70,7 @@ public interface AiProductDescriptionApi {
     )
     ResponseEntity<GeneralResponse<Void>> deleteAiProductDescription(
             UUID aiDescriptionId,
-            UUID userId
-    );
-
-    @Operation(
-            summary = "AI 상품 설명 단건 조회",
-            description = "특정 AI 상품 설명의 상세 내용을 조회합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
-    )
-    ResponseEntity<GeneralResponse<AiProductDescriptionResponse>> getAiProductDescription(
-            UUID aiDescriptionId,
-            UUID userId
+            UUID userId,
+            Authentication authentication
     );
 }
