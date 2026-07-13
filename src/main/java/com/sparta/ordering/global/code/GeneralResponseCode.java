@@ -21,6 +21,10 @@ public enum GeneralResponseCode implements ApiResponseCode {
     ORDER_RESTAURANT_NOT_OPEN(HttpStatus.BAD_REQUEST, "영업 중인 식당에만 주문할 수 있습니다."),
     ORDER_PRODUCT_RESTAURANT_MISMATCH(HttpStatus.BAD_REQUEST, "해당 식당의 상품만 주문할 수 있습니다."),
 
+    // Payment
+    PAYMENT_AMOUNT_INVALID(HttpStatus.BAD_REQUEST, "결제 금액이 주문 금액과 일치하지 않습니다."),
+    PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 결제 내역을 찾을 수 없습니다."),
+
     // Review
     ALREADY_REVIEWED(HttpStatus.CONFLICT, "이미 리뷰를 작성한 주문입니다."),
     REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 리뷰를 찾을 수 없습니다."),

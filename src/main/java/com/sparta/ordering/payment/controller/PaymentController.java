@@ -1,8 +1,10 @@
 package com.sparta.ordering.payment.controller;
 
+import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import com.sparta.ordering.payment.dto.PaymentRequest;
 import com.sparta.ordering.payment.dto.PaymentResponse;
+import com.sparta.ordering.payment.facade.PaymentFacade;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,13 +28,16 @@ import java.util.UUID;
 @RequestMapping("/api")
 public class PaymentController {
 
+    private final PaymentFacade paymentFacade;
+
     @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping("/payments")
     public ResponseEntity<GeneralResponse<PaymentResponse>> createPayment(
             @AuthenticationPrincipal UUID userId,
             @Valid @RequestBody PaymentRequest request
     ) {
-        return null;
+        PaymentResponse response = paymentFacade.processPayment(userId, request);
+        return  GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 
     @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
