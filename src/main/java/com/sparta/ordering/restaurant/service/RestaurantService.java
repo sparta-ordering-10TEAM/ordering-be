@@ -38,8 +38,15 @@ public class RestaurantService {
     private static final Set<Role> PRIVILEGED_ROLES = Set.of(Role.MANAGER, Role.MASTER);
 
     @Transactional(readOnly = true)
-    public Page<RestaurantResponse> getRestaurants(String category, Pageable pageable) {
-        return findRestaurants(category, pageable)
+    public Page<RestaurantResponse> getRestaurants(
+            String category,
+            UUID regionId,
+            RestaurantStatus status,
+            Pageable pageable
+    ) {
+        UUID categoryId = StringUtils.hasText(category) ? getActiveCategory(category).getId() : null;
+
+        return restaurantRepository.findWithFilters(categoryId, regionId, status, pageable)
                 .map(RestaurantResponse::from);
     }
 
@@ -149,16 +156,6 @@ public class RestaurantService {
         validateModificationPermission(requestUser, restaurant);
 
         restaurant.softDelete(userId);
-    }
-
-    private Page<Restaurant> findRestaurants(String category, Pageable pageable) {
-        if (StringUtils.hasText(category)) {
-            RestaurantCategory restaurantCategory = getActiveCategory(category);
-
-            return restaurantRepository.findByCategoryAndDeletedAtIsNull(restaurantCategory, pageable);
-        }
-
-        return restaurantRepository.findByDeletedAtIsNull(pageable);
     }
 
     private Region getActiveLeafRegion(UUID regionId) {
