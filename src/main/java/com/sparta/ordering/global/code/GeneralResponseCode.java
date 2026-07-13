@@ -36,7 +36,11 @@ public enum GeneralResponseCode implements ApiResponseCode {
 
     // Cart
     CART_DIFFERENT_RESTAURANT(HttpStatus.BAD_REQUEST, "장바구니에는 같은 식당의 상품만 담을 수 있습니다."),
-    CART_ITEM_QUANTITY_EXCEEDED(HttpStatus.BAD_REQUEST, "장바구니 상품은 최대 99개까지 담을 수 있습니다."),
+    CART_ITEM_QUANTITY_INVALID(HttpStatus.BAD_REQUEST, "수량은 1개 이상 99개 이하여야 합니다."),
+    CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 장바구니 상품을 찾을 수 없습니다"),
+    CART_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 장바구니를 찾을 수 없습니다." ),
+    CART_CREATE_CONFLICT(HttpStatus.CONFLICT, "장바구니를 생성하는 중 문제가 발생했습니다. 다시 시도해주세요."),
+    CART_ITEM_ADD_CONFLICT(HttpStatus.CONFLICT, "장바구니에 상품을 담는 중 문제가 발생했습니다. 다시 시도해주세요."),
 
     //USER
     USER_ALREADY_LOCKED(HttpStatus.CONFLICT, "이미 잠긴 계정입니다."),

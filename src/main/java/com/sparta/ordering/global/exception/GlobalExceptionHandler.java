@@ -37,6 +37,16 @@ public class GlobalExceptionHandler {
             code = GeneralResponseCode.ALREADY_REVIEWED;
         }
 
+        // Cart 생성 경합
+        if (message.contains("uk_cart_user")) {
+            code = GeneralResponseCode.CART_CREATE_CONFLICT;
+        }
+
+        // CartItem 추가 경합
+        if (message.contains("uk_cart_item_cart_product")) {
+            code = GeneralResponseCode.CART_ITEM_ADD_CONFLICT;
+        }
+
         return ErrorResponse.toResponseEntity(code, null);
     }
 
