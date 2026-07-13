@@ -1,6 +1,8 @@
 package com.sparta.ordering.order.entity;
 
+import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.entity.BaseUpdatableEntity;
+import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.restaurant.entity.Restaurant;
 import com.sparta.ordering.user.entity.User;
 import jakarta.persistence.CascadeType;
@@ -77,5 +79,29 @@ public class Order extends BaseUpdatableEntity {
         orderItems.add(orderItem);
         orderItem.assignOrder(this);
         this.totalPrice += orderItem.getTotalPrice();
+    }
+
+    public void changeStatus(OrderStatus requestStatus) {
+        validateStatus(requestStatus);
+        this.orderStatus = requestStatus;
+    }
+
+    private void validateStatus(OrderStatus requestStatus) {
+        boolean valid = switch (this.orderStatus) {
+            case REQUESTED ->
+                requestStatus == OrderStatus.APPROVED
+                        || requestStatus == OrderStatus.REJECTED;
+            case APPROVED ->
+                requestStatus == OrderStatus.COOKING_COMPLETED;
+            case COOKING_COMPLETED ->
+                requestStatus == OrderStatus.DELIVERING;
+            case DELIVERING ->
+                requestStatus == OrderStatus.COMPLETED;
+            case COMPLETED, CANCELLED, REJECTED -> false;
+        };
+
+        if (!valid) {
+            throw new ApiException(GeneralResponseCode.ORDER_STATUS_TRANSITION_INVALID);
+        }
     }
 }
