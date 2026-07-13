@@ -1,0 +1,20 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ordering_test
+    username: ordering_test
+    password: ordering_test
+
+
+jwt:
+  secret: local-dev-secret-key-that-is-at-least-256-bits-long-for-hs256
+  access-token:
+    validity-seconds: 3600000
+  refresh-token:
+    validity-seconds: 2592000000
+
+gemini:
+  url: test
+  api-key: test
