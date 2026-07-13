@@ -59,7 +59,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .logout(logout -> logout
-                        .logoutUrl("/api/auth/sign-out")
+                        .logoutRequestMatcher(securityRequestMatcher.getSignOut())
                         .logoutSuccessUrl("/")
                         .deleteCookies("refresh_token")
                         .addLogoutHandler(jwtLogoutHandler)
