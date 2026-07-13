@@ -128,6 +128,19 @@ public class RestaurantService {
     }
 
     @Transactional
+    public RestaurantResponse changeRestaurantStatus(UUID restaurantId, RestaurantStatus status, UUID userId) {
+        Restaurant restaurant = getActiveRestaurant(restaurantId);
+        User requestUser = userRepository.findByIdAndDeletedAtIsNull(userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
+
+        validateModificationPermission(requestUser, restaurant);
+
+        restaurant.changeStatus(status);
+
+        return RestaurantResponse.from(restaurant);
+    }
+
+    @Transactional
     public void deleteRestaurant(UUID restaurantId, UUID userId) {
         Restaurant restaurant = getActiveRestaurant(restaurantId);
         User requestUser = userRepository.findByIdAndDeletedAtIsNull(userId)

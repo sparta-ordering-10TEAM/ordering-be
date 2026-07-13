@@ -4,6 +4,7 @@ import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import com.sparta.ordering.restaurant.dto.RestaurantCreateRequest;
 import com.sparta.ordering.restaurant.dto.RestaurantResponse;
+import com.sparta.ordering.restaurant.dto.RestaurantStatusUpdateRequest;
 import com.sparta.ordering.restaurant.dto.RestaurantUpdateRequest;
 import com.sparta.ordering.restaurant.service.RestaurantService;
 import jakarta.validation.Valid;
@@ -86,6 +87,19 @@ public class RestaurantController {
         return GeneralResponse.toResponseEntity(
                 GeneralResponseCode.OK,
                 restaurantService.updateRestaurant(restaurantId, request, userId)
+        );
+    }
+
+    @PreAuthorize("hasAnyRole('MANAGER', 'MASTER', 'OWNER')")
+    @PatchMapping("/restaurants/{restaurantId}/status")
+    public ResponseEntity<GeneralResponse<RestaurantResponse>> changeRestaurantStatus(
+            @PathVariable UUID restaurantId,
+            @Valid @RequestBody RestaurantStatusUpdateRequest request,
+            @AuthenticationPrincipal UUID userId
+    ) {
+        return GeneralResponse.toResponseEntity(
+                GeneralResponseCode.OK,
+                restaurantService.changeRestaurantStatus(restaurantId, request.status(), userId)
         );
     }
 
