@@ -3,11 +3,15 @@ package com.sparta.ordering.restaurant.dto;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 public record RestaurantCreateRequest(
         @NotBlank
         @Size(min = 1, max = 20, message = "카테고리는 1자 이상 20자 이하여야 합니다.")
         String category,
+
+        @NotNull(message = "지역은 필수 입력 값입니다.")
+        UUID regionId,
 
         @NotBlank
         @Size(min = 1, max = 100, message = "식당 이름은 1자 이상 100자 이하여야 합니다.")
