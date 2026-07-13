@@ -44,9 +44,8 @@ public class ProductService {
     @Transactional(readOnly = true)
     public Page<ProductResponse> getProducts(ProductSearchRequest request, UUID restaurantId, Pageable pageable) {
         PageableUtils.validateSort(pageable, ALLOWED_SORT_FIELD);
-        Pageable normalizedPageable = PageableUtils.normalizePageSize(pageable);
 
-        Page<Product> products = productRepository.searchProducts(restaurantId, request.name(), request.minPrice(), request.maxPrice(), normalizedPageable);
+        Page<Product> products = productRepository.searchProducts(restaurantId, request.name(), request.minPrice(), request.maxPrice(), pageable);
 
         return products.map(ProductResponse::from);
     }
