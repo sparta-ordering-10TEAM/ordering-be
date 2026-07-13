@@ -8,6 +8,7 @@ import com.sparta.ordering.payment.dto.PGResponse;
 import com.sparta.ordering.payment.dto.PaymentRequest;
 import com.sparta.ordering.payment.dto.PaymentResponse;
 import com.sparta.ordering.payment.entity.Payment;
+import com.sparta.ordering.payment.entity.PaymentStatus;
 import com.sparta.ordering.payment.repository.PaymentRepository;
 import com.sparta.ordering.user.entity.Role;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +53,10 @@ public class PaymentService {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND));
 
+        if (!payment.getStatus().equals(PaymentStatus.IN_PROGRESS)) {
+            throw new ApiException(GeneralResponseCode.PAYMENT_INVALID_PAYMENT_STATUS);
+        }
+
         payment.approve(response.approvedAt(), response.cardCompany());
         return payment;
     }
@@ -60,6 +65,10 @@ public class PaymentService {
     public void failPayment(UUID paymentId, String reason) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND));
+
+        if (!payment.getStatus().equals(PaymentStatus.IN_PROGRESS)) {
+            throw new ApiException(GeneralResponseCode.PAYMENT_INVALID_PAYMENT_STATUS);
+        }
 
         payment.fail(reason);
     }
