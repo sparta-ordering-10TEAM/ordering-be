@@ -21,6 +21,8 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,6 +88,13 @@ public class Order extends BaseUpdatableEntity {
         this.orderStatus = requestStatus;
     }
 
+    public void cancel(Instant now) {
+        validateCancelStatus();
+        validateCancelCheckTime(now);
+
+        this.orderStatus = OrderStatus.CANCELLED;
+    }
+
     private void validateStatus(OrderStatus requestStatus) {
         boolean valid = switch (this.orderStatus) {
             case REQUESTED ->
@@ -102,6 +111,23 @@ public class Order extends BaseUpdatableEntity {
 
         if (!valid) {
             throw new ApiException(GeneralResponseCode.ORDER_STATUS_TRANSITION_INVALID);
+        }
+    }
+
+    private void validateCancelStatus() {
+        boolean valid = this.orderStatus == OrderStatus.REQUESTED
+                || this.orderStatus == OrderStatus.APPROVED;
+
+        if (!valid) {
+            throw new ApiException(GeneralResponseCode.ORDER_STATUS_TRANSITION_INVALID);
+        }
+    }
+
+    private void validateCancelCheckTime(Instant now) {
+        Instant deadline = getCreatedAt().plus(Duration.ofMinutes(5));
+
+        if (now.isAfter(deadline)) {
+            throw new ApiException(GeneralResponseCode.ORDER_CANCELLATION_TIME_EXPIRED);
         }
     }
 }
