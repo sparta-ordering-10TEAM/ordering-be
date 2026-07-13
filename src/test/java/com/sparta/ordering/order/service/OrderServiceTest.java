@@ -4,6 +4,7 @@ import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.order.dto.OrderCreateRequest;
 import com.sparta.ordering.order.dto.OrderCreateResponse;
+import com.sparta.ordering.order.dto.OrderStatusResponse;
 import com.sparta.ordering.order.entity.Order;
 import com.sparta.ordering.order.entity.OrderItem;
 import com.sparta.ordering.order.entity.OrderStatus;
@@ -20,12 +21,17 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -283,6 +289,229 @@ class OrderServiceTest {
         }
     }
 
+    @Nested
+    @DisplayName("OWNER 주문 상태 변경")
+    class UpdateOrderStatus {
+
+        @ParameterizedTest
+        @CsvSource({
+                "REQUESTED, APPROVED",
+                "REQUESTED, REJECTED",
+                "APPROVED, COOKING_COMPLETED",
+                "COOKING_COMPLETED, DELIVERING",
+                "DELIVERING, COMPLETED"
+        })
+        @DisplayName("성공 - OWNER가 허용된 순서로 주문 상태를 변경한다")
+        void successAllowedTransition(OrderStatus currentStatus, OrderStatus requestStatus) {
+            // given
+            UUID ownerId = UUID.randomUUID();
+            UUID orderId = UUID.randomUUID();
+
+            Order order = createOrder(orderId, currentStatus, Instant.now());
+
+            when(orderRepository.findByIdAndOwnerIdForUpdate(orderId, ownerId))
+                    .thenReturn(Optional.of(order));
+
+            // when
+            OrderStatusResponse response = orderService.updateStatus(orderId, ownerId, requestStatus);
+
+            // then
+            assertThat(order.getOrderStatus()).isEqualTo(requestStatus);
+            assertThat(response.status()).isEqualTo(requestStatus);
+        }
+
+        @Test
+        @DisplayName("실패 - OWNER가 허용되지 않은 상태로 변경할 수 없다")
+        void failInvalidTransition() {
+            // given: 현재 상태와 허용되지 않은 요청 상태를 가진 실제 Order 준비
+            UUID ownerId = UUID.randomUUID();
+            UUID orderId = UUID.randomUUID();
+
+            Order order = createOrder(orderId, OrderStatus.REQUESTED, Instant.now());
+
+            when(orderRepository.findByIdAndOwnerIdForUpdate(orderId, ownerId))
+                    .thenReturn(Optional.of(order));
+
+            // when & then
+            assertThatThrownBy(() ->
+                    orderService.updateStatus(orderId, ownerId, OrderStatus.COMPLETED))
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(GeneralResponseCode.ORDER_STATUS_TRANSITION_INVALID);
+
+            assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.REQUESTED);
+        }
+
+        @Test
+        @DisplayName("실패 - OWNER가 변경할 수 있는 주문을 찾을 수 없다")
+        void failOrderNotFound() {
+            // given
+            UUID orderId = UUID.randomUUID();
+            UUID ownerId = UUID.randomUUID();
+
+            when(orderRepository.findByIdAndOwnerIdForUpdate(
+                    orderId,
+                    ownerId
+            )).thenReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() ->
+                    orderService.updateStatus(
+                            orderId,
+                            ownerId,
+                            OrderStatus.APPROVED
+                    )
+            )
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(GeneralResponseCode.ORDER_NOT_FOUND);
+        }
+    }
+
+    @Nested
+    @DisplayName("CUSTOMER 주문 취소")
+    class CancelOrder {
+
+        @ParameterizedTest
+        @EnumSource(
+                value = OrderStatus.class,
+                names = {"REQUESTED", "APPROVED"}
+        )
+        @DisplayName("성공 - 고객이 취소 가능한 상태의 주문을 5분 이내에 취소한다")
+        void successCancellableStatus(OrderStatus currentStatus) {
+            // given
+            UUID orderId = UUID.randomUUID();
+            UUID customerId = UUID.randomUUID();
+
+            Order order = createOrder(
+                    orderId,
+                    currentStatus,
+                    Instant.now().minus(Duration.ofMinutes(4))
+            );
+
+            when(orderRepository.findByIdAndCustomerIdForUpdate(
+                    orderId,
+                    customerId
+            )).thenReturn(Optional.of(order));
+            // when
+            OrderStatusResponse response =
+                    orderService.cancelOrder(
+                            orderId,
+                            customerId
+                    );
+
+            // then
+            assertThat(order.getOrderStatus())
+                    .isEqualTo(OrderStatus.CANCELLED);
+
+            assertThat(response.orderId())
+                    .isEqualTo(orderId);
+
+            assertThat(response.status())
+                    .isEqualTo(OrderStatus.CANCELLED);
+
+            verify(orderRepository)
+                    .findByIdAndCustomerIdForUpdate(
+                            orderId,
+                            customerId
+                    );
+        }
+
+        @Test
+        @DisplayName("실패 - 주문 생성 후 5분을 초과하면 취소할 수 없다")
+        void failCancellationTimeExpired() {
+            // given
+            UUID orderId = UUID.randomUUID();
+            UUID customerId = UUID.randomUUID();
+
+            Order order = createOrder(
+                    orderId,
+                    OrderStatus.REQUESTED,
+                    Instant.now().minus(Duration.ofMinutes(6))
+            );
+
+            when(orderRepository.findByIdAndCustomerIdForUpdate(
+                    orderId,
+                    customerId
+            )).thenReturn(Optional.of(order));
+
+            // when & then
+            assertThatThrownBy(() ->
+                    orderService.cancelOrder(
+                            orderId,
+                            customerId
+                    )
+            )
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(
+                            GeneralResponseCode.ORDER_CANCELLATION_TIME_EXPIRED
+                    );
+
+            assertThat(order.getOrderStatus())
+                    .isEqualTo(OrderStatus.REQUESTED);
+        }
+
+        @Test
+        @DisplayName("실패 - 취소 가능한 상태가 아니면 취소할 수 없다")
+        void failInvalidCancellationStatus() {
+            // given
+            UUID orderId = UUID.randomUUID();
+            UUID customerId = UUID.randomUUID();
+
+            Order order = createOrder(
+                    orderId,
+                    OrderStatus.COOKING_COMPLETED,
+                    Instant.now().minus(Duration.ofMinutes(1))
+            );
+
+            when(orderRepository.findByIdAndCustomerIdForUpdate(
+                    orderId,
+                    customerId
+            )).thenReturn(Optional.of(order));
+
+            // when & then
+            assertThatThrownBy(() ->
+                    orderService.cancelOrder(
+                            orderId,
+                            customerId
+                    )
+            )
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(
+                            GeneralResponseCode.ORDER_STATUS_TRANSITION_INVALID
+                    );
+
+            assertThat(order.getOrderStatus())
+                    .isEqualTo(OrderStatus.COOKING_COMPLETED);
+        }
+
+        @Test
+        @DisplayName("실패 - 고객이 취소할 수 있는 주문을 찾을 수 없다")
+        void failOrderNotFound() {
+            // given
+            UUID orderId = UUID.randomUUID();
+            UUID customerId = UUID.randomUUID();
+
+            when(orderRepository.findByIdAndCustomerIdForUpdate(
+                    orderId,
+                    customerId
+            )).thenReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() ->
+                    orderService.cancelOrder(
+                            orderId,
+                            customerId
+                    )
+            )
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(GeneralResponseCode.ORDER_NOT_FOUND);
+        }
+    }
+
     private User createUser(UUID userId, Role role) {
         User user = User.builder()
                 .role(role)
@@ -308,6 +537,22 @@ class OrderServiceTest {
                 .build();
         ReflectionTestUtils.setField(product, "id", productId);
         return product;
+    }
+
+    private Order createOrder(UUID orderId, OrderStatus status, Instant createdAt) {
+        Order order = Order.create(
+                "ORDER01",
+                createRestaurant(UUID.randomUUID(), RestaurantStatus.OPEN, 10000),
+                createUser(UUID.randomUUID(), Role.CUSTOMER),
+                "서울시 강남구",
+                null
+        );
+
+        ReflectionTestUtils.setField(order, "id", orderId);
+        ReflectionTestUtils.setField(order, "orderStatus", status);
+        ReflectionTestUtils.setField(order, "createdAt", createdAt);
+
+        return order;
     }
 
     private OrderCreateRequest createRequest(UUID restaurantId, UUID productId, int quantity) {
