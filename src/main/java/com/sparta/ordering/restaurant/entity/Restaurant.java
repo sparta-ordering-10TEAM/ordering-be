@@ -66,6 +66,9 @@ public class Restaurant extends BaseUpdatableEntity {
     @Column(name = "delivery_radius_km", nullable = false, precision = 4, scale = 1)
     private BigDecimal deliveryRadiusKm;
 
+    @Column(name = "average_rating", nullable = false)
+    private Double averageRating = 0.0;
+
     @Builder
     public Restaurant(
             User user,
@@ -97,6 +100,7 @@ public class Restaurant extends BaseUpdatableEntity {
         this.latitude = latitude;
         this.longitude = longitude;
         this.deliveryRadiusKm = deliveryRadiusKm;
+        this.averageRating = 0.0;
     }
 
     public void update(
