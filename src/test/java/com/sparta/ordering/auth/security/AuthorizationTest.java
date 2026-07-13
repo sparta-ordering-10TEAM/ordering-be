@@ -2,7 +2,6 @@ package com.sparta.ordering.auth.security;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sparta.ordering.global.config.ContainerInitializer;
 import com.sparta.ordering.user.entity.Role;
 import com.sparta.ordering.user.entity.User;
 import com.sparta.ordering.user.repository.UserRepository;
@@ -22,7 +21,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
 
 import java.util.Map;
 import java.util.UUID;
@@ -30,8 +28,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("test-security")
-@ContextConfiguration(initializers = ContainerInitializer.class)
+@ActiveProfiles("test")
 @Slf4j
 public class AuthorizationTest {
 

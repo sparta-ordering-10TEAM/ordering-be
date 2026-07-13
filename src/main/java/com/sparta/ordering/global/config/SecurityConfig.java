@@ -35,7 +35,6 @@ import org.springframework.security.web.servlet.util.matcher.PathPatternRequestM
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
-@Profile("!test")
 public class SecurityConfig {
 
     @Bean
