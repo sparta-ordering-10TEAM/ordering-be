@@ -349,7 +349,8 @@ class RestaurantControllerTest {
                 new BigDecimal("37.5665"),
                 new BigDecimal("126.9780"),
                 new BigDecimal("3.0"),
-                0.0
+                0.0,
+                0L
         );
     }
 }

@@ -69,6 +69,9 @@ public class Restaurant extends BaseUpdatableEntity {
     @Column(name = "average_rating", nullable = false)
     private Double averageRating = 0.0;
 
+    @Column(name = "review_count", nullable = false)
+    private Long reviewCount = 0L;
+
     @Builder
     public Restaurant(
             User user,
@@ -101,6 +104,7 @@ public class Restaurant extends BaseUpdatableEntity {
         this.longitude = longitude;
         this.deliveryRadiusKm = deliveryRadiusKm;
         this.averageRating = 0.0;
+        this.reviewCount = 0L;
     }
 
     public void update(

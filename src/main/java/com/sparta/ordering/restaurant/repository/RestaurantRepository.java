@@ -31,6 +31,12 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, UUID> {
                     FROM Review rev
                     WHERE rev.order.restaurant.id = :restaurantId
                     AND rev.deletedAt IS NULL
+                ),
+                r.reviewCount = (
+                    SELECT COUNT(rev)
+                    FROM Review rev
+                    WHERE rev.order.restaurant.id = :restaurantId
+                    AND rev.deletedAt IS NULL
                 )
                 WHERE r.id = :restaurantId
             """)
