@@ -1,8 +1,8 @@
 package com.sparta.ordering.user.service;
 
+import com.sparta.ordering.auth.security.session.JwtSessionService;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
-import com.sparta.ordering.global.util.PageableUtils;
 import com.sparta.ordering.user.dto.request.UserRoleUpdateRequest;
 import com.sparta.ordering.user.dto.response.AdminUserDetailResponse;
 import com.sparta.ordering.user.dto.response.UserResponse;
@@ -12,7 +12,6 @@ import com.sparta.ordering.user.repository.UserRepository;
 import com.sparta.ordering.user.repository.UserSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -25,6 +24,7 @@ import java.util.UUID;
 @Transactional
 public class AdminService {
     private final UserRepository userRepository;
+    private final JwtSessionService jwtSessionService;
 
 
     public UUID lock(UUID userId) {
@@ -37,7 +37,8 @@ public class AdminService {
 
         user.updateLocked(true);
 
-        // TODO: 잠긴 계정은 자동으로 로그아웃
+        // 잠긴 계정은 자동으로 로그아웃
+        jwtSessionService.invalidateToken(userId);
 
         return user.getId();
     }
@@ -59,9 +60,10 @@ public class AdminService {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
-        //TODO: 권한 변경 시 자동으로 로그아웃
-
         user.updateRole(userRoleUpdateRequest.role());
+
+        // 권한 변경 시 해당 사용자는 자동으로 로그아웃
+        jwtSessionService.invalidateToken(userId);
 
         return UserResponse.from(user);
     }
