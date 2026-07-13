@@ -6,8 +6,10 @@ import com.sparta.ordering.order.dto.OrderCreateRequest;
 import com.sparta.ordering.order.dto.OrderCreateResponse;
 import com.sparta.ordering.order.dto.OrderDetailResponse;
 import com.sparta.ordering.order.dto.OrderListResponse;
+import com.sparta.ordering.order.dto.OrderStatusResponse;
 import com.sparta.ordering.order.entity.Order;
 import com.sparta.ordering.order.entity.OrderItem;
+import com.sparta.ordering.order.entity.OrderStatus;
 import com.sparta.ordering.order.repository.OrderItemRepository;
 import com.sparta.ordering.order.repository.OrderRepository;
 import com.sparta.ordering.product.entity.Product;
@@ -127,6 +129,15 @@ public class OrderService {
         };
 
         return OrderDetailResponse.from(order);
+    }
+
+    @Transactional
+    public OrderStatusResponse updateStatus(UUID orderId, UUID ownerId, OrderStatus requestStatus) {
+        Order order = orderRepository.findByIdAndOwnerIdForUpdate(orderId, ownerId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
+        order.changeStatus(requestStatus);
+
+        return OrderStatusResponse.from(order);
     }
 
     private OrderCreateResponse saveWithRetry(OrderCreateRequest request,
