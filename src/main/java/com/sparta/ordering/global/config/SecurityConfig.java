@@ -8,11 +8,11 @@ import com.sparta.ordering.auth.security.customauthentication.CustomUserDetailSe
 import com.sparta.ordering.auth.security.customauthentication.JwtLogoutHandler;
 import com.sparta.ordering.auth.security.session.JwtSessionService;
 import com.sparta.ordering.global.security.JwtAuthenticationFilter;
+import com.sparta.ordering.global.security.SecurityRequestMatcher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -29,6 +29,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -41,17 +42,17 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    CustomAuthenticationFilter customAuthenticationFilter,
                                                    JwtAuthenticationFilter jwtAuthenticationFilter,
-                                                   JwtLogoutHandler jwtLogoutHandler) throws Exception {
+                                                   JwtLogoutHandler jwtLogoutHandler,
+                                                   SecurityRequestMatcher securityRequestMatcher) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/users/sign-up").permitAll()
-                        .requestMatchers("/api/auth/sign-in", "/api/auth/reset-password", "/api/auth/refresh").permitAll()
-                        .requestMatchers("/api/**").authenticated()
-                        .anyRequest().permitAll()
+                        .requestMatchers(securityRequestMatcher.getPublicMatchers()).permitAll()
+                        .requestMatchers(PathPatternRequestMatcher.withDefaults().matcher("/api/**")).authenticated()
+                        .anyRequest().authenticated()
                 )
                 .addFilterAt(customAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(jwtAuthenticationFilter, CustomAuthenticationFilter.class)
