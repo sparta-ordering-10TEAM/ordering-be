@@ -1,5 +1,6 @@
 package com.sparta.ordering.payment.controller;
 
+import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import com.sparta.ordering.global.security.SecurityUtil;
@@ -38,10 +39,10 @@ public class PaymentController {
     @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping("/payments")
     public ResponseEntity<GeneralResponse<PaymentResponse>> createPayment(
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody PaymentRequest request
     ) {
-        PaymentResponse response = paymentFacade.processPayment(userId, request);
+        PaymentResponse response = paymentFacade.processPayment(userDetails.getUserId(), request);
         return  GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 
@@ -49,18 +50,18 @@ public class PaymentController {
     @GetMapping("/payments/{paymentId}")
     public ResponseEntity<GeneralResponse<PaymentResponse>> getPayment(
             @PathVariable UUID paymentId,
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             Authentication authentication
     ) {
         Role role = SecurityUtil.getRole(authentication);
-        PaymentResponse response = paymentService.getPayment(paymentId, userId, role);
+        PaymentResponse response = paymentService.getPayment(paymentId, userDetails.getUserId(), role);
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 
     @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/payments")
     public ResponseEntity<GeneralResponse<Page<PaymentResponse>>> getPayments(
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return null;
@@ -70,7 +71,7 @@ public class PaymentController {
     @PostMapping("/payments/{paymentId}/cancel")
     public ResponseEntity<GeneralResponse<PaymentResponse>> cancelPayment(
             @PathVariable UUID paymentId,
-            @AuthenticationPrincipal UUID userId
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         return null;
     }
