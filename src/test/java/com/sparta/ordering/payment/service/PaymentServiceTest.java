@@ -20,9 +20,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -311,26 +316,93 @@ class PaymentServiceTest {
                     .isEqualTo(GeneralResponseCode.PAYMENT_NOT_FOUND);
         }
 
-        private Order createOrder(UUID customerId, UUID restaurantOwnerId) {
-            User customer = User.builder().build();
-            ReflectionTestUtils.setField(customer, "id", customerId);
+    }
 
-            User owner = User.builder().build();
-            ReflectionTestUtils.setField(owner, "id", restaurantOwnerId);
+    @Nested
+    @DisplayName("결제 목록 조회")
+    class GetPayments {
 
-            Restaurant restaurant = Restaurant.builder().user(owner).build();
+        @Test
+        @DisplayName("성공 - master/manager")
+        void test1() {
+            // given
+            UUID userId = UUID.randomUUID();
+            Pageable pageable = PageRequest.of(0, 10);
+            Payment payment = createPayment(UUID.randomUUID(), createOrder(UUID.randomUUID(), UUID.randomUUID()));
+            Page<Payment> page = new PageImpl<>(List.of(payment), pageable, 1);
 
-            return Order.create("orderNumber", restaurant, customer, "address", "message");
+            when(paymentRepository.findAllByDeletedAtIsNull(pageable)).thenReturn(page);
+
+            // when
+            Page<PaymentResponse> response = paymentService.getPayments(userId, Role.MANAGER, pageable);
+
+            // then
+            verify(paymentRepository).findAllByDeletedAtIsNull(pageable);
+            verify(paymentRepository, never()).findAllByOrder_Restaurant_User_IdAndDeletedAtIsNull(any(), any());
+            verify(paymentRepository, never()).findAllByOrder_User_IdAndDeletedAtIsNull(any(), any());
+            assertThat(response.getContent()).containsExactly(PaymentResponse.from(payment));
         }
 
-        private Payment createPayment(UUID paymentId, Order order) {
-            Payment payment = Payment.builder()
-                    .order(order)
-                    .amount(1000L)
-                    .paymentKey("paymentKey")
-                    .build();
-            ReflectionTestUtils.setField(payment, "id", paymentId);
-            return payment;
+        @Test
+        @DisplayName("성공 - owner")
+        void test2() {
+            // given
+            UUID ownerId = UUID.randomUUID();
+            Pageable pageable = PageRequest.of(0, 10);
+            Payment payment = createPayment(UUID.randomUUID(), createOrder(UUID.randomUUID(), ownerId));
+            Page<Payment> page = new PageImpl<>(List.of(payment), pageable, 1);
+
+            when(paymentRepository.findAllByOrder_Restaurant_User_IdAndDeletedAtIsNull(ownerId, pageable))
+                    .thenReturn(page);
+
+            // when
+            Page<PaymentResponse> response = paymentService.getPayments(ownerId, Role.OWNER, pageable);
+
+            // then
+            verify(paymentRepository).findAllByOrder_Restaurant_User_IdAndDeletedAtIsNull(ownerId, pageable);
+            assertThat(response.getContent()).containsExactly(PaymentResponse.from(payment));
         }
+
+        @Test
+        @DisplayName("성공 - customer")
+        void test3() {
+            // given
+            UUID customerId = UUID.randomUUID();
+            Pageable pageable = PageRequest.of(0, 10);
+            Payment payment = createPayment(UUID.randomUUID(), createOrder(customerId, UUID.randomUUID()));
+            Page<Payment> page = new PageImpl<>(List.of(payment), pageable, 1);
+
+            when(paymentRepository.findAllByOrder_User_IdAndDeletedAtIsNull(customerId, pageable))
+                    .thenReturn(page);
+
+            // when
+            Page<PaymentResponse> response = paymentService.getPayments(customerId, Role.CUSTOMER, pageable);
+
+            // then
+            verify(paymentRepository).findAllByOrder_User_IdAndDeletedAtIsNull(customerId, pageable);
+            assertThat(response.getContent()).containsExactly(PaymentResponse.from(payment));
+        }
+    }
+
+    private Order createOrder(UUID customerId, UUID restaurantOwnerId) {
+        User customer = User.builder().build();
+        ReflectionTestUtils.setField(customer, "id", customerId);
+
+        User owner = User.builder().build();
+        ReflectionTestUtils.setField(owner, "id", restaurantOwnerId);
+
+        Restaurant restaurant = Restaurant.builder().user(owner).build();
+
+        return Order.create("orderNumber", restaurant, customer, "address", "message");
+    }
+
+    private Payment createPayment(UUID paymentId, Order order) {
+        Payment payment = Payment.builder()
+                .order(order)
+                .amount(1000L)
+                .paymentKey("paymentKey")
+                .build();
+        ReflectionTestUtils.setField(payment, "id", paymentId);
+        return payment;
     }
 }
