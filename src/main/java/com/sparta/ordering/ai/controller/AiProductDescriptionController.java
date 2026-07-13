@@ -98,7 +98,7 @@ public class AiProductDescriptionController implements AiProductDescriptionApi {
     }
 
     @Override
-    @PreAuthorize("hasRole('OWNER')")
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/ai-descriptions/{aiDescriptionId}")
     public ResponseEntity<GeneralResponse<AiProductDescriptionResponse>> getAiProductDescription(
             @PathVariable UUID aiDescriptionId,
