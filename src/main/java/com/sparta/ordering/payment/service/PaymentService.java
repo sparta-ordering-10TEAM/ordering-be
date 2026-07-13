@@ -12,6 +12,8 @@ import com.sparta.ordering.payment.entity.PaymentStatus;
 import com.sparta.ordering.payment.repository.PaymentRepository;
 import com.sparta.ordering.user.entity.Role;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -92,5 +94,20 @@ public class PaymentService {
         }
 
         return PaymentResponse.from(payment);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PaymentResponse> getPayments(UUID userId, Role role, Pageable pageable) {
+        Page<Payment> payments;
+        if (PRIVILEGED_ROLES.contains(role)) { // master, manager 조회
+            payments = paymentRepository.findAllByDeletedAtIsNull(pageable);
+        } else if (role.equals(Role.OWNER)) { // owner는 자기 가게 주문인지 확인
+            payments = paymentRepository.findAllByOrder_Restaurant_User_IdAndDeletedAtIsNull(userId, pageable);
+        } else if (role.equals(Role.CUSTOMER)) { // customer는 자기 주문인지 확인
+            payments = paymentRepository.findAllByOrder_User_IdAndDeletedAtIsNull(userId, pageable);
+        } else {
+            throw new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND);
+        }
+        return payments.map(PaymentResponse::from);
     }
 }

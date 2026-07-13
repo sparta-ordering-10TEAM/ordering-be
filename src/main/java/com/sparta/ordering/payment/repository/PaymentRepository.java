@@ -1,6 +1,8 @@
 package com.sparta.ordering.payment.repository;
 
 import com.sparta.ordering.payment.entity.Payment;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
@@ -13,4 +15,10 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     Optional<Payment> findByIdAndOrder_User_IdAndDeletedAtIsNull(UUID paymentId, UUID userId);
 
     Optional<Payment> findByIdAndOrder_Restaurant_User_IdAndDeletedAtIsNull(UUID paymentId, UUID ownerId);
+
+    Page<Payment> findAllByDeletedAtIsNull(Pageable pageable);
+
+    Page<Payment> findAllByOrder_Restaurant_User_IdAndDeletedAtIsNull(UUID userId, Pageable pageable);
+
+    Page<Payment> findAllByOrder_User_IdAndDeletedAtIsNull(UUID userId, Pageable pageable);
 }

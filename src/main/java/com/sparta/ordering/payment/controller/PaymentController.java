@@ -62,9 +62,12 @@ public class PaymentController {
     @GetMapping("/payments")
     public ResponseEntity<GeneralResponse<Page<PaymentResponse>>> getPayments(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            Authentication authentication,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return null;
+        Role role = SecurityUtil.getRole(authentication);
+        Page<PaymentResponse> paymentResponse = paymentService.getPayments(userDetails.getUserId(), role, pageable);
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, paymentResponse);
     }
 
     @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
