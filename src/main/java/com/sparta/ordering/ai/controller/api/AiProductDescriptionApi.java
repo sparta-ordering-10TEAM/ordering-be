@@ -3,6 +3,7 @@ package com.sparta.ordering.ai.controller.api;
 import com.sparta.ordering.ai.dto.AiProductDescriptionResponse;
 import com.sparta.ordering.ai.dto.GenerateAiProductDescriptionRequest;
 import com.sparta.ordering.ai.dto.UpdateAiProductDescriptionRequest;
+import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -25,7 +26,7 @@ public interface AiProductDescriptionApi {
     )
     ResponseEntity<GeneralResponse<Page<AiProductDescriptionResponse>>> searchAiProductDescription(
             UUID productId,
-            UUID userId,
+            CustomUserDetails user,
             Pageable pageable,
             Authentication authentication
     );
@@ -37,7 +38,7 @@ public interface AiProductDescriptionApi {
     )
     ResponseEntity<GeneralResponse<AiProductDescriptionResponse>> getAiProductDescription(
             UUID aiDescriptionId,
-            UUID userId,
+            CustomUserDetails user,
             Authentication authentication
     );
 
@@ -48,7 +49,7 @@ public interface AiProductDescriptionApi {
     )
     ResponseEntity<GeneralResponse<UUID>> generateAiProductDescription(
             UUID productId,
-            UUID userId,
+            CustomUserDetails user,
             @Valid GenerateAiProductDescriptionRequest request
     );
 
@@ -59,7 +60,7 @@ public interface AiProductDescriptionApi {
     )
     ResponseEntity<GeneralResponse<Void>> updateAiProductDescription(
             UUID aiDescriptionId,
-            UUID userId,
+            CustomUserDetails user,
             @Valid UpdateAiProductDescriptionRequest request
     );
 
@@ -70,7 +71,7 @@ public interface AiProductDescriptionApi {
     )
     ResponseEntity<GeneralResponse<Void>> deleteAiProductDescription(
             UUID aiDescriptionId,
-            UUID userId,
+            CustomUserDetails user,
             Authentication authentication
     );
 }

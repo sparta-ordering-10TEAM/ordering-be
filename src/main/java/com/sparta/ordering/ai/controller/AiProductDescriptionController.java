@@ -7,6 +7,7 @@ import com.sparta.ordering.ai.dto.UpdateAiProductDescriptionRequest;
 import com.sparta.ordering.ai.facade.AiProductDescriptionFacade;
 import com.sparta.ordering.ai.service.AdminAiProductDescriptionService;
 import com.sparta.ordering.ai.service.AiProductDescriptionService;
+import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import com.sparta.ordering.user.entity.Role;
@@ -44,7 +45,7 @@ public class AiProductDescriptionController implements AiProductDescriptionApi {
     @GetMapping("/products/{productId}/ai-descriptions")
     public ResponseEntity<GeneralResponse<Page<AiProductDescriptionResponse>>> searchAiProductDescription(
             @PathVariable UUID productId,
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails user,
             @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
             Authentication authentication
     ) {
@@ -52,8 +53,8 @@ public class AiProductDescriptionController implements AiProductDescriptionApi {
 
         return GeneralResponse.toResponseEntity(
                 GeneralResponseCode.OK,
-                isAdmin ? adminAiProductDescriptionService.search(productId, userId, pageable)
-                        : aiProductDescriptionService.search(productId, userId, pageable)
+                isAdmin ? adminAiProductDescriptionService.search(productId, user.getUserId(), pageable)
+                        : aiProductDescriptionService.search(productId, user.getUserId(), pageable)
         );
     }
 
@@ -62,15 +63,15 @@ public class AiProductDescriptionController implements AiProductDescriptionApi {
     @GetMapping("/ai-descriptions/{aiDescriptionId}")
     public ResponseEntity<GeneralResponse<AiProductDescriptionResponse>> getAiProductDescription(
             @PathVariable UUID aiDescriptionId,
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails user,
             Authentication authentication
     ) {
         boolean isAdmin = isAdmin(authentication);
 
         return GeneralResponse.toResponseEntity(
                 GeneralResponseCode.OK,
-                isAdmin ? adminAiProductDescriptionService.getAiProductDescription(aiDescriptionId, userId)
-                        : aiProductDescriptionService.getAiProductDescription(aiDescriptionId, userId)
+                isAdmin ? adminAiProductDescriptionService.getAiProductDescription(aiDescriptionId, user.getUserId())
+                        : aiProductDescriptionService.getAiProductDescription(aiDescriptionId, user.getUserId())
         );
     }
 
@@ -79,11 +80,11 @@ public class AiProductDescriptionController implements AiProductDescriptionApi {
     @PostMapping("/products/{productId}/ai-descriptions")
     public ResponseEntity<GeneralResponse<UUID>> generateAiProductDescription(
             @PathVariable UUID productId,
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails user,
             @RequestBody @Valid GenerateAiProductDescriptionRequest request
     ) {
         // Facade로 위임하여 트랜잭션 경계 분리 호출
-        UUID aiDescriptionId = aiProductDescriptionFacade.generate(productId, userId, request.prompt());
+        UUID aiDescriptionId = aiProductDescriptionFacade.generate(productId, user.getUserId(), request.prompt());
 
         return GeneralResponse.toResponseEntity(
                 GeneralResponseCode.CREATED,
@@ -96,10 +97,10 @@ public class AiProductDescriptionController implements AiProductDescriptionApi {
     @PatchMapping("/ai-descriptions/{aiDescriptionId}")
     public ResponseEntity<GeneralResponse<Void>> updateAiProductDescription(
             @PathVariable UUID aiDescriptionId,
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails user,
             @RequestBody @Valid UpdateAiProductDescriptionRequest request
     ) {
-        aiProductDescriptionService.update(aiDescriptionId, userId, request.description());
+        aiProductDescriptionService.update(aiDescriptionId, user.getUserId(), request.description());
 
         return GeneralResponse.toResponseEntity(
                 GeneralResponseCode.OK,
@@ -112,15 +113,15 @@ public class AiProductDescriptionController implements AiProductDescriptionApi {
     @DeleteMapping("/ai-descriptions/{aiDescriptionId}")
     public ResponseEntity<GeneralResponse<Void>> deleteAiProductDescription(
             @PathVariable UUID aiDescriptionId,
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails user,
             Authentication authentication
     ) {
         boolean isAdmin = isAdmin(authentication);
 
         if (isAdmin) {
-            adminAiProductDescriptionService.delete(aiDescriptionId, userId);
+            adminAiProductDescriptionService.delete(aiDescriptionId, user.getUserId());
         } else {
-            aiProductDescriptionService.delete(aiDescriptionId, userId);
+            aiProductDescriptionService.delete(aiDescriptionId, user.getUserId());
         }
 
         return GeneralResponse.toResponseEntity(
