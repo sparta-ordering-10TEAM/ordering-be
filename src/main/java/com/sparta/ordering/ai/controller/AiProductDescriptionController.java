@@ -96,4 +96,17 @@ public class AiProductDescriptionController implements AiProductDescriptionApi {
                 null
         );
     }
+
+    @Override
+    @PreAuthorize("hasRole('OWNER')")
+    @GetMapping("/ai-descriptions/{aiDescriptionId}")
+    public ResponseEntity<GeneralResponse<AiProductDescriptionResponse>> getAiProductDescription(
+            @PathVariable UUID aiDescriptionId,
+            @AuthenticationPrincipal UUID userId
+    ) {
+        return GeneralResponse.toResponseEntity(
+                GeneralResponseCode.OK,
+                aiProductDescriptionService.getAiProductDescription(aiDescriptionId, userId)
+        );
+    }
 }

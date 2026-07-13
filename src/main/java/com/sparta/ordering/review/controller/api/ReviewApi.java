@@ -87,4 +87,14 @@ public interface ReviewApi {
             @AuthenticationPrincipal UUID userId,
             Authentication authentication
     );
+
+    @Operation(
+            summary = "리뷰 단건 조회",
+            description = "특정 리뷰의 상세 내용을 조회합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @GetMapping("/reviews/{reviewId}")
+    ResponseEntity<GeneralResponse<ReviewResponse>> getReview(
+            @PathVariable UUID reviewId
+    );
 }

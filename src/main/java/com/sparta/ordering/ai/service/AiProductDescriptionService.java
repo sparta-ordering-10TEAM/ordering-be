@@ -25,7 +25,7 @@ public class AiProductDescriptionService {
 
     @Transactional(readOnly = true)
     public Page<AiProductDescriptionResponse> search(UUID productId, UUID userId, Pageable pageable) {
-        if(!productRepository.existsByIdAndRestaurant_User_IdAndDeletedAtIsNull(productId, userId)){
+        if (!productRepository.existsByIdAndRestaurant_User_IdAndDeletedAtIsNull(productId, userId)) {
             throw new ApiException(GeneralResponseCode.PRODUCT_NOT_FOUND); // Product 소유권 검증
         }
 
@@ -33,7 +33,7 @@ public class AiProductDescriptionService {
                 .map(AiProductDescriptionResponse::fromEntity);
     }
 
-    public String generateDescription(String prompt){
+    public String generateDescription(String prompt) {
         return geminiClient.generateDescription(prompt);
     }
 
@@ -74,5 +74,14 @@ public class AiProductDescriptionService {
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.AI_PRODUCT_DESCRIPTION_NOT_FOUND));
 
         aiProductDescription.softDelete(userId);
+    }
+
+    @Transactional(readOnly = true)
+    public AiProductDescriptionResponse getAiProductDescription(UUID aiDescriptionId, UUID userId) {
+        AiProductDescription aiProductDescription = aiProductDescriptionRepository
+                .findByIdAndProduct_Restaurant_User_IdAndDeletedAtIsNull(aiDescriptionId, userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.AI_PRODUCT_DESCRIPTION_NOT_FOUND));
+
+        return AiProductDescriptionResponse.fromEntity(aiProductDescription);
     }
 }

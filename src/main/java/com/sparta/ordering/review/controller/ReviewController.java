@@ -107,4 +107,13 @@ public class ReviewController implements ReviewApi {
 
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, null);
     }
+
+    @Override
+    @GetMapping("/reviews/{reviewId}")
+    public ResponseEntity<GeneralResponse<ReviewResponse>> getReview(@PathVariable UUID reviewId) {
+        return GeneralResponse.toResponseEntity(
+                GeneralResponseCode.OK,
+                reviewService.getReview(reviewId)
+        );
+    }
 }

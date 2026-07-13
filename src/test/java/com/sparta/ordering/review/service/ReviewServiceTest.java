@@ -429,4 +429,53 @@ class ReviewServiceTest {
                     .hasFieldOrPropertyWithValue("responseCode", GeneralResponseCode.REVIEW_NOT_FOUND);
         }
     }
+
+    @Nested
+    @DisplayName("리뷰 단건 조회 (getReview)")
+    class GetReview {
+
+        @Test
+        @DisplayName("성공")
+        void success() {
+            // given
+            UUID reviewId = UUID.randomUUID();
+            User customer = mock(User.class);
+            when(customer.getId()).thenReturn(UUID.randomUUID());
+            Order order = mock(Order.class);
+            when(order.getId()).thenReturn(UUID.randomUUID());
+
+            Review review = Review.builder()
+                    .rating(4)
+                    .comment("맛있어요")
+                    .customer(customer)
+                    .order(order)
+                    .build();
+            ReflectionTestUtils.setField(review, "id", reviewId);
+
+            when(reviewRepository.findByIdAndDeletedAtIsNull(reviewId))
+                    .thenReturn(Optional.of(review));
+
+            // when
+            ReviewResponse response = reviewService.getReview(reviewId);
+
+            // then
+            assertThat(response.id()).isEqualTo(reviewId);
+            assertThat(response.comment()).isEqualTo("맛있어요");
+            assertThat(response.rating()).isEqualTo(4);
+        }
+
+        @Test
+        @DisplayName("실패 - 리뷰 없음")
+        void failReviewNotFound() {
+            // given
+            UUID reviewId = UUID.randomUUID();
+            when(reviewRepository.findByIdAndDeletedAtIsNull(reviewId))
+                    .thenReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> reviewService.getReview(reviewId))
+                    .isInstanceOf(ApiException.class)
+                    .hasFieldOrPropertyWithValue("responseCode", GeneralResponseCode.REVIEW_NOT_FOUND);
+        }
+    }
 }

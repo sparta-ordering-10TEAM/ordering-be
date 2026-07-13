@@ -628,4 +628,43 @@ class ReviewControllerIntegrationTest {
                     .andExpect(jsonPath("$.message").value("해당하는 리뷰를 찾을 수 없습니다."));
         }
     }
+
+    @Nested
+    @DisplayName("리뷰 단건 조회 (GET /api/reviews/{reviewId})")
+    class GetReview {
+
+        @Test
+        @DisplayName("성공 - 리뷰 단건 조회 성공")
+        void success() throws Exception {
+            // given
+            Review targetReview = Review.builder()
+                    .order(order)
+                    .customer(customer)
+                    .rating(4)
+                    .comment("정말 최고의 맛이네요!")
+                    .build();
+            targetReview = reviewRepository.save(targetReview);
+
+            // when & then
+            mockMvc.perform(get("/api/reviews/{reviewId}", targetReview.getId())
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.status").value(200))
+                    .andExpect(jsonPath("$.data.comment").value("정말 최고의 맛이네요!"))
+                    .andExpect(jsonPath("$.data.rating").value(4));
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 리뷰 상세 조회 요청 시 404 에러")
+        void failReviewNotFound() throws Exception {
+            // given
+            UUID nonExistentReviewId = UUID.randomUUID();
+
+            // when & then
+            mockMvc.perform(get("/api/reviews/{reviewId}", nonExistentReviewId)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.status").value(404));
+        }
+    }
 }

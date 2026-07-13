@@ -101,4 +101,11 @@ public class ReviewService {
         review.softDelete(userId);
         restaurantRepository.updateAverageRating(review.getOrder().getRestaurant().getId());
     }
+
+    @Transactional(readOnly = true)
+    public ReviewResponse getReview(UUID reviewId) {
+        Review review = reviewRepository.findByIdAndDeletedAtIsNull(reviewId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.REVIEW_NOT_FOUND));
+        return ReviewResponse.fromEntity(review);
+    }
 }

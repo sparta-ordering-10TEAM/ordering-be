@@ -59,4 +59,14 @@ public interface AiProductDescriptionApi {
             UUID aiDescriptionId,
             UUID userId
     );
+
+    @Operation(
+            summary = "AI 상품 설명 단건 조회",
+            description = "특정 AI 상품 설명의 상세 내용을 조회합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    ResponseEntity<GeneralResponse<AiProductDescriptionResponse>> getAiProductDescription(
+            UUID aiDescriptionId,
+            UUID userId
+    );
 }
