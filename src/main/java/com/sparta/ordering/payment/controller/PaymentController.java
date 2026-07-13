@@ -2,9 +2,12 @@ package com.sparta.ordering.payment.controller;
 
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
+import com.sparta.ordering.global.security.SecurityUtil;
 import com.sparta.ordering.payment.dto.PaymentRequest;
 import com.sparta.ordering.payment.dto.PaymentResponse;
 import com.sparta.ordering.payment.facade.PaymentFacade;
+import com.sparta.ordering.payment.service.PaymentService;
+import com.sparta.ordering.user.entity.Role;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -13,6 +16,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,6 +33,7 @@ import java.util.UUID;
 public class PaymentController {
 
     private final PaymentFacade paymentFacade;
+    private final PaymentService paymentService;
 
     @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping("/payments")
@@ -44,9 +49,12 @@ public class PaymentController {
     @GetMapping("/payments/{paymentId}")
     public ResponseEntity<GeneralResponse<PaymentResponse>> getPayment(
             @PathVariable UUID paymentId,
-            @AuthenticationPrincipal UUID userId
+            @AuthenticationPrincipal UUID userId,
+            Authentication authentication
     ) {
-        return null;
+        Role role = SecurityUtil.getRole(authentication);
+        PaymentResponse response = paymentService.getPayment(paymentId, userId, role);
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 
     @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")

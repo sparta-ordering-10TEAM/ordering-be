@@ -6,9 +6,12 @@ import com.sparta.ordering.order.entity.Order;
 import com.sparta.ordering.order.repository.OrderRepository;
 import com.sparta.ordering.payment.dto.PGResponse;
 import com.sparta.ordering.payment.dto.PaymentRequest;
+import com.sparta.ordering.payment.dto.PaymentResponse;
 import com.sparta.ordering.payment.entity.Payment;
 import com.sparta.ordering.payment.entity.PaymentStatus;
 import com.sparta.ordering.payment.repository.PaymentRepository;
+import com.sparta.ordering.restaurant.entity.Restaurant;
+import com.sparta.ordering.user.entity.Role;
 import com.sparta.ordering.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -206,6 +209,128 @@ class PaymentServiceTest {
                     .isInstanceOf(ApiException.class)
                     .extracting("responseCode")
                     .isEqualTo(GeneralResponseCode.PAYMENT_NOT_FOUND);
+        }
+    }
+    @Nested
+    @DisplayName("결제 단건 조회")
+    class GetPayment {
+
+        @Test
+        @DisplayName("성공 - master/manager")
+        void test1() {
+            // given
+            UUID userId = UUID.randomUUID();
+            UUID paymentId = UUID.randomUUID();
+            Order order = createOrder(UUID.randomUUID(), UUID.randomUUID());
+            Payment payment = createPayment(paymentId, order);
+
+            when(paymentRepository.findByIdAndDeletedAtIsNull(paymentId))
+                    .thenReturn(Optional.of(payment));
+
+            // when
+            PaymentResponse response = paymentService.getPayment(paymentId, userId, Role.MANAGER);
+
+            // then
+            verify(paymentRepository).findByIdAndDeletedAtIsNull(paymentId);
+            verify(paymentRepository, never()).findByIdAndOrder_Restaurant_User_IdAndDeletedAtIsNull(any(), any());
+            verify(paymentRepository, never()).findByIdAndOrder_User_IdAndDeletedAtIsNull(any(), any());
+            assertThat(response).isEqualTo(PaymentResponse.from(payment));
+        }
+
+        @Test
+        @DisplayName("성공 - owner")
+        void test2() {
+            // given
+            UUID ownerId = UUID.randomUUID();
+            UUID paymentId = UUID.randomUUID();
+            Order order = createOrder(UUID.randomUUID(), ownerId);
+            Payment payment = createPayment(paymentId, order);
+
+            when(paymentRepository.findByIdAndOrder_Restaurant_User_IdAndDeletedAtIsNull(paymentId, ownerId))
+                    .thenReturn(Optional.of(payment));
+
+            // when
+            PaymentResponse response = paymentService.getPayment(paymentId, ownerId, Role.OWNER);
+
+            // then
+            verify(paymentRepository).findByIdAndOrder_Restaurant_User_IdAndDeletedAtIsNull(paymentId, ownerId);
+            assertThat(response).isEqualTo(PaymentResponse.from(payment));
+        }
+
+        @Test
+        @DisplayName("성공 - customer")
+        void test3() {
+            // given
+            UUID customerId = UUID.randomUUID();
+            UUID paymentId = UUID.randomUUID();
+            Order order = createOrder(customerId, UUID.randomUUID());
+            Payment payment = createPayment(paymentId, order);
+
+            when(paymentRepository.findByIdAndOrder_User_IdAndDeletedAtIsNull(paymentId, customerId))
+                    .thenReturn(Optional.of(payment));
+
+            // when
+            PaymentResponse response = paymentService.getPayment(paymentId, customerId, Role.CUSTOMER);
+
+            // then
+            verify(paymentRepository).findByIdAndOrder_User_IdAndDeletedAtIsNull(paymentId, customerId);
+            assertThat(response).isEqualTo(PaymentResponse.from(payment));
+        }
+
+        @Test
+        @DisplayName("실패 - owner인데 자기 식당 아님")
+        void test4() {
+            // given
+            UUID ownerId = UUID.randomUUID();
+            UUID paymentId = UUID.randomUUID();
+
+            when(paymentRepository.findByIdAndOrder_Restaurant_User_IdAndDeletedAtIsNull(paymentId, ownerId))
+                    .thenReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> paymentService.getPayment(paymentId, ownerId, Role.OWNER))
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(GeneralResponseCode.PAYMENT_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("실패 - customer 자기 주문 아님")
+        void test5() {
+            // given
+            UUID customerId = UUID.randomUUID();
+            UUID paymentId = UUID.randomUUID();
+
+            when(paymentRepository.findByIdAndOrder_User_IdAndDeletedAtIsNull(paymentId, customerId))
+                    .thenReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> paymentService.getPayment(paymentId, customerId, Role.CUSTOMER))
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(GeneralResponseCode.PAYMENT_NOT_FOUND);
+        }
+
+        private Order createOrder(UUID customerId, UUID restaurantOwnerId) {
+            User customer = User.builder().build();
+            ReflectionTestUtils.setField(customer, "id", customerId);
+
+            User owner = User.builder().build();
+            ReflectionTestUtils.setField(owner, "id", restaurantOwnerId);
+
+            Restaurant restaurant = Restaurant.builder().user(owner).build();
+
+            return Order.create("orderNumber", restaurant, customer, "address", "message");
+        }
+
+        private Payment createPayment(UUID paymentId, Order order) {
+            Payment payment = Payment.builder()
+                    .order(order)
+                    .amount(1000L)
+                    .paymentKey("paymentKey")
+                    .build();
+            ReflectionTestUtils.setField(payment, "id", paymentId);
+            return payment;
         }
     }
 }
