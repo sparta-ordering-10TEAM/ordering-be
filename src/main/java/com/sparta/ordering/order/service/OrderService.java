@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -136,6 +137,15 @@ public class OrderService {
         Order order = orderRepository.findByIdAndOwnerIdForUpdate(orderId, ownerId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
         order.changeStatus(requestStatus);
+
+        return OrderStatusResponse.from(order);
+    }
+
+    @Transactional
+    public OrderStatusResponse cancelOrder(UUID orderId, UUID customerId) {
+        Order order = orderRepository.findByIdAndCustomerIdForUpdate(orderId, customerId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
+        order.cancel(Instant.now());
 
         return OrderStatusResponse.from(order);
     }
