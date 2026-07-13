@@ -1,5 +1,6 @@
 package com.sparta.ordering.user.service;
 
+import com.sparta.ordering.auth.security.session.JwtSessionService;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.user.dto.request.UserRoleUpdateRequest;
@@ -11,7 +12,6 @@ import com.sparta.ordering.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -40,6 +40,9 @@ class AdminServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private JwtSessionService jwtSessionService;
 
     @Test
     @DisplayName("잠금 상태 변경 성공")

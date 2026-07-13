@@ -1,5 +1,6 @@
 package com.sparta.ordering.global.config;
 
+import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.AuditorAware;
@@ -24,7 +25,8 @@ public class JpaAuditingConfig {
                 return Optional.empty();
             }
 
-            return Optional.of((UUID) authentication.getPrincipal());
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            return Optional.of(userDetails.getUserId());
         };
     }
 
