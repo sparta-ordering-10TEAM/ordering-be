@@ -65,6 +65,8 @@ class RestaurantControllerTest {
         Method method = RestaurantController.class.getDeclaredMethod(
                 "getRestaurants",
                 String.class,
+                UUID.class,
+                RestaurantStatus.class,
                 Pageable.class
         );
 
@@ -74,9 +76,10 @@ class RestaurantControllerTest {
         assertThat(getMapping.value()).containsExactly("/restaurants");
         assertThat(method.getAnnotation(PreAuthorize.class)).isNull();
 
-        RequestParam requestParam = parameterAnnotation(method, 0, RequestParam.class);
-        assertThat(requestParam.required()).isFalse();
-        parameterAnnotation(method, 1, PageableDefault.class);
+        assertThat(parameterAnnotation(method, 0, RequestParam.class).required()).isFalse();
+        assertThat(parameterAnnotation(method, 1, RequestParam.class).required()).isFalse();
+        assertThat(parameterAnnotation(method, 2, RequestParam.class).required()).isFalse();
+        parameterAnnotation(method, 3, PageableDefault.class);
     }
 
     @Test
@@ -187,13 +190,13 @@ class RestaurantControllerTest {
         RestaurantResponse restaurant = restaurantResponse(UUID.randomUUID());
         Page<RestaurantResponse> restaurants = new PageImpl<>(List.of(restaurant), pageable, 1);
 
-        when(restaurantService.getRestaurants(category, pageable)).thenReturn(restaurants);
+        when(restaurantService.getRestaurants(category, null, null, pageable)).thenReturn(restaurants);
 
         ResponseEntity<GeneralResponse<Page<RestaurantResponse>>> response =
-                restaurantController.getRestaurants(category, pageable);
+                restaurantController.getRestaurants(category, null, null, pageable);
 
         assertResponse(response, HttpStatus.OK, restaurants);
-        verify(restaurantService).getRestaurants(category, pageable);
+        verify(restaurantService).getRestaurants(category, null, null, pageable);
     }
 
     @Test
@@ -301,6 +304,7 @@ class RestaurantControllerTest {
     private static RestaurantCreateRequest restaurantCreateRequest() {
         return new RestaurantCreateRequest(
                 "한식",
+                UUID.fromString("00000000-0000-0000-0000-000000000002"),
                 "테스트 음식점",
                 "02-1234-5678",
                 "테스트 음식점 설명",
@@ -317,6 +321,7 @@ class RestaurantControllerTest {
 
     private static RestaurantUpdateRequest restaurantUpdateRequest() {
         return new RestaurantUpdateRequest(
+                null,
                 null,
                 "수정된 음식점",
                 null,
@@ -337,6 +342,8 @@ class RestaurantControllerTest {
                 restaurantId,
                 UUID.fromString("00000000-0000-0000-0000-000000000001"),
                 "한식",
+                UUID.fromString("00000000-0000-0000-0000-000000000002"),
+                "사직동",
                 "테스트 음식점",
                 "02-1234-5678",
                 "테스트 음식점 설명",
