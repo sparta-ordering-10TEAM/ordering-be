@@ -3,6 +3,8 @@ package com.sparta.ordering.user.entity;
 import com.sparta.ordering.global.entity.BaseUpdatableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -11,6 +13,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -32,6 +35,7 @@ public class User extends BaseUpdatableEntity {
     private String phoneNumber;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     private Role role;
 
@@ -44,9 +48,12 @@ public class User extends BaseUpdatableEntity {
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
+    @Column(nullable = true)
+    private Instant tempPasswordExpirationTime;
+
     @Builder
     public User(String userName, String nickName, String email, String phoneNumber, Role role, String password, boolean locked,
-                String profileImageUrl) {
+                String profileImageUrl, Instant tempPasswordExpirationTime) {
         this.userName = userName;
         this.nickName = nickName;
         this.email = email;
@@ -55,6 +62,7 @@ public class User extends BaseUpdatableEntity {
         this.password = password;
         this.locked = locked;
         this.profileImageUrl = profileImageUrl;
+        this.tempPasswordExpirationTime = tempPasswordExpirationTime;
     }
 
     public void updateProfile(String nickName, String phoneNumber, String profileImageUrl) {
@@ -76,12 +84,20 @@ public class User extends BaseUpdatableEntity {
     public void updatePassword(String password) {
         if (password != null && !password.isBlank()) {
             this.password = password;
+            this.tempPasswordExpirationTime = null;   // 정식으로 비밀번호 변경된 경우 다시 null로 설정
         }
     }
 
     public void updateRole(Role role) {
         if (role != null) {
             this.role = role;
+        }
+    }
+
+    public void setTempPassword(String password, Instant tempPasswordExpirationTime) {
+        if (password != null && !password.isBlank()) {
+            this.password = password;
+            this.tempPasswordExpirationTime = tempPasswordExpirationTime;
         }
     }
 
