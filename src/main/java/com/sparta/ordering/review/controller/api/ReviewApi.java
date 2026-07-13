@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,12 +31,12 @@ import java.util.UUID;
 public interface ReviewApi {
     @Operation(
             summary = "리뷰 생성",
-            description = "완료된 주문에 대해 평점과 리뷰 코멘트를 등록합니다.",
+            description = "완료된 주문에 대해 평점과 리뷰 코멘트를 등록합니다. 생성된 리뷰 ID가 반환됩니다.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping("/orders/{orderId}/reviews")
-    ResponseEntity<GeneralResponse<Void>> postReview(
+    ResponseEntity<GeneralResponse<UUID>> postReview(
             @PathVariable UUID orderId,
             @RequestBody @Valid PostReviewRequest request,
             @AuthenticationPrincipal UUID userId
@@ -64,16 +65,6 @@ public interface ReviewApi {
     );
 
     @Operation(
-            summary = "가게 평균 평점 조회",
-            description = "특정 식당의 누적 리뷰 평균 평점을 조회합니다.",
-            security = @SecurityRequirement(name = "bearerAuth")
-    )
-    @GetMapping("/restaurants/{restaurantId}/ratings")
-    ResponseEntity<GeneralResponse<Double>> getRestaurantAverageRating(
-            @PathVariable UUID restaurantId
-    );
-
-    @Operation(
             summary = "리뷰 수정",
             description = "자신이 작성한 리뷰의 평점과 내용을 수정합니다.",
             security = @SecurityRequirement(name = "bearerAuth")
@@ -87,12 +78,13 @@ public interface ReviewApi {
 
     @Operation(
             summary = "리뷰 삭제",
-            description = "자신이 작성한 리뷰를 삭제(Soft Delete)합니다.",
+            description = "자신이 작성한 리뷰를 삭제(Soft Delete)하거나, 관리자가 강제 삭제합니다.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @DeleteMapping("/reviews/{reviewId}")
     ResponseEntity<GeneralResponse<Void>> deleteReview(
             @PathVariable UUID reviewId,
-            @AuthenticationPrincipal UUID userId
+            @AuthenticationPrincipal UUID userId,
+            Authentication authentication
     );
 }

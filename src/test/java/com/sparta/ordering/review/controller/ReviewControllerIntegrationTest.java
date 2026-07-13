@@ -184,8 +184,8 @@ class ReviewControllerIntegrationTest {
                             .header("Authorization", "Bearer " + customerToken)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.status").value(200));
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.status").value(201));
 
             // 실제 DB에 데이터가 적재되어 유효한지 영속성 검증
             boolean reviewExists = reviewRepository.existsByOrder_IdAndCustomer_IdAndDeletedAtIsNull(order.getId(), customer.getId());
@@ -400,11 +400,11 @@ class ReviewControllerIntegrationTest {
     }
 
     @Nested
-    @DisplayName("가게 평균 평점 조회 (GET /api/restaurants/{restaurantId}/ratings)")
-    class GetRestaurantAverageRating {
+    @DisplayName("가게 상세 조회 - 평균 평점 검증 (GET /api/restaurants/{restaurantId})")
+    class GetRestaurantDetailRating {
 
         @Test
-        @DisplayName("성공 - 여러 리뷰 등록 시 평균 평점 계산 검증")
+        @DisplayName("성공 - 여러 리뷰 등록 시 가게 상세 조회 응답에 평균 평점 포함 확인")
         void success() throws Exception {
             // given
             // 1. 첫번째 완료 주문 리뷰 저장 (5점)
@@ -431,26 +431,15 @@ class ReviewControllerIntegrationTest {
                     .build();
             reviewRepository.save(review2);
 
+            // DB에서 수동 적재된 데이터를 바탕으로 평점을 명시적으로 계산/갱신
+            restaurantRepository.updateAverageRating(restaurant.getId());
+
             // when & then (평균 평점 계산 검증: (5 + 3) / 2 = 4.0)
-            mockMvc.perform(get("/api/restaurants/{restaurantId}/ratings", restaurant.getId())
+            mockMvc.perform(get("/api/restaurants/{restaurantId}", restaurant.getId())
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.status").value(200))
-                    .andExpect(jsonPath("$.data").value(4.0));
-        }
-
-        @Test
-        @DisplayName("실패 - 존재하지 않는 가게 ID로 평균 평점 조회 시 에러")
-        void failRestaurantNotFound() throws Exception {
-            // given
-            UUID nonExistentRestaurantId = UUID.randomUUID();
-
-            // when & then
-            mockMvc.perform(get("/api/restaurants/{restaurantId}/ratings", nonExistentRestaurantId)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.status").value(404))
-                    .andExpect(jsonPath("$.message").value("해당하는 가게를 찾을 수 없습니다."));
+                    .andExpect(jsonPath("$.data.averageRating").value(4.0));
         }
     }
 
@@ -609,8 +598,8 @@ class ReviewControllerIntegrationTest {
                     .build();
             reviewRepository.save(review);
 
-            // when & then
-            mockMvc.perform(delete("/api/admin/reviews/{reviewId}", review.getId())
+            // when & then (통합된 단일 DELETE /api/reviews/{reviewId} API에 MANAGER 권한 토큰 전달)
+            mockMvc.perform(delete("/api/reviews/{reviewId}", review.getId())
                             .header("Authorization", "Bearer " + managerToken)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk())
@@ -625,34 +614,13 @@ class ReviewControllerIntegrationTest {
         }
 
         @Test
-        @DisplayName("실패 - 일반 CUSTOMER 권한으로 어드민 삭제 API 호출 시 인가 에러")
-        void failForbidden() throws Exception {
-            // given
-            Review review = Review.builder()
-                    .order(order)
-                    .customer(customer)
-                    .rating(5)
-                    .comment("어드민 삭제 예정")
-                    .build();
-            reviewRepository.save(review);
-
-            // when & then (일반 CUSTOMER 토큰으로 ADMIN 전용 API 호출에 따른 403 차단 검증)
-            mockMvc.perform(delete("/api/admin/reviews/{reviewId}", review.getId())
-                            .header("Authorization", "Bearer " + customerToken)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isForbidden())
-                    .andExpect(jsonPath("$.status").value(403))
-                    .andExpect(jsonPath("$.message").value("인가되지 않은 요청입니다."));
-        }
-
-        @Test
         @DisplayName("실패 - 존재하지 않는 리뷰 강제 삭제 요청 시 에러")
         void failReviewNotFound() throws Exception {
             // given
             UUID nonExistentReviewId = UUID.randomUUID();
 
             // when & then
-            mockMvc.perform(delete("/api/admin/reviews/{reviewId}", nonExistentReviewId)
+            mockMvc.perform(delete("/api/reviews/{reviewId}", nonExistentReviewId)
                             .header("Authorization", "Bearer " + managerToken)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isNotFound())

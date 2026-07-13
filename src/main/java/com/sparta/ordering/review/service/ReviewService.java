@@ -27,7 +27,7 @@ public class ReviewService {
     private final ProductRepository productRepository;
 
     @Transactional
-    public void postReview(int rating, String comment, UUID orderId, UUID userId) {
+    public UUID postReview(int rating, String comment, UUID orderId, UUID userId) {
         if (rating < 1 || rating > 5) { // 메서드 재활용 시 rating 범위에 대한 안전 장치
             throw new ApiException(GeneralResponseCode.INVALID_REQUEST);
         }
@@ -51,6 +51,8 @@ public class ReviewService {
                 .build();
 
         reviewRepository.save(newReview);
+        restaurantRepository.updateAverageRating(order.getRestaurant().getId());
+        return newReview.getId();
     }
 
     @Transactional(readOnly = true)
@@ -84,17 +86,19 @@ public class ReviewService {
 
     @Transactional
     public void updateReview(Integer rating, String comment, UUID reviewId, UUID userId) {
-        Review review = reviewRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(reviewId, userId)
+        Review review = reviewRepository.findByIdAndCustomer_IdAndDeletedAtIsNullWithOrder(reviewId, userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.REVIEW_NOT_FOUND));
 
         review.updateReview(rating, comment);
+        restaurantRepository.updateAverageRating(review.getOrder().getRestaurant().getId());
     }
 
     @Transactional
     public void softDeleteReview(UUID reviewId, UUID userId) {
-        Review review = reviewRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(reviewId, userId)
+        Review review = reviewRepository.findByIdAndCustomer_IdAndDeletedAtIsNullWithOrder(reviewId, userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.REVIEW_NOT_FOUND));
 
         review.softDelete(userId);
+        restaurantRepository.updateAverageRating(review.getOrder().getRestaurant().getId());
     }
 }

@@ -6,7 +6,9 @@ import com.sparta.ordering.review.controller.api.ReviewApi;
 import com.sparta.ordering.review.dto.PostReviewRequest;
 import com.sparta.ordering.review.dto.ReviewResponse;
 import com.sparta.ordering.review.dto.UpdateReviewRequest;
+import com.sparta.ordering.review.service.AdminReviewService;
 import com.sparta.ordering.review.service.ReviewService;
+import com.sparta.ordering.user.entity.Role;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -15,6 +17,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,18 +35,19 @@ import java.util.UUID;
 @RequestMapping("/api")
 public class ReviewController implements ReviewApi {
     private final ReviewService reviewService;
+    private final AdminReviewService adminReviewService;
 
     @Override
     @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping("/orders/{orderId}/reviews")
-    public ResponseEntity<GeneralResponse<Void>> postReview(
+    public ResponseEntity<GeneralResponse<UUID>> postReview(
             @PathVariable UUID orderId,
             @RequestBody @Valid PostReviewRequest request,
             @AuthenticationPrincipal UUID userId
     ) {
-        reviewService.postReview(request.rating(), request.comment(), orderId, userId);
+        UUID reviewId = reviewService.postReview(request.rating(), request.comment(), orderId, userId);
 
-        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, null);
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.CREATED, reviewId);
     }
 
     @Override
@@ -71,17 +75,6 @@ public class ReviewController implements ReviewApi {
     }
 
     @Override
-    @GetMapping("/restaurants/{restaurantId}/ratings")
-    public ResponseEntity<GeneralResponse<Double>> getRestaurantAverageRating(
-            @PathVariable UUID restaurantId
-    ) {
-        return GeneralResponse.toResponseEntity(
-                GeneralResponseCode.OK,
-                reviewService.getRestaurantAverageRating(restaurantId)
-        );
-    }
-
-    @Override
     @PreAuthorize("hasRole('CUSTOMER')")
     @PatchMapping("/reviews/{reviewId}")
     public ResponseEntity<GeneralResponse<Void>> updateReview(
@@ -95,13 +88,22 @@ public class ReviewController implements ReviewApi {
     }
 
     @Override
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'MASTER')")
     @DeleteMapping("/reviews/{reviewId}")
     public ResponseEntity<GeneralResponse<Void>> deleteReview(
             @PathVariable UUID reviewId,
-            @AuthenticationPrincipal UUID userId
+            @AuthenticationPrincipal UUID userId,
+            Authentication authentication
     ) {
-        reviewService.softDeleteReview(reviewId, userId);
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .map(a -> a.getAuthority().replace("ROLE_", ""))
+                .map(Role::valueOf)
+                .anyMatch(Role::isAdmin);
+        if (isAdmin) {
+            adminReviewService.softDeleteReview(reviewId, userId);
+        } else {
+            reviewService.softDeleteReview(reviewId, userId);
+        }
 
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, null);
     }
