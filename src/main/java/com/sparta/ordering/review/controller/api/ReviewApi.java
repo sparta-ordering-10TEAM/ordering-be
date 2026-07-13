@@ -1,5 +1,6 @@
 package com.sparta.ordering.review.controller.api;
 
+import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import com.sparta.ordering.review.dto.PostReviewRequest;
 import com.sparta.ordering.review.dto.ReviewResponse;
@@ -39,7 +40,7 @@ public interface ReviewApi {
     ResponseEntity<GeneralResponse<UUID>> postReview(
             @PathVariable UUID orderId,
             @RequestBody @Valid PostReviewRequest request,
-            @AuthenticationPrincipal UUID userId
+            @AuthenticationPrincipal CustomUserDetails user
     );
 
     @Operation(
@@ -73,7 +74,7 @@ public interface ReviewApi {
     ResponseEntity<GeneralResponse<Void>> updateReview(
             @PathVariable UUID reviewId,
             @RequestBody @Valid UpdateReviewRequest request,
-            @AuthenticationPrincipal UUID userId
+            @AuthenticationPrincipal CustomUserDetails user
     );
 
     @Operation(
@@ -84,7 +85,7 @@ public interface ReviewApi {
     @DeleteMapping("/reviews/{reviewId}")
     ResponseEntity<GeneralResponse<Void>> deleteReview(
             @PathVariable UUID reviewId,
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails user,
             Authentication authentication
     );
 

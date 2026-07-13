@@ -1,7 +1,7 @@
 package com.sparta.ordering.review.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sparta.ordering.global.security.JwtTokenProvider;
+import com.sparta.ordering.auth.security.session.JwtSessionService;
 import com.sparta.ordering.order.entity.Order;
 import com.sparta.ordering.order.entity.OrderItem;
 import com.sparta.ordering.order.entity.OrderStatus;
@@ -74,9 +74,6 @@ class ReviewControllerIntegrationTest {
     @Autowired
     private ReviewRepository reviewRepository;
 
-    @Autowired
-    private JwtTokenProvider jwtTokenProvider;
-
     // 사전 정의할 테스트 데이터 셋
     private User customer;
     private User manager;
@@ -86,6 +83,8 @@ class ReviewControllerIntegrationTest {
 
     private String customerToken;
     private String managerToken;
+    @Autowired
+    private JwtSessionService jwtSessionService;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -165,8 +164,8 @@ class ReviewControllerIntegrationTest {
         orderRepository.save(order);
 
         // 테스트 계정별 JWT Access Token 생성
-        customerToken = jwtTokenProvider.generateAccessToken(customer.getId(), customer.getUserName(), customer.getRole());
-        managerToken = jwtTokenProvider.generateAccessToken(manager.getId(), manager.getUserName(), manager.getRole());
+        customerToken = jwtSessionService.createJwtSession(customer.getId()).getAccessToken();
+        managerToken = jwtSessionService.createJwtSession(manager.getId()).getAccessToken();
     }
 
     @Nested
@@ -324,7 +323,7 @@ class ReviewControllerIntegrationTest {
     class SearchRestaurantReviews {
 
         @Test
-        @DisplayName("성공 - 인증 없이 가게 리뷰 조회 가능 및 페이징 정상 작동")
+        @DisplayName("성공 - 가게 리뷰 조회 가능 및 페이징 정상 작동")
         void success() throws Exception {
             // given (가게 리뷰 등록)
             Review review = Review.builder()
@@ -337,7 +336,8 @@ class ReviewControllerIntegrationTest {
 
             // when & then
             mockMvc.perform(get("/api/restaurants/{restaurantId}/reviews", restaurant.getId())
-                            .contentType(MediaType.APPLICATION_JSON))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .header("Authorization", "Bearer " + customerToken))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.status").value(200))
                     .andExpect(jsonPath("$.data.content[0].comment").value("최고의 치킨!"))
@@ -352,7 +352,8 @@ class ReviewControllerIntegrationTest {
 
             // when & then
             mockMvc.perform(get("/api/restaurants/{restaurantId}/reviews", nonExistentRestaurantId)
-                            .contentType(MediaType.APPLICATION_JSON))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .header("Authorization", "Bearer " + customerToken))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.status").value(404))
                     .andExpect(jsonPath("$.message").value("해당하는 가게를 찾을 수 없습니다."));
@@ -364,7 +365,7 @@ class ReviewControllerIntegrationTest {
     class SearchProductReviews {
 
         @Test
-        @DisplayName("성공 - 인증 없이 상품 리뷰 조회 가능")
+        @DisplayName("성공 - Customer 권한으로 리뷰 조회 가능")
         void success() throws Exception {
             // given (리뷰 저장)
             Review review = Review.builder()
@@ -377,7 +378,8 @@ class ReviewControllerIntegrationTest {
 
             // when & then
             mockMvc.perform(get("/api/products/{productId}/reviews", product.getId())
-                            .contentType(MediaType.APPLICATION_JSON))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .header("Authorization", "Bearer " + customerToken))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.status").value(200))
                     .andExpect(jsonPath("$.data.content[0].comment").value("치킨 바삭해요"))
@@ -392,7 +394,8 @@ class ReviewControllerIntegrationTest {
 
             // when & then
             mockMvc.perform(get("/api/products/{productId}/reviews", nonExistentProductId)
-                            .contentType(MediaType.APPLICATION_JSON))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .header("Authorization", "Bearer " + customerToken))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.status").value(404))
                     .andExpect(jsonPath("$.message").value("해당하는 상품을 찾을 수 없습니다."));
@@ -436,7 +439,8 @@ class ReviewControllerIntegrationTest {
 
             // when & then (평균 평점 계산 검증: (5 + 3) / 2 = 4.0)
             mockMvc.perform(get("/api/restaurants/{restaurantId}", restaurant.getId())
-                            .contentType(MediaType.APPLICATION_JSON))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .header("Authorization", "Bearer " + customerToken))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.status").value(200))
                     .andExpect(jsonPath("$.data.averageRating").value(4.0));
@@ -520,7 +524,7 @@ class ReviewControllerIntegrationTest {
                     .password("password")
                     .build();
             userRepository.save(otherCustomer);
-            String otherToken = jwtTokenProvider.generateAccessToken(otherCustomer.getId(), otherCustomer.getUserName(), otherCustomer.getRole());
+            String otherToken = jwtSessionService.createJwtSession(otherCustomer.getId()).getAccessToken();
 
             UpdateReviewRequest request = new UpdateReviewRequest(4, "수정 시도");
 
@@ -583,7 +587,7 @@ class ReviewControllerIntegrationTest {
     }
 
     @Nested
-    @DisplayName("리뷰 삭제 - ADMIN (DELETE /api/admin/reviews/{reviewId})")
+    @DisplayName("리뷰 삭제 - ADMIN (DELETE /api/reviews/{reviewId})")
     class AdminDeleteReview {
 
         @Test
@@ -647,7 +651,8 @@ class ReviewControllerIntegrationTest {
 
             // when & then
             mockMvc.perform(get("/api/reviews/{reviewId}", targetReview.getId())
-                            .contentType(MediaType.APPLICATION_JSON))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .header("Authorization", "Bearer " + customerToken))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.status").value(200))
                     .andExpect(jsonPath("$.data.comment").value("정말 최고의 맛이네요!"))
@@ -662,7 +667,8 @@ class ReviewControllerIntegrationTest {
 
             // when & then
             mockMvc.perform(get("/api/reviews/{reviewId}", nonExistentReviewId)
-                            .contentType(MediaType.APPLICATION_JSON))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .header("Authorization", "Bearer " + customerToken))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.status").value(404));
         }

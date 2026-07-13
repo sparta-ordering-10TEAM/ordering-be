@@ -1,16 +1,18 @@
 package com.sparta.ordering.review.controller;
 
+import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
+import com.sparta.ordering.global.security.SecurityUtil;
 import com.sparta.ordering.review.controller.api.ReviewApi;
 import com.sparta.ordering.review.dto.PostReviewRequest;
 import com.sparta.ordering.review.dto.ReviewResponse;
 import com.sparta.ordering.review.dto.UpdateReviewRequest;
 import com.sparta.ordering.review.service.AdminReviewService;
 import com.sparta.ordering.review.service.ReviewService;
-import com.sparta.ordering.user.entity.Role;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -30,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
@@ -43,9 +46,9 @@ public class ReviewController implements ReviewApi {
     public ResponseEntity<GeneralResponse<UUID>> postReview(
             @PathVariable UUID orderId,
             @RequestBody @Valid PostReviewRequest request,
-            @AuthenticationPrincipal UUID userId
+            @AuthenticationPrincipal CustomUserDetails user
     ) {
-        UUID reviewId = reviewService.postReview(request.rating(), request.comment(), orderId, userId);
+        UUID reviewId = reviewService.postReview(request.rating(), request.comment(), orderId, user.getUserId());
 
         return GeneralResponse.toResponseEntity(GeneralResponseCode.CREATED, reviewId);
     }
@@ -80,9 +83,9 @@ public class ReviewController implements ReviewApi {
     public ResponseEntity<GeneralResponse<Void>> updateReview(
             @PathVariable UUID reviewId,
             @RequestBody @Valid UpdateReviewRequest request,
-            @AuthenticationPrincipal UUID userId
+            @AuthenticationPrincipal CustomUserDetails user
     ) {
-        reviewService.updateReview(request.rating(), request.comment(), reviewId, userId);
+        reviewService.updateReview(request.rating(), request.comment(), reviewId, user.getUserId());
 
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, null);
     }
@@ -92,17 +95,16 @@ public class ReviewController implements ReviewApi {
     @DeleteMapping("/reviews/{reviewId}")
     public ResponseEntity<GeneralResponse<Void>> deleteReview(
             @PathVariable UUID reviewId,
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails user,
             Authentication authentication
     ) {
-        boolean isAdmin = authentication.getAuthorities().stream()
-                .map(a -> a.getAuthority().replace("ROLE_", ""))
-                .map(Role::valueOf)
-                .anyMatch(Role::isAdmin);
+        boolean isAdmin = SecurityUtil.getRole(authentication).isAdmin();
+        log.info("UserId : {}, role : {}", user.getUserId(), SecurityUtil.getRole(authentication));
+
         if (isAdmin) {
-            adminReviewService.softDeleteReview(reviewId, userId);
+            adminReviewService.softDeleteReview(reviewId, user.getUserId());
         } else {
-            reviewService.softDeleteReview(reviewId, userId);
+            reviewService.softDeleteReview(reviewId, user.getUserId());
         }
 
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, null);
