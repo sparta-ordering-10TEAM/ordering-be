@@ -1,5 +1,6 @@
 package com.sparta.ordering.product.controller;
 
+import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import com.sparta.ordering.global.security.SecurityUtil;
@@ -62,11 +63,11 @@ public class ProductController implements ProductApi {
     @PreAuthorize("hasAnyRole('MASTER', 'MANAGER', 'OWNER')")
     public ResponseEntity<GeneralResponse<ProductResponse>> createProduct(
             @Valid @RequestBody ProductCreateRequest request,
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             Authentication authentication
     ) {
         Role role = SecurityUtil.getRole(authentication);
-        ProductResponse responseDto = productService.createProduct(request, userId, role);
+        ProductResponse responseDto = productService.createProduct(request, userDetails.getUserId(), role);
 
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, responseDto);
     }
@@ -77,11 +78,11 @@ public class ProductController implements ProductApi {
     public ResponseEntity<GeneralResponse<ProductResponse>> updateProduct(
             @PathVariable UUID productId,
             @Valid @RequestBody ProductUpdateRequest request,
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             Authentication authentication
     ) {
         Role role = SecurityUtil.getRole(authentication);
-        ProductResponse responseDto = productService.updateProduct(productId, request, userId, role);
+        ProductResponse responseDto = productService.updateProduct(productId, request, userDetails.getUserId(), role);
 
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, responseDto);
     }
@@ -91,12 +92,12 @@ public class ProductController implements ProductApi {
     @PreAuthorize("hasAnyRole('MASTER', 'MANAGER', 'OWNER')")
     public ResponseEntity<GeneralResponse<Void>> softDeleteProduct(
             @PathVariable UUID productId,
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             Authentication authentication
     ) {
         Role role = SecurityUtil.getRole(authentication);
 
-        productService.softDeleteProduct(productId, userId, role);
+        productService.softDeleteProduct(productId, userDetails.getUserId(), role);
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, null);
     }
 }
