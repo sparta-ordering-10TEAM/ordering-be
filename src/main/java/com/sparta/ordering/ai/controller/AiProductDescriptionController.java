@@ -52,17 +52,17 @@ public class AiProductDescriptionController implements AiProductDescriptionApi {
     @Override
     @PreAuthorize("hasRole('OWNER')")
     @PostMapping("/products/{productId}/ai-descriptions")
-    public ResponseEntity<GeneralResponse<Void>> generateAiProductDescription(
+    public ResponseEntity<GeneralResponse<UUID>> generateAiProductDescription(
             @PathVariable UUID productId,
             @AuthenticationPrincipal UUID userId,
             @RequestBody @Valid GenerateAiProductDescriptionRequest request
     ) {
         // Facade로 위임하여 트랜잭션 경계 분리 호출
-        aiProductDescriptionFacade.generate(productId, userId, request.prompt());
+        UUID aiDescriptionId = aiProductDescriptionFacade.generate(productId, userId, request.prompt());
 
         return GeneralResponse.toResponseEntity(
-                GeneralResponseCode.OK,
-                null
+                GeneralResponseCode.CREATED,
+                aiDescriptionId
         );
     }
 

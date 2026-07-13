@@ -30,10 +30,10 @@ public interface AiProductDescriptionApi {
 
     @Operation(
             summary = "AI 상품 설명 생성",
-            description = "입력된 프롬프트를 기반으로 AI 상품 설명을 자동 생성하고 저장합니다.",
+            description = "입력된 프롬프트를 기반으로 AI 상품 설명을 자동 생성하고 저장합니다. 생성된 AI 설명 ID가 반환됩니다.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    ResponseEntity<GeneralResponse<Void>> generateAiProductDescription(
+    ResponseEntity<GeneralResponse<UUID>> generateAiProductDescription(
             UUID productId,
             UUID userId,
             @Valid GenerateAiProductDescriptionRequest request
