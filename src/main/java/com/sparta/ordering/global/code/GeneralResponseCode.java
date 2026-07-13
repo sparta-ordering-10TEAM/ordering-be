@@ -29,7 +29,17 @@ public enum GeneralResponseCode implements ApiResponseCode {
     // Restaurant
     RESTAURANT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 가게를 찾을 수 없습니다."),
     RESTAURANT_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 카테고리를 찾을 수 없습니다."),
+    RESTAURANT_CATEGORY_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 카테고리입니다."),
+    RESTAURANT_CATEGORY_IN_USE(HttpStatus.BAD_REQUEST, "해당 카테고리를 사용 중인 가게가 있어 삭제할 수 없습니다."),
     RESTAURANT_STATUS_INVALID(HttpStatus.BAD_REQUEST, "영업 상태가 빈 값입니다."),
+
+    // Region
+    REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 지역을 찾을 수 없습니다."),
+    REGION_ALREADY_EXISTS(HttpStatus.CONFLICT, "같은 상위 지역에 이미 존재하는 지역입니다."),
+    REGION_DEPTH_EXCEEDED(HttpStatus.BAD_REQUEST, "지역은 최대 3단계까지만 등록할 수 있습니다."),
+    REGION_NOT_LEAF(HttpStatus.BAD_REQUEST, "가게는 최하위(동 단위) 지역에만 등록할 수 있습니다."),
+    REGION_HAS_CHILDREN(HttpStatus.BAD_REQUEST, "하위 지역이 있어 삭제할 수 없습니다."),
+    REGION_IN_USE(HttpStatus.BAD_REQUEST, "해당 지역에 등록된 가게가 있어 삭제할 수 없습니다."),
 
     // Product
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 상품을 찾을 수 없습니다."),
