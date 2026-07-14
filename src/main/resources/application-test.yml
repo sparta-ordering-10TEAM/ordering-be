@@ -3,6 +3,9 @@ spring:
     url: jdbc:postgresql://localhost:5432/ordering_test
     username: ordering_test
     password: ordering_test
+  scheduling:
+    enabled: false
+
 jwt:
   secret: local-dev-secret-key-that-is-at-least-256-bits-long-for-hs256
   access-token:
