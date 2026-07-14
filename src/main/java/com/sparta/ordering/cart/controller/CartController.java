@@ -1,6 +1,7 @@
 package com.sparta.ordering.cart.controller;
 
 import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
+import com.sparta.ordering.cart.controller.api.CartApi;
 import com.sparta.ordering.cart.dto.CartItemQuantityRequest;
 import com.sparta.ordering.cart.dto.CartItemRequest;
 import com.sparta.ordering.cart.dto.CartResponse;
@@ -26,10 +27,11 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
-public class CartController {
+public class CartController implements CartApi {
 
     private final CartService cartService;
 
+    @Override
     @GetMapping("/cart")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<GeneralResponse<CartResponse>> getMyCart(
@@ -39,6 +41,7 @@ public class CartController {
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 
+    @Override
     @PostMapping("/cart/items")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<GeneralResponse<CartResponse>> addItem(
@@ -49,6 +52,7 @@ public class CartController {
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 
+    @Override
     @PatchMapping("/cart/items/{cartItemId}")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<GeneralResponse<CartResponse>> updateItemQuantity(
@@ -60,6 +64,7 @@ public class CartController {
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 
+    @Override
     @DeleteMapping("/cart/items/{cartItemId}")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<GeneralResponse<CartResponse>> removeItem(
@@ -70,6 +75,7 @@ public class CartController {
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 
+    @Override
     @DeleteMapping("/cart")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<GeneralResponse<CartResponse>> clearCart(
@@ -78,6 +84,4 @@ public class CartController {
         CartResponse response = cartService.clearCart(userDetails.getUserId());
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
-
-
 }
