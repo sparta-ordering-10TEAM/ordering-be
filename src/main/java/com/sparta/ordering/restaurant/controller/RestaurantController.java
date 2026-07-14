@@ -3,6 +3,7 @@ package com.sparta.ordering.restaurant.controller;
 import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
+import com.sparta.ordering.restaurant.controller.api.RestaurantApi;
 import com.sparta.ordering.restaurant.dto.RestaurantCreateRequest;
 import com.sparta.ordering.restaurant.dto.RestaurantResponse;
 import com.sparta.ordering.restaurant.dto.RestaurantUpdateRequest;
@@ -30,10 +31,11 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
-public class RestaurantController {
+public class RestaurantController implements RestaurantApi {
 
     private final RestaurantService restaurantService;
 
+    @Override
     @GetMapping("/restaurants")
     public ResponseEntity<GeneralResponse<Page<RestaurantResponse>>> getRestaurants(
             @RequestParam(required = false) String category,
@@ -45,6 +47,7 @@ public class RestaurantController {
         );
     }
 
+    @Override
     @GetMapping("/restaurants/{restaurantId}")
     public ResponseEntity<GeneralResponse<RestaurantResponse>> getRestaurant(@PathVariable UUID restaurantId) {
         return GeneralResponse.toResponseEntity(
@@ -53,6 +56,7 @@ public class RestaurantController {
         );
     }
 
+    @Override
     @PreAuthorize("hasRole('OWNER')")
     @GetMapping("/users/me/restaurants")
     public ResponseEntity<GeneralResponse<Page<RestaurantResponse>>> getOwnerRestaurants(
@@ -65,6 +69,7 @@ public class RestaurantController {
         );
     }
 
+    @Override
     @PreAuthorize("hasRole('OWNER')")
     @PostMapping("/restaurants")
     public ResponseEntity<GeneralResponse<RestaurantResponse>> createRestaurant(
@@ -77,6 +82,7 @@ public class RestaurantController {
         );
     }
 
+    @Override
     @PreAuthorize("hasAnyRole('MANAGER', 'MASTER', 'OWNER')")
     @PatchMapping("/restaurants/{restaurantId}")
     public ResponseEntity<GeneralResponse<RestaurantResponse>> updateRestaurant(
@@ -90,6 +96,7 @@ public class RestaurantController {
         );
     }
 
+    @Override
     @PreAuthorize("hasAnyRole('MANAGER', 'MASTER', 'OWNER')")
     @DeleteMapping("/restaurants/{restaurantId}")
     public ResponseEntity<GeneralResponse<Void>> deleteRestaurant(
