@@ -30,7 +30,7 @@ public class PaymentService {
     @Transactional
     public Payment preparePayment(UUID userId, PaymentRequest request) {
         // 1 . 주문 조회 & 소유자 검증
-        Order order = orderRepository.findByIdAndUser_IdAndDeletedAtIsNull(request.orderId(), userId)
+        Order order = orderRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(request.orderId(), userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
 
         // 가격 검증
@@ -85,7 +85,7 @@ public class PaymentService {
             payment = paymentRepository.findByIdAndOrder_Restaurant_User_IdAndDeletedAtIsNull(paymentId, userId)
                     .orElseThrow(() -> new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND));
         } else if (role.equals(Role.CUSTOMER)) { // customer는 자기 주문인지 확인
-            payment = paymentRepository.findByIdAndOrder_User_IdAndDeletedAtIsNull(paymentId, userId)
+            payment = paymentRepository.findByIdAndOrder_Customer_IdAndDeletedAtIsNull(paymentId, userId)
                     .orElseThrow(() -> new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND));
         } else {
             throw new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND);
