@@ -72,6 +72,8 @@ public class RegionService {
             throw new ApiException(GeneralResponseCode.REGION_ALREADY_EXISTS);
         }
 
+        region.rename(request.name());
+
         return RegionResponse.from(region);
     }
 
