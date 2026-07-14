@@ -11,7 +11,6 @@ import com.sparta.ordering.restaurant.repository.RegionRepository;
 import com.sparta.ordering.user.entity.Role;
 import com.sparta.ordering.user.entity.User;
 import com.sparta.ordering.user.repository.UserRepository;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,7 +37,7 @@ public class RegionService {
     }
 
     @Transactional
-    public RegionResponse createRegion(@Valid RegionCreateRequest request, UUID userId) {
+    public RegionResponse createRegion(RegionCreateRequest request, UUID userId) {
 
         validateAdminPermission(userId);
 
@@ -60,7 +59,7 @@ public class RegionService {
     }
 
     @Transactional
-    public RegionResponse updateRegion(UUID regionId, @Valid RegionUpdateRequest request, UUID userId) {
+    public RegionResponse updateRegion(UUID regionId, RegionUpdateRequest request, UUID userId) {
         validateAdminPermission(userId);
 
         Region region = getActiveRegion(regionId);
