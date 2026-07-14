@@ -15,6 +15,8 @@ public enum GeneralResponseCode implements ApiResponseCode {
 
     // Order
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 주문을 찾을 수 없습니다."),
+    ORDER_STATUS_TRANSITION_INVALID(HttpStatus.CONFLICT, "현재 주문 상태에서는 요청한 상태로 변경할 수 없습니다."),
+    ORDER_CANCELLATION_TIME_EXPIRED(HttpStatus.CONFLICT, "주문 생성 후 5분이 지나 취소할 수 없습니다."),
     ORDER_TOTAL_PRICE_INVALID(HttpStatus.BAD_REQUEST, "주문 금액이 올바르지 않습니다."),
     ORDER_NUMBER_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "주문번호 생성에 실패했습니다."),
     ORDER_ONLY_CUSTOMER(HttpStatus.FORBIDDEN, "고객만 주문할 수 있습니다."),

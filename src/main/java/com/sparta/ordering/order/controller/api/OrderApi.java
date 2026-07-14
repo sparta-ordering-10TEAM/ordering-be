@@ -5,6 +5,8 @@ import com.sparta.ordering.order.dto.OrderCreateRequest;
 import com.sparta.ordering.order.dto.OrderCreateResponse;
 import com.sparta.ordering.order.dto.OrderDetailResponse;
 import com.sparta.ordering.order.dto.OrderListResponse;
+import com.sparta.ordering.order.dto.OrderStatusResponse;
+import com.sparta.ordering.order.dto.OrderStatusUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -60,6 +63,31 @@ public interface OrderApi {
     @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/orders/{orderId}")
     ResponseEntity<GeneralResponse<OrderDetailResponse>> getOrder(
+            @PathVariable UUID orderId,
+            @AuthenticationPrincipal UUID userId
+    );
+
+    @Operation(
+            summary = "주문 상태 변경",
+            description = "가게 사장이 주문 처리 상태를 변경합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PreAuthorize("hasRole('OWNER')")
+    @PatchMapping("/orders/{orderId}/status")
+    ResponseEntity<GeneralResponse<OrderStatusResponse>> updateOrderStatus(
+            @PathVariable UUID orderId,
+            @AuthenticationPrincipal UUID userId,
+            @RequestBody @Valid OrderStatusUpdateRequest request
+    );
+
+    @Operation(
+            summary = "주문 취소",
+            description = "고객이 주문 생성 후 5분 이내에 주문을 취소합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @PatchMapping("/orders/{orderId}/cancel")
+    ResponseEntity<GeneralResponse<OrderStatusResponse>> cancelOrder(
             @PathVariable UUID orderId,
             @AuthenticationPrincipal UUID userId
     );
