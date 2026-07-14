@@ -98,10 +98,8 @@ public class RestaurantService {
             UUID userId
     ) {
         Restaurant restaurant = getActiveRestaurant(restaurantId);
-        User requestUser = userRepository.findByIdAndDeletedAtIsNull(userId)
-                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
-        validateModificationPermission(requestUser, restaurant);
+        validateModificationPermission(userId, restaurant);
 
         RestaurantCategory category = (request.category() != null) ? getActiveCategory(request.category()): null;
         Region region = (request.regionId() != null) ? getActiveLeafRegion(request.regionId()): null;
@@ -126,12 +124,21 @@ public class RestaurantService {
     }
 
     @Transactional
+    public RestaurantResponse changeRestaurantStatus(UUID restaurantId, RestaurantStatus status, UUID userId) {
+        Restaurant restaurant = getActiveRestaurant(restaurantId);
+
+        validateModificationPermission(userId, restaurant);
+
+        restaurant.changeStatus(status);
+
+        return RestaurantResponse.from(restaurant);
+    }
+
+    @Transactional
     public void deleteRestaurant(UUID restaurantId, UUID userId) {
         Restaurant restaurant = getActiveRestaurant(restaurantId);
-        User requestUser = userRepository.findByIdAndDeletedAtIsNull(userId)
-                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
-        validateModificationPermission(requestUser, restaurant);
+        validateModificationPermission(userId, restaurant);
 
         restaurant.softDelete(userId);
     }
@@ -156,11 +163,14 @@ public class RestaurantService {
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.RESTAURANT_NOT_FOUND));
     }
 
-    private void validateModificationPermission(User user, Restaurant restaurant) {
-        if (user.getRole().isAdmin()) {
+    private void validateModificationPermission(UUID userId, Restaurant restaurant) {
+        User requestUser = userRepository.findByIdAndDeletedAtIsNull(userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
+
+        if (requestUser.getRole().isAdmin()) {
             return;
         }
-        if (user.getRole() == Role.OWNER && restaurant.isOwnedBy(user)) {
+        if (requestUser.getRole() == Role.OWNER && restaurant.isOwnedBy(requestUser)) {
             return;
         }
         throw new ApiException(AuthResponseCode.FORBIDDEN);
