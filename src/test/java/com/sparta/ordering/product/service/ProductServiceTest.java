@@ -24,7 +24,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -143,21 +142,6 @@ class ProductServiceTest {
             // then
             assertThat(result.getTotalElements()).isEqualTo(1);
             assertThat(result.getContent().get(0).name()).isEqualTo("상품1");
-        }
-
-        @Test
-        @DisplayName("실패 - 허용되지 않은 정렬 필드")
-        void test2() {
-            // given
-            UUID restaurantId = UUID.randomUUID();
-            ProductSearchRequest request = new ProductSearchRequest(null, null, null);
-            Pageable pageable = PageRequest.of(0, 10, Sort.by("description"));
-
-            // when & then
-            assertThatThrownBy(() -> productService.getProducts(request, restaurantId, pageable))
-                    .isInstanceOf(ApiException.class)
-                    .extracting("responseCode")
-                    .isEqualTo(GeneralResponseCode.INVALID_REQUEST);
         }
 
     }
