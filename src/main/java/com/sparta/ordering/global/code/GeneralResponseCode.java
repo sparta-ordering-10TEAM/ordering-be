@@ -41,6 +41,10 @@ public enum GeneralResponseCode implements ApiResponseCode {
     RESTAURANT_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 카테고리를 찾을 수 없습니다."),
     RESTAURANT_STATUS_INVALID(HttpStatus.BAD_REQUEST, "영업 상태가 빈 값입니다."),
 
+    RESTAURANT_CATEGORY_CODE_INVALID(HttpStatus.BAD_REQUEST, "카테고리 코드가 빈 값입니다."),
+    RESTAURANT_CATEGORY_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 카테고리입니다."),
+    RESTAURANT_CATEGORY_IN_USE(HttpStatus.CONFLICT, "이 카테고리는 현재 사용 중입니다."),
+
     // Region
     REGION_ALREADY_EXISTS(HttpStatus.CONFLICT, "같은 계층에 이미 존재하는 지역입니다."),
     REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 지역을 찾을 수 없습니다."),
