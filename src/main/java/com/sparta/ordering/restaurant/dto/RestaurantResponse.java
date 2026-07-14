@@ -21,7 +21,9 @@ public record RestaurantResponse(
         RestaurantStatus status,
         BigDecimal latitude,
         BigDecimal longitude,
-        BigDecimal deliveryRadiusKm
+        BigDecimal deliveryRadiusKm,
+        Double averageRating,
+        Long reviewCount
 ) {
     public static RestaurantResponse from(Restaurant restaurant) {
         return new RestaurantResponse(
@@ -39,7 +41,9 @@ public record RestaurantResponse(
                 restaurant.getStatus(),
                 restaurant.getLatitude(),
                 restaurant.getLongitude(),
-                restaurant.getDeliveryRadiusKm()
+                restaurant.getDeliveryRadiusKm(),
+                restaurant.getAverageRating(),
+                restaurant.getReviewCount()
         );
     }
 }
