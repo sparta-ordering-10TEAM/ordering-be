@@ -5,7 +5,9 @@ spring:
     password: ordering_test
   scheduling:
     enabled: false
-
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
 jwt:
   secret: local-dev-secret-key-that-is-at-least-256-bits-long-for-hs256
   access-token:
