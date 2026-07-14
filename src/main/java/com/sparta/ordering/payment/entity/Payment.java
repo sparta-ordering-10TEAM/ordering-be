@@ -55,6 +55,9 @@ public class Payment extends BaseUpdatableEntity {
     @Column(name = "cancel_reason")
     private String cancelReason;
 
+    @Column(name = "canceled_at")
+    private Instant canceledAt;
+
     @Column(name = "fail_reason")
     private String failReason;
 
@@ -91,4 +94,11 @@ public class Payment extends BaseUpdatableEntity {
         this.failReason = reason;
         this.uniqueVersion = this.getId();
     }
+
+    public void cancel(String reason, Instant canceledAt) {
+        this.status = PaymentStatus.CANCELED;
+        this.cancelReason = reason;
+        this.canceledAt = canceledAt;
+    }
+
 }

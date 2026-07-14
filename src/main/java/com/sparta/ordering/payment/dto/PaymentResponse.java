@@ -14,6 +14,7 @@ public record PaymentResponse(
         Long amount,
         PaymentStatus status,
         String cancelReason,
+        Instant canceledAt,
         Instant approvedAt,
         String cardCompany
 ) {
@@ -25,6 +26,7 @@ public record PaymentResponse(
                 payment.getAmount(),
                 payment.getStatus(),
                 payment.getCancelReason(),
+                payment.getCanceledAt(),
                 payment.getApprovedAt(),
                 payment.getCardCompany()
         );

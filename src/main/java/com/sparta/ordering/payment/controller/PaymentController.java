@@ -4,6 +4,7 @@ import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import com.sparta.ordering.global.security.SecurityUtil;
+import com.sparta.ordering.payment.dto.PaymentCancelRequest;
 import com.sparta.ordering.payment.dto.PaymentRequest;
 import com.sparta.ordering.payment.dto.PaymentResponse;
 import com.sparta.ordering.payment.facade.PaymentFacade;
@@ -74,8 +75,12 @@ public class PaymentController {
     @PostMapping("/payments/{paymentId}/cancel")
     public ResponseEntity<GeneralResponse<PaymentResponse>> cancelPayment(
             @PathVariable UUID paymentId,
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            Authentication authentication,
+            @Valid @RequestBody PaymentCancelRequest request
     ) {
-        return null;
+        Role role = SecurityUtil.getRole(authentication);
+        PaymentResponse response = paymentFacade.processCancelPayment(paymentId, userDetails.getUserId(), role, request.reason());
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 }
