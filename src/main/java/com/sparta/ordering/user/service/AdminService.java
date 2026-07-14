@@ -80,4 +80,20 @@ public class AdminService {
         return userRepository.findAll(spec, pageable)
                 .map(AdminUserDetailResponse::from);
     }
+
+    public UserResponse approveOwner(UUID userId, UUID approverId) {
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
+
+        if (user.getRole() != Role.CUSTOMER) {
+            throw new ApiException(GeneralResponseCode.INVALID_ROLE_CHANGE);
+        }
+
+        user.approveAsOwner(approverId);
+
+        // 권한 변경 시 해당 사용자 자동 로그아웃
+        jwtSessionService.invalidateToken(userId);
+
+        return UserResponse.from(user);
+    }
 }

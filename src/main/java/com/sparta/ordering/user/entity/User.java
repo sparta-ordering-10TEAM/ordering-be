@@ -51,6 +51,9 @@ public class User extends BaseUpdatableEntity {
     @Column(nullable = true)
     private Instant tempPasswordExpirationTime;
 
+    @Column(name = "approved_owner_by", nullable = true)
+    private UUID approvedOwnerBy;
+
     @Builder
     public User(String userName, String nickName, String email, String phoneNumber, Role role, String password, boolean locked,
                 String profileImageUrl, Instant tempPasswordExpirationTime) {
@@ -99,6 +102,11 @@ public class User extends BaseUpdatableEntity {
             this.password = password;
             this.tempPasswordExpirationTime = tempPasswordExpirationTime;
         }
+    }
+
+    public void approveAsOwner(UUID approvedBy) {
+        this.role = Role.OWNER;
+        this.approvedOwnerBy = approvedBy;
     }
 
     @Override

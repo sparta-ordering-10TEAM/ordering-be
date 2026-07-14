@@ -56,6 +56,7 @@ public enum GeneralResponseCode implements ApiResponseCode {
     ALREADY_EXISTS_USER(HttpStatus.CONFLICT, "사용자가 이미 존재합니다."),
     ALREADY_EXISTS_NICKNAME(HttpStatus.CONFLICT, "이미 존재하는 닉네임 입니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 사용자를 찾을 수 없습니다."),
+    INVALID_ROLE_CHANGE(HttpStatus.BAD_REQUEST, "권한 변경이 불가능한 상태입니다."),
 
     // AI Product Description
     AI_PRODUCT_DESCRIPTION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 AI 상품 설명을 찾을 수 없습니다."),

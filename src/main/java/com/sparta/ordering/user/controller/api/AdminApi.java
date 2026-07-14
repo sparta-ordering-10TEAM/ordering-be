@@ -74,6 +74,27 @@ public interface AdminApi {
     ResponseEntity<GeneralResponse<UserResponse>> updateRole(@PathVariable UUID userId,
                                                              @RequestBody UserRoleUpdateRequest userRoleUpdateRequest);
 
+    @Operation(summary = "가게주인 승인", description = "[MANAGER, MASTER 기능] CUSTOMER 상태의 회원을 OWNER로 승인합니다.")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "가게주인 승인 성공",
+                    content = @Content(schema = @Schema(implementation = UserResponse.class))),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "가게주인 승인 실패 (CUSTOMER가 아닌 회원)",
+                    content = @Content(schema = @Schema(implementation = GeneralResponseCode.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "가게주인 승인 실패 (사용자 없음)",
+                    content = @Content(schema = @Schema(implementation = GeneralResponseCode.class))
+            )
+    })
+    @PatchMapping
+    ResponseEntity<GeneralResponse<UserResponse>> approveOwner(@PathVariable UUID userId,
+                                                               UUID approveOwner);
+
     @Operation(summary = "회원 상세 조회", description = "관리자가 회원을 상세 조회합니다.")
     @ApiResponses({
             @ApiResponse(
