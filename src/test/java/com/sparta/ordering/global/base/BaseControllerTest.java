@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sparta.ordering.auth.security.customauthentication.CustomUserDetailService;
 import com.sparta.ordering.auth.security.session.JwtSessionService;
 import com.sparta.ordering.user.repository.UserRepository;
+import com.sparta.ordering.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
@@ -27,6 +28,9 @@ public abstract class BaseControllerTest {
     // JwtAuthenticationFilter(@Component)의 의존성
     @MockitoBean
     protected JwtSessionService jwtSessionService;
+
+    @MockitoBean
+    protected UserService userService;
 
     @MockitoBean
     protected UserRepository userRepository;
