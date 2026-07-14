@@ -85,7 +85,7 @@ public class PaymentService {
             payment = paymentRepository.findByIdAndOrder_Restaurant_User_IdAndDeletedAtIsNull(paymentId, userId)
                     .orElseThrow(() -> new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND));
         } else if (role.equals(Role.CUSTOMER)) { // customer는 자기 주문인지 확인
-            payment = paymentRepository.findByIdAndOrder_User_IdAndDeletedAtIsNull(paymentId, userId)
+            payment = paymentRepository.findByIdAndOrder_Customer_IdAndDeletedAtIsNull(paymentId, userId)
                     .orElseThrow(() -> new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND));
         } else {
             throw new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND);
