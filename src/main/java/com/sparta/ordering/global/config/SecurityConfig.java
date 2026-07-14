@@ -48,6 +48,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/users/sign-up").permitAll()
                         .requestMatchers("/api/auth/sign-in", "/api/auth/reset-password", "/api/auth/refresh").permitAll()
+                        .requestMatchers( // Swagger
+                                "/api/api-docs",
+                                "/api/swagger-ui/*",
+                                "/api/api-spec/swagger-config",
+                                "/api/api-spec"
+                        ).permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )
@@ -71,7 +77,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http,
-                                                       CustomUserDetailService customUserDetailService) throws Exception{
+                                                       CustomUserDetailService customUserDetailService) throws Exception {
 
         AuthenticationManagerBuilder authenticationManagerBuilder =
                 http.getSharedObject(AuthenticationManagerBuilder.class);
@@ -115,8 +121,8 @@ public class SecurityConfig {
     @Bean
     public RoleHierarchy roleHierarchy() {
         return RoleHierarchyImpl.fromHierarchy(
-                "ROLE_MASTER > ROLE_MANAGER > ROLE_OWNER\n"+
-                "ROLE_MASTER > ROLE_MANAGER > ROLE_CUSTOMER");
+                "ROLE_MASTER > ROLE_MANAGER > ROLE_OWNER\n" +
+                        "ROLE_MASTER > ROLE_MANAGER > ROLE_CUSTOMER");
     }
 
 }

@@ -50,7 +50,10 @@ public enum GeneralResponseCode implements ApiResponseCode {
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 사용자를 찾을 수 없습니다."),
 
     // AI Product Description
-    AI_PRODUCT_DESCRIPTION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 AI 상품 설명을 찾을 수 없습니다.");
+    AI_PRODUCT_DESCRIPTION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 AI 상품 설명을 찾을 수 없습니다."),
+    
+    // AI Prompt Log
+    AI_PROMPT_LOG_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 AI 프롬프트 로그를 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String message;
