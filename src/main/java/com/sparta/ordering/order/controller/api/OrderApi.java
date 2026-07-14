@@ -1,5 +1,6 @@
 package com.sparta.ordering.order.controller.api;
 
+import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import com.sparta.ordering.order.dto.OrderCreateRequest;
 import com.sparta.ordering.order.dto.OrderCreateResponse;
@@ -40,7 +41,7 @@ public interface OrderApi {
     @PostMapping("/orders")
     ResponseEntity<GeneralResponse<OrderCreateResponse>> createOrder(
             @RequestBody @Valid OrderCreateRequest request,
-            @AuthenticationPrincipal UUID userId
+            @AuthenticationPrincipal CustomUserDetails userDetails
     );
 
     @Operation(
@@ -51,7 +52,7 @@ public interface OrderApi {
     @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/orders")
     ResponseEntity<GeneralResponse<Page<OrderListResponse>>> getOrders(
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     );
 
@@ -64,7 +65,7 @@ public interface OrderApi {
     @GetMapping("/orders/{orderId}")
     ResponseEntity<GeneralResponse<OrderDetailResponse>> getOrder(
             @PathVariable UUID orderId,
-            @AuthenticationPrincipal UUID userId
+            @AuthenticationPrincipal CustomUserDetails userDetails
     );
 
     @Operation(
@@ -76,7 +77,7 @@ public interface OrderApi {
     @PatchMapping("/orders/{orderId}/status")
     ResponseEntity<GeneralResponse<OrderStatusResponse>> updateOrderStatus(
             @PathVariable UUID orderId,
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody @Valid OrderStatusUpdateRequest request
     );
 
@@ -89,6 +90,6 @@ public interface OrderApi {
     @PatchMapping("/orders/{orderId}/cancel")
     ResponseEntity<GeneralResponse<OrderStatusResponse>> cancelOrder(
             @PathVariable UUID orderId,
-            @AuthenticationPrincipal UUID userId
+            @AuthenticationPrincipal CustomUserDetails userDetails
     );
 }
