@@ -33,7 +33,6 @@ import java.util.UUID;
 public class JwtSessionService {
     private final JwtSessionRepository jwtSessionRepository;
     private final JwtProperties jwtProperties;
-    private final Clock clock;
     private SecretKey signingKey;
     private final UserRepository userRepository;
     private final JwtBlackList jwtBlackList;
@@ -42,7 +41,7 @@ public class JwtSessionService {
         ACCESS, REFRESH
     }
 
-    public class JwtClaimNames {
+    public static class JwtClaimNames {
         public static final String TYPE = "type";
         public static final String USER_ID = "userId";
         public static final String NAME = "name";
@@ -52,7 +51,7 @@ public class JwtSessionService {
 
     @Transactional
     public JwtSession createJwtSession(UUID userId) {
-        Instant now = clock.instant();
+        Instant now = Instant.now();
         Instant accessTokenExpirationTime = now
                 .plusSeconds(jwtProperties.getAccessToken().getValiditySeconds());
         Instant refreshTokenExpirationTime = now
@@ -178,7 +177,7 @@ public class JwtSessionService {
             throw new ApiException(AuthResponseCode.ACCOUNT_LOCKED);
         }
 
-        Instant now = clock.instant();
+        Instant now = Instant.now();
         Instant newAccessTokenExpirationTime = now
                 .plusSeconds(jwtProperties.getAccessToken().getValiditySeconds());
         Instant newRefreshTokenExpirationTime = now
@@ -193,7 +192,8 @@ public class JwtSessionService {
 
     //토큰 생성
     private String createTokenWithClaims(User user, Instant expirationTime, TokenType tokenType) {
-        Instant now = clock.instant();
+        Instant now = Instant.now();
+        ;
 
         JwtBuilder builder = Jwts.builder()
                 .header()
@@ -214,7 +214,7 @@ public class JwtSessionService {
     }
 
     //서명키 생성
-    private SecretKey getSignKey() {
+    public SecretKey getSignKey() {
         if (this.signingKey == null) {
             byte[] keyBytes = jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8);
             signingKey = Keys.hmacShaKeyFor(keyBytes);
