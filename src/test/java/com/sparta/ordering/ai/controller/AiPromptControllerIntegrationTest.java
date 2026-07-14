@@ -142,6 +142,22 @@ class AiPromptControllerIntegrationTest {
                             .content(requestBody))
                     .andExpect(status().isForbidden());
         }
+
+        @Test
+        @DisplayName("실패 - 프롬프트 글자 수가 50자를 초과하는 경우 400 Bad Request 발생")
+        void failPromptSizeExceeded() throws Exception {
+            // given
+            String requestBody = "{\"prompt\": \"" + "A".repeat(51) + "\"}";
+
+            // when & then
+            mockMvc.perform(post("/api/products/generate-description")
+                            .header("Authorization", "Bearer " + ownerToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.status").value(400))
+                    .andExpect(jsonPath("$.message").value("유효하지 않은 요청입니다."));
+        }
     }
 
     @Nested

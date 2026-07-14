@@ -76,7 +76,7 @@ class AiPromptServiceTest {
     class GenerateProductDescription {
 
         @Test
-        @DisplayName("성공")
+        @DisplayName("성공 - 50자 이하인 경우 생략 처리되지 않음")
         void success() {
             // given
             String prompt = "치킨 설명 생성";
@@ -90,6 +90,47 @@ class AiPromptServiceTest {
 
             // then
             assertThat(result).isEqualTo(generatedText);
+            verify(geminiClient, times(1)).generateDescription(contains(prompt));
+            verify(aiPromptLogRepository, times(1)).save(any(AiPromptLog.class));
+        }
+
+        @Test
+        @DisplayName("성공 - 50자를 초과하는 경우 47자 자른 뒤 ...을 붙여 50자로 만듦")
+        void successWithTruncate() {
+            // given
+            String prompt = "치킨 설명 생성";
+            String generatedText = "A".repeat(60);
+            when(geminiClient.generateDescription(anyString())).thenReturn(generatedText);
+
+            AiPromptFacade facade = new AiPromptFacade(geminiClient, aiPromptService);
+
+            // when
+            String result = facade.generateProductDescription(prompt);
+
+            // then
+            String expected = "A".repeat(47) + "...";
+            assertThat(result).isEqualTo(expected);
+            assertThat(result.length()).isEqualTo(50);
+            verify(geminiClient, times(1)).generateDescription(contains(prompt));
+            verify(aiPromptLogRepository, times(1)).save(any(AiPromptLog.class));
+        }
+
+        @Test
+        @DisplayName("성공 - 정확히 50자인 경우 생략 처리되지 않음")
+        void successWithExactLimit() {
+            // given
+            String prompt = "치킨 설명 생성";
+            String generatedText = "A".repeat(50);
+            when(geminiClient.generateDescription(anyString())).thenReturn(generatedText);
+
+            AiPromptFacade facade = new AiPromptFacade(geminiClient, aiPromptService);
+
+            // when
+            String result = facade.generateProductDescription(prompt);
+
+            // then
+            assertThat(result).isEqualTo(generatedText);
+            assertThat(result.length()).isEqualTo(50);
             verify(geminiClient, times(1)).generateDescription(contains(prompt));
             verify(aiPromptLogRepository, times(1)).save(any(AiPromptLog.class));
         }
