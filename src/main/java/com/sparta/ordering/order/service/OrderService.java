@@ -6,8 +6,10 @@ import com.sparta.ordering.order.dto.OrderCreateRequest;
 import com.sparta.ordering.order.dto.OrderCreateResponse;
 import com.sparta.ordering.order.dto.OrderDetailResponse;
 import com.sparta.ordering.order.dto.OrderListResponse;
+import com.sparta.ordering.order.dto.OrderStatusResponse;
 import com.sparta.ordering.order.entity.Order;
 import com.sparta.ordering.order.entity.OrderItem;
+import com.sparta.ordering.order.entity.OrderStatus;
 import com.sparta.ordering.order.repository.OrderItemRepository;
 import com.sparta.ordering.order.repository.OrderRepository;
 import com.sparta.ordering.product.entity.Product;
@@ -26,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -52,10 +55,10 @@ public class OrderService {
     @Transactional
     public OrderCreateResponse create(OrderCreateRequest request, UUID userId) {
 
-        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+        User customer = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
-        if (user.getRole() != Role.CUSTOMER) {
+        if (customer.getRole() != Role.CUSTOMER) {
             throw new ApiException(GeneralResponseCode.ORDER_ONLY_CUSTOMER);
         }
 
@@ -75,7 +78,7 @@ public class OrderService {
         Map<UUID, Product> productMap = products.stream()
                 .collect(Collectors.toMap(Product::getId, product -> product));
 
-        return saveWithRetry(request, user, restaurant, productMap);
+        return saveWithRetry(request, customer, restaurant, productMap);
     }
 
     @Transactional(readOnly = true)
@@ -85,7 +88,7 @@ public class OrderService {
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
         Page<Order> orders = switch (user.getRole()) {
-            case CUSTOMER -> orderRepository.findAllByUserIdWithRestaurant(userId, pageable);
+            case CUSTOMER -> orderRepository.findAllByCustomerIdWithRestaurant(userId, pageable);
             case OWNER -> orderRepository.findAllByOwnerIdWithRestaurant(userId, pageable);
             case MANAGER, MASTER -> orderRepository.findAllWithRestaurant(pageable);
         };
@@ -116,7 +119,7 @@ public class OrderService {
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
         Order order = switch (user.getRole()) {
-            case CUSTOMER -> orderRepository.findByUserIdWithRestaurantAndOrderItems(userId, orderId)
+            case CUSTOMER -> orderRepository.findByCustomerIdWithRestaurantAndOrderItems(userId, orderId)
                     .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
 
             case OWNER -> orderRepository.findByOwnerIdWithRestaurantAndOrderItems(userId, orderId)
@@ -127,6 +130,24 @@ public class OrderService {
         };
 
         return OrderDetailResponse.from(order);
+    }
+
+    @Transactional
+    public OrderStatusResponse updateStatus(UUID orderId, UUID ownerId, OrderStatus requestStatus) {
+        Order order = orderRepository.findByIdAndOwnerIdForUpdate(orderId, ownerId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
+        order.changeStatus(requestStatus);
+
+        return OrderStatusResponse.from(order);
+    }
+
+    @Transactional
+    public OrderStatusResponse cancelOrder(UUID orderId, UUID customerId) {
+        Order order = orderRepository.findByIdAndCustomerIdForUpdate(orderId, customerId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
+        order.cancel(Instant.now());
+
+        return OrderStatusResponse.from(order);
     }
 
     private OrderCreateResponse saveWithRetry(OrderCreateRequest request,

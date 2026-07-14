@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,6 +31,7 @@ public class AdminController implements AdminApi {
     private final AdminService adminService;
 
     @Override
+    @PreAuthorize("hasAnyRole('MANAGER','MASTER')")
     @PatchMapping("/{userId}/lock")
     public ResponseEntity<GeneralResponse<UUID>> lock(@PathVariable UUID userId) {
         UUID result = adminService.lock(userId);
@@ -37,6 +39,7 @@ public class AdminController implements AdminApi {
     }
 
     @Override
+    @PreAuthorize("hasAnyRole('MANAGER','MASTER')")
     @PatchMapping("/{userId}/unlock")
     public ResponseEntity<GeneralResponse<UUID>> unlock(@PathVariable UUID userId) {
         UUID result = adminService.unlock(userId);
@@ -44,6 +47,7 @@ public class AdminController implements AdminApi {
     }
 
     @Override
+    @PreAuthorize("hasRole('MASTER')")
     @PatchMapping("/{userId}/role")
     public ResponseEntity<GeneralResponse<UserResponse>> updateRole(@PathVariable UUID userId, @RequestBody UserRoleUpdateRequest userRoleUpdateRequest) {
         UserResponse result = adminService.updateRole(userId, userRoleUpdateRequest);
@@ -51,6 +55,7 @@ public class AdminController implements AdminApi {
     }
 
     @Override
+    @PreAuthorize("hasAnyRole('MANAGER','MASTER')")
     @GetMapping("{userId}")
     public ResponseEntity<GeneralResponse<AdminUserDetailResponse>> findUserDetail(@PathVariable UUID userId) {
         AdminUserDetailResponse result = adminService.findUserDetail(userId);
@@ -58,6 +63,7 @@ public class AdminController implements AdminApi {
     }
 
     @Override
+    @PreAuthorize("hasAnyRole('MANAGER','MASTER')")
     @GetMapping
     public ResponseEntity<GeneralResponse<Page<AdminUserDetailResponse>>> searchUsers(
             @RequestParam(required = false) String userName,

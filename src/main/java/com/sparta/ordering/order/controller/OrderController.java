@@ -7,6 +7,8 @@ import com.sparta.ordering.order.dto.OrderCreateRequest;
 import com.sparta.ordering.order.dto.OrderCreateResponse;
 import com.sparta.ordering.order.dto.OrderDetailResponse;
 import com.sparta.ordering.order.dto.OrderListResponse;
+import com.sparta.ordering.order.dto.OrderStatusResponse;
+import com.sparta.ordering.order.dto.OrderStatusUpdateRequest;
 import com.sparta.ordering.order.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -59,5 +62,24 @@ public class OrderController implements OrderApi {
     public ResponseEntity<GeneralResponse<OrderDetailResponse>> getOrder(@AuthenticationPrincipal UUID userId,
                                                                          @PathVariable UUID orderId) {
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, orderService.getOrder(userId, orderId));
+    }
+
+    @Override
+    @PreAuthorize("hasRole('OWNER')")
+    @PatchMapping("/orders/{orderId}/status")
+    public ResponseEntity<GeneralResponse<OrderStatusResponse>> updateOrderStatus(@PathVariable UUID orderId,
+                                                                                  @AuthenticationPrincipal UUID userId,
+                                                                                  @Valid @RequestBody OrderStatusUpdateRequest request) {
+        OrderStatusResponse response = orderService.updateStatus(orderId, userId, request.status());
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
+    }
+
+    @Override
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @PatchMapping("/orders/{orderId}/cancel")
+    public ResponseEntity<GeneralResponse<OrderStatusResponse>> cancelOrder(@PathVariable UUID orderId,
+                                                                            @AuthenticationPrincipal UUID userId) {
+        OrderStatusResponse response = orderService.cancelOrder(orderId, userId);
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 }

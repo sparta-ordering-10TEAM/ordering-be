@@ -76,11 +76,11 @@ class ReviewServiceTest {
             when(restaurant.getId()).thenReturn(UUID.randomUUID());
 
             Order order = mock(Order.class);
-            when(order.getUser()).thenReturn(customer);
+            when(order.getCustomer()).thenReturn(customer);
             when(order.getOrderStatus()).thenReturn(OrderStatus.COMPLETED);
             when(order.getRestaurant()).thenReturn(restaurant);
 
-            when(orderRepository.findByIdAndUser_IdAndDeletedAtIsNull(orderId, userId))
+            when(orderRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(orderId, userId))
                     .thenReturn(Optional.of(order));
             when(reviewRepository.existsByOrder_IdAndCustomer_IdAndDeletedAtIsNull(orderId, userId))
                     .thenReturn(false);
@@ -124,7 +124,7 @@ class ReviewServiceTest {
             UUID orderId = UUID.randomUUID();
             UUID userId = UUID.randomUUID();
 
-            when(orderRepository.findByIdAndUser_IdAndDeletedAtIsNull(orderId, userId))
+            when(orderRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(orderId, userId))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> reviewService.postReview(4, "댓글", orderId, userId))
@@ -143,7 +143,7 @@ class ReviewServiceTest {
             Order order = mock(Order.class);
             when(order.getOrderStatus()).thenReturn(OrderStatus.REQUESTED); // 완료 아님
 
-            when(orderRepository.findByIdAndUser_IdAndDeletedAtIsNull(orderId, userId))
+            when(orderRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(orderId, userId))
                     .thenReturn(Optional.of(order));
 
             assertThatThrownBy(() -> reviewService.postReview(4, "댓글", orderId, userId))
@@ -162,7 +162,7 @@ class ReviewServiceTest {
             Order order = mock(Order.class);
             when(order.getOrderStatus()).thenReturn(OrderStatus.COMPLETED);
 
-            when(orderRepository.findByIdAndUser_IdAndDeletedAtIsNull(orderId, userId))
+            when(orderRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(orderId, userId))
                     .thenReturn(Optional.of(order));
             when(reviewRepository.existsByOrder_IdAndCustomer_IdAndDeletedAtIsNull(orderId, userId))
                     .thenReturn(true);
