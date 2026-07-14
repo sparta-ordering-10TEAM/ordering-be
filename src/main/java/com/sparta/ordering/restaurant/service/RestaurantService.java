@@ -23,7 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -34,8 +33,6 @@ public class RestaurantService {
     private final RestaurantCategoryRepository restaurantCategoryRepository;
     private final RegionRepository regionRepository;
     private final UserRepository userRepository;
-
-    private static final Set<Role> PRIVILEGED_ROLES = Set.of(Role.MANAGER, Role.MASTER);
 
     @Transactional(readOnly = true)
     public Page<RestaurantResponse> getRestaurants(String category, Pageable pageable) {
@@ -160,7 +157,7 @@ public class RestaurantService {
     }
 
     private void validateModificationPermission(User user, Restaurant restaurant) {
-        if (PRIVILEGED_ROLES.contains(user.getRole())) {
+        if (user.getRole().isAdmin()) {
             return;
         }
         if (user.getRole() == Role.OWNER && restaurant.isOwnedBy(user)) {
