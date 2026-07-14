@@ -1,14 +1,16 @@
 package com.sparta.ordering.auth.security.customauthentication;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sparta.ordering.auth.dto.SignInResponse;
 import com.sparta.ordering.auth.security.session.JwtSession;
 import com.sparta.ordering.auth.security.session.JwtSessionService;
+import com.sparta.ordering.global.code.GeneralResponseCode;
+import com.sparta.ordering.global.dto.GeneralResponse;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -41,18 +43,22 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         // 토큰 발급
         JwtSession jwtSession = jwtSessionService.createJwtSession(userId);
 
-        response.setStatus(HttpStatus.OK.value());
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-
-        // response body에 액세스 토큰, response header에 리프레시 토큰 삽입
         Cookie refreshTokenCookie = new Cookie("refresh_token", jwtSession.getRefreshToken());
-        refreshTokenCookie.setHttpOnly(true);   // 리프레시 토큰은 서버에서만 사용하므로 자바 스크립트에서 접근 x -> true로 서렂ㅇ
-        refreshTokenCookie.setSecure(false); // https가 아닌 http 환경에서 개발, 배포하므로 false
+        refreshTokenCookie.setHttpOnly(true);
+        refreshTokenCookie.setSecure(false);
         refreshTokenCookie.setPath("/");
-        refreshTokenCookie.setMaxAge(30 * 24 * 60 * 60); // 쿠키 만료 시간 30일
+        refreshTokenCookie.setMaxAge(30 * 24 * 60 * 60);
         refreshTokenCookie.setAttribute("SameSite", "Strict");
         response.addCookie(refreshTokenCookie);
-        objectMapper.writeValue(response.getWriter(), jwtSession.getAccessToken());
+
+        GeneralResponse<SignInResponse> body = GeneralResponse.<SignInResponse>builder()
+                .status(GeneralResponseCode.OK.getStatus().value())
+                .data(new SignInResponse(jwtSession.getAccessToken()))
+                .build();
+
+        response.setStatus(GeneralResponseCode.OK.getStatus().value());
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        objectMapper.writeValue(response.getWriter(), body);
     }
 }
