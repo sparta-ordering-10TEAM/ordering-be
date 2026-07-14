@@ -113,12 +113,10 @@ public class PaymentService {
         Payment refreshed = paymentRepository.findByIdAndDeletedAtIsNullWithOrder(paymentId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND));
 
-        // 관리자(MANAGER/MASTER)는 5분 제한 없이 취소 가능
-        if (role != Role.MANAGER && role != Role.MASTER) {
-            Instant cancelDeadline = refreshed.getOrder().getCreatedAt().plus(CANCEL_TIME_LIMIT);
-            if (Instant.now().isAfter(cancelDeadline)) {
-                throw new ApiException(GeneralResponseCode.ORDER_CANCELLATION_TIME_EXPIRED);
-            }
+        // Order와 동일하게 역할 관계없이 5분 제한 적용
+        Instant cancelDeadline = refreshed.getOrder().getCreatedAt().plus(CANCEL_TIME_LIMIT);
+        if (Instant.now().isAfter(cancelDeadline)) {
+            throw new ApiException(GeneralResponseCode.ORDER_CANCELLATION_TIME_EXPIRED);
         }
 
         return refreshed;
