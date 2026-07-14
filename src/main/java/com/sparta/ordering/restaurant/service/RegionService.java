@@ -73,7 +73,7 @@ public class RegionService {
             throw new ApiException(GeneralResponseCode.REGION_ALREADY_EXISTS);
         }
 
-        return null;
+        return RegionResponse.from(region);
     }
 
     @Transactional
