@@ -35,8 +35,14 @@ public class RestaurantService {
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public Page<RestaurantResponse> getRestaurants(String category, Pageable pageable) {
-        return findRestaurants(category, pageable)
+    public Page<RestaurantResponse> getRestaurants(
+            String category,
+            UUID regionId,
+            RestaurantStatus status,
+            Pageable pageable) {
+        UUID categoryId = StringUtils.hasText(category) ? getActiveCategory(category).getId() : null;
+
+        return restaurantRepository.findWithFilters(categoryId, regionId, status, pageable)
                 .map(RestaurantResponse::from);
     }
 
@@ -101,8 +107,8 @@ public class RestaurantService {
 
         validateModificationPermission(userId, restaurant);
 
-        RestaurantCategory category = (request.category() != null) ? getActiveCategory(request.category()): null;
-        Region region = (request.regionId() != null) ? getActiveLeafRegion(request.regionId()): null;
+        RestaurantCategory category = (request.category() != null) ? getActiveCategory(request.category()) : null;
+        Region region = (request.regionId() != null) ? getActiveLeafRegion(request.regionId()) : null;
 
         restaurant.update(
                 category,

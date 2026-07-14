@@ -8,6 +8,7 @@ import com.sparta.ordering.restaurant.dto.RestaurantCreateRequest;
 import com.sparta.ordering.restaurant.dto.RestaurantResponse;
 import com.sparta.ordering.restaurant.dto.RestaurantStatusUpdateRequest;
 import com.sparta.ordering.restaurant.dto.RestaurantUpdateRequest;
+import com.sparta.ordering.restaurant.entity.RestaurantStatus;
 import com.sparta.ordering.restaurant.service.RestaurantService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -40,11 +41,13 @@ public class RestaurantController implements RestaurantApi {
     @GetMapping("/restaurants")
     public ResponseEntity<GeneralResponse<Page<RestaurantResponse>>> getRestaurants(
             @RequestParam(required = false) String category,
+            @RequestParam(required = false) UUID regionId,
+            @RequestParam(required = false) RestaurantStatus status,
             @PageableDefault Pageable pageable
     ) {
         return GeneralResponse.toResponseEntity(
                 GeneralResponseCode.OK,
-                restaurantService.getRestaurants(category, pageable)
+                restaurantService.getRestaurants(category, regionId, status, pageable)
         );
     }
 
