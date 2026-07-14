@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 public enum AuthResponseCode implements ApiResponseCode {
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증되지 않은 요청입니다."),
 
+    LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 올바르지 않습니다."),
+
     FORBIDDEN(HttpStatus.FORBIDDEN, "인가되지 않은 요청입니다."),
 
     JWT_SESSION_NOT_FOUND(HttpStatus.UNAUTHORIZED, "토큰이 만료되거나 로그아웃되었습니다."),
