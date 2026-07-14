@@ -6,9 +6,11 @@ import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.restaurant.dto.RestaurantCreateRequest;
 import com.sparta.ordering.restaurant.dto.RestaurantResponse;
 import com.sparta.ordering.restaurant.dto.RestaurantUpdateRequest;
+import com.sparta.ordering.restaurant.entity.Region;
 import com.sparta.ordering.restaurant.entity.Restaurant;
 import com.sparta.ordering.restaurant.entity.RestaurantCategory;
 import com.sparta.ordering.restaurant.entity.RestaurantStatus;
+import com.sparta.ordering.restaurant.repository.RegionRepository;
 import com.sparta.ordering.restaurant.repository.RestaurantCategoryRepository;
 import com.sparta.ordering.restaurant.repository.RestaurantRepository;
 import com.sparta.ordering.user.entity.Role;
@@ -30,6 +32,7 @@ public class RestaurantService {
 
     private final RestaurantRepository restaurantRepository;
     private final RestaurantCategoryRepository restaurantCategoryRepository;
+    private final RegionRepository regionRepository;
     private final UserRepository userRepository;
 
     private static final Set<Role> PRIVILEGED_ROLES = Set.of(Role.MANAGER, Role.MASTER);
@@ -65,9 +68,12 @@ public class RestaurantService {
         RestaurantCategory category = restaurantCategoryRepository.findByCodeAndDeletedAtIsNull(request.category())
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.RESTAURANT_CATEGORY_NOT_FOUND));
 
+        Region region = getActiveLeafRegion(request.regionId());
+
         Restaurant restaurant = Restaurant.builder()
                 .user(owner)
                 .category(category)
+                .region(region)
                 .name(request.name())
                 .description(request.description())
                 .phone(request.phone())
@@ -87,6 +93,7 @@ public class RestaurantService {
         return RestaurantResponse.from(savedRestaurant);
     }
 
+
     @Transactional
     public RestaurantResponse updateRestaurant(
             UUID restaurantId,
@@ -100,9 +107,11 @@ public class RestaurantService {
         validateModificationPermission(requestUser, restaurant);
 
         RestaurantCategory category = (request.category() != null) ? getActiveCategory(request.category()): null;
+        Region region = (request.regionId() != null) ? getActiveLeafRegion(request.regionId()): null;
 
         restaurant.update(
                 category,
+                region,
                 request.name(),
                 request.phone(),
                 request.description(),
@@ -158,5 +167,15 @@ public class RestaurantService {
             return;
         }
         throw new ApiException(AuthResponseCode.FORBIDDEN);
+    }
+
+    private Region getActiveLeafRegion(UUID regionId) {
+        Region region = regionRepository.findByIdAndDeletedAtIsNull(regionId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.REGION_NOT_FOUND));
+
+        if (!region.isLeaf()) {
+            throw new ApiException(GeneralResponseCode.REGION_NOT_LEAF);
+        }
+        return region;
     }
 }

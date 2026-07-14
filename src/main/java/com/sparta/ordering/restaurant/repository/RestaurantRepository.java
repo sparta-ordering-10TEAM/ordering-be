@@ -15,6 +15,8 @@ import java.util.UUID;
 public interface RestaurantRepository extends JpaRepository<Restaurant, UUID> {
     boolean existsByIdAndDeletedAtIsNull(UUID id);
 
+    boolean existsByRegion_IdAndDeletedAtIsNull(UUID regionId);
+
     Optional<Restaurant> findByIdAndDeletedAtIsNull(UUID id);
 
     Page<Restaurant> findByDeletedAtIsNull(Pageable pageable);
