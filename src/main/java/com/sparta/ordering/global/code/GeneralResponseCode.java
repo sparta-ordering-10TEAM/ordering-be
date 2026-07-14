@@ -62,7 +62,13 @@ public enum GeneralResponseCode implements ApiResponseCode {
     AI_PRODUCT_DESCRIPTION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 AI 상품 설명을 찾을 수 없습니다."),
     
     // AI Prompt Log
-    AI_PROMPT_LOG_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 AI 프롬프트 로그를 찾을 수 없습니다.");
+    AI_PROMPT_LOG_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 AI 프롬프트 로그를 찾을 수 없습니다."),
+
+    // Image
+    IMAGE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 업로드에 실패했습니다."),
+    IMAGE_TYPE_INVALID(HttpStatus.BAD_REQUEST, "지원하지 않는 이미지 형식입니다. (jpeg, png, webp만 허용)"),
+    IMAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "이미지를 찾을 수 없습니다.");
+
 
     private final HttpStatus status;
     private final String message;

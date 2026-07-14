@@ -4,6 +4,7 @@ import com.sparta.ordering.auth.security.session.JwtSessionService;
 import com.sparta.ordering.global.code.AuthResponseCode;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
+import com.sparta.ordering.global.storage.FileStorageService;
 import com.sparta.ordering.user.dto.request.ChangePasswordRequest;
 import com.sparta.ordering.user.dto.request.ProfileUpdateRequest;
 import com.sparta.ordering.user.dto.request.UserCreateRequest;
@@ -28,6 +29,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtSessionService jwtSessionService;
+    private final FileStorageService fileStorageService;
 
     @Cacheable(cacheNames = "users", key = "#userId")
     public Optional<User> findCachedById(UUID userId) {
@@ -74,9 +76,15 @@ public class UserService {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
-        // TODO: 인프라 세팅 완료되면 ProfileImageUrl도 업데이트
+        String imageUrl = null;
+        if (profileImage != null && !profileImage.isEmpty()) {
+            if (user.getProfileImageUrl() != null) {
+                fileStorageService.delete(user.getProfileImageUrl());
+            }
+            imageUrl = fileStorageService.upload(profileImage, userId);
+        }
 
-        user.updateProfile(profileUpdateRequest.nickName(), profileUpdateRequest.phoneNumber(),null);
+        user.updateProfile(profileUpdateRequest.nickName(), profileUpdateRequest.phoneNumber(), imageUrl);
         return ProfileResponse.from(user);
     }
 
