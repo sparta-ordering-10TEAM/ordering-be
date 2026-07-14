@@ -41,10 +41,10 @@ public class JwtSession {
     @Column(columnDefinition = "uuid", nullable = false, updatable = false)
     private UUID userId;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(columnDefinition = "text", nullable = false)
     private String accessToken;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "text")
     private String refreshToken;
 
     @Column(columnDefinition = "timestamp with time zone")

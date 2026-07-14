@@ -40,7 +40,24 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
 
     Optional<Review> findByIdAndDeletedAtIsNull(UUID id);
 
+    @Query("""
+            SELECT r FROM Review r
+            JOIN FETCH r.order o
+            WHERE r.id = :id
+            AND r.deletedAt IS NULL
+            """)
+    Optional<Review> findByIdAndDeletedAtIsNullWithOrder(UUID id);
+
     Optional<Review> findByIdAndCustomer_IdAndDeletedAtIsNull(UUID id, UUID customerId);
+
+    @Query("""
+            SELECT r FROM Review r
+            JOIN FETCH r.order o
+            WHERE r.id = :id
+            AND r.customer.id = :customerId
+            AND r.deletedAt IS NULL
+            """)
+    Optional<Review> findByIdAndCustomer_IdAndDeletedAtIsNullWithOrder(UUID id, UUID customerId);
 
     boolean existsByOrder_IdAndCustomer_IdAndDeletedAtIsNull(UUID orderId, UUID customerId);
 }

@@ -13,7 +13,7 @@ public class AiProductDescriptionFacade {
 
     private static final String PROMPT_CONSTRAINT = " (공백 포함 50자 이하로 생성해줘)";
 
-    public void generate(UUID productId, UUID userId, String prompt) {
+    public UUID generate(UUID productId, UUID userId, String prompt) {
         // 유효성 검증 및 상품 조회 (짧은 Read 트랜잭션)
         aiProductDescriptionService.validateProduct(productId, userId);
 
@@ -22,6 +22,6 @@ public class AiProductDescriptionFacade {
         String description = aiProductDescriptionService.generateDescription(refinedPrompt);
 
         // AI 상품 설명 저장 (짧은 Write 트랜잭션)
-        aiProductDescriptionService.saveDescription(productId, refinedPrompt, description, userId);
+        return aiProductDescriptionService.saveDescription(productId, refinedPrompt, description, userId);
     }
 }

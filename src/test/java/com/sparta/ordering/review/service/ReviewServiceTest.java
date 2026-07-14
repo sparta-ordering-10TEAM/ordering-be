@@ -6,6 +6,7 @@ import com.sparta.ordering.order.entity.Order;
 import com.sparta.ordering.order.entity.OrderStatus;
 import com.sparta.ordering.order.repository.OrderRepository;
 import com.sparta.ordering.product.repository.ProductRepository;
+import com.sparta.ordering.restaurant.entity.Restaurant;
 import com.sparta.ordering.restaurant.repository.RestaurantRepository;
 import com.sparta.ordering.review.dto.ReviewResponse;
 import com.sparta.ordering.review.entity.Review;
@@ -71,12 +72,15 @@ class ReviewServiceTest {
             String comment = "맛있어요!";
 
             User customer = mock(User.class);
+            Restaurant restaurant = mock(Restaurant.class);
+            when(restaurant.getId()).thenReturn(UUID.randomUUID());
 
             Order order = mock(Order.class);
-            when(order.getUser()).thenReturn(customer);
+            when(order.getCustomer()).thenReturn(customer);
             when(order.getOrderStatus()).thenReturn(OrderStatus.COMPLETED);
+            when(order.getRestaurant()).thenReturn(restaurant);
 
-            when(orderRepository.findByIdAndUser_IdAndDeletedAtIsNull(orderId, userId))
+            when(orderRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(orderId, userId))
                     .thenReturn(Optional.of(order));
             when(reviewRepository.existsByOrder_IdAndCustomer_IdAndDeletedAtIsNull(orderId, userId))
                     .thenReturn(false);
@@ -120,7 +124,7 @@ class ReviewServiceTest {
             UUID orderId = UUID.randomUUID();
             UUID userId = UUID.randomUUID();
 
-            when(orderRepository.findByIdAndUser_IdAndDeletedAtIsNull(orderId, userId))
+            when(orderRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(orderId, userId))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> reviewService.postReview(4, "댓글", orderId, userId))
@@ -139,7 +143,7 @@ class ReviewServiceTest {
             Order order = mock(Order.class);
             when(order.getOrderStatus()).thenReturn(OrderStatus.REQUESTED); // 완료 아님
 
-            when(orderRepository.findByIdAndUser_IdAndDeletedAtIsNull(orderId, userId))
+            when(orderRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(orderId, userId))
                     .thenReturn(Optional.of(order));
 
             assertThatThrownBy(() -> reviewService.postReview(4, "댓글", orderId, userId))
@@ -158,7 +162,7 @@ class ReviewServiceTest {
             Order order = mock(Order.class);
             when(order.getOrderStatus()).thenReturn(OrderStatus.COMPLETED);
 
-            when(orderRepository.findByIdAndUser_IdAndDeletedAtIsNull(orderId, userId))
+            when(orderRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(orderId, userId))
                     .thenReturn(Optional.of(order));
             when(reviewRepository.existsByOrder_IdAndCustomer_IdAndDeletedAtIsNull(orderId, userId))
                     .thenReturn(true);
@@ -310,8 +314,13 @@ class ReviewServiceTest {
             UUID reviewId = UUID.randomUUID();
             UUID userId = UUID.randomUUID();
 
-            Review review = spy(Review.builder().rating(3).comment("그냥 그래요").build());
-            when(reviewRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(reviewId, userId))
+            Restaurant restaurant = mock(Restaurant.class);
+            when(restaurant.getId()).thenReturn(UUID.randomUUID());
+            Order order = mock(Order.class);
+            when(order.getRestaurant()).thenReturn(restaurant);
+
+            Review review = spy(Review.builder().rating(3).comment("그냥 그래요").order(order).build());
+            when(reviewRepository.findByIdAndCustomer_IdAndDeletedAtIsNullWithOrder(reviewId, userId))
                     .thenReturn(Optional.of(review));
 
             reviewService.updateReview(5, "수정된 평점 최고!", reviewId, userId);
@@ -327,8 +336,13 @@ class ReviewServiceTest {
             UUID reviewId = UUID.randomUUID();
             UUID userId = UUID.randomUUID();
 
-            Review review = spy(Review.builder().rating(3).comment("그냥 그래요").build());
-            when(reviewRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(reviewId, userId))
+            Restaurant restaurant = mock(Restaurant.class);
+            when(restaurant.getId()).thenReturn(UUID.randomUUID());
+            Order order = mock(Order.class);
+            when(order.getRestaurant()).thenReturn(restaurant);
+
+            Review review = spy(Review.builder().rating(3).comment("그냥 그래요").order(order).build());
+            when(reviewRepository.findByIdAndCustomer_IdAndDeletedAtIsNullWithOrder(reviewId, userId))
                     .thenReturn(Optional.of(review));
 
             reviewService.updateReview(5, null, reviewId, userId);
@@ -343,8 +357,13 @@ class ReviewServiceTest {
             UUID reviewId = UUID.randomUUID();
             UUID userId = UUID.randomUUID();
 
-            Review review = spy(Review.builder().rating(3).comment("그냥 그래요").build());
-            when(reviewRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(reviewId, userId))
+            Restaurant restaurant = mock(Restaurant.class);
+            when(restaurant.getId()).thenReturn(UUID.randomUUID());
+            Order order = mock(Order.class);
+            when(order.getRestaurant()).thenReturn(restaurant);
+
+            Review review = spy(Review.builder().rating(3).comment("그냥 그래요").order(order).build());
+            when(reviewRepository.findByIdAndCustomer_IdAndDeletedAtIsNullWithOrder(reviewId, userId))
                     .thenReturn(Optional.of(review));
 
             reviewService.updateReview(null, "수정된 평점 최고!", reviewId, userId);
@@ -359,7 +378,7 @@ class ReviewServiceTest {
             UUID reviewId = UUID.randomUUID();
             UUID userId = UUID.randomUUID();
 
-            when(reviewRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(reviewId, userId))
+            when(reviewRepository.findByIdAndCustomer_IdAndDeletedAtIsNullWithOrder(reviewId, userId))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> reviewService.updateReview(5, "수정", reviewId, userId))
@@ -378,9 +397,14 @@ class ReviewServiceTest {
             UUID reviewId = UUID.randomUUID();
             UUID userId = UUID.randomUUID();
 
-            Review review = spy(Review.builder().rating(3).comment("그냥 그래요").build());
+            Restaurant restaurant = mock(Restaurant.class);
+            when(restaurant.getId()).thenReturn(UUID.randomUUID());
+            Order order = mock(Order.class);
+            when(order.getRestaurant()).thenReturn(restaurant);
+
+            Review review = spy(Review.builder().rating(3).comment("그냥 그래요").order(order).build());
             ReflectionTestUtils.setField(review, "id", reviewId);
-            when(reviewRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(reviewId, userId))
+            when(reviewRepository.findByIdAndCustomer_IdAndDeletedAtIsNullWithOrder(reviewId, userId))
                     .thenReturn(Optional.of(review));
 
             reviewService.softDeleteReview(reviewId, userId);
@@ -397,10 +421,59 @@ class ReviewServiceTest {
             UUID reviewId = UUID.randomUUID();
             UUID userId = UUID.randomUUID();
 
-            when(reviewRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(reviewId, userId))
+            when(reviewRepository.findByIdAndCustomer_IdAndDeletedAtIsNullWithOrder(reviewId, userId))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> reviewService.softDeleteReview(reviewId, userId))
+                    .isInstanceOf(ApiException.class)
+                    .hasFieldOrPropertyWithValue("responseCode", GeneralResponseCode.REVIEW_NOT_FOUND);
+        }
+    }
+
+    @Nested
+    @DisplayName("리뷰 단건 조회 (getReview)")
+    class GetReview {
+
+        @Test
+        @DisplayName("성공")
+        void success() {
+            // given
+            UUID reviewId = UUID.randomUUID();
+            User customer = mock(User.class);
+            when(customer.getId()).thenReturn(UUID.randomUUID());
+            Order order = mock(Order.class);
+            when(order.getId()).thenReturn(UUID.randomUUID());
+
+            Review review = Review.builder()
+                    .rating(4)
+                    .comment("맛있어요")
+                    .customer(customer)
+                    .order(order)
+                    .build();
+            ReflectionTestUtils.setField(review, "id", reviewId);
+
+            when(reviewRepository.findByIdAndDeletedAtIsNull(reviewId))
+                    .thenReturn(Optional.of(review));
+
+            // when
+            ReviewResponse response = reviewService.getReview(reviewId);
+
+            // then
+            assertThat(response.id()).isEqualTo(reviewId);
+            assertThat(response.comment()).isEqualTo("맛있어요");
+            assertThat(response.rating()).isEqualTo(4);
+        }
+
+        @Test
+        @DisplayName("실패 - 리뷰 없음")
+        void failReviewNotFound() {
+            // given
+            UUID reviewId = UUID.randomUUID();
+            when(reviewRepository.findByIdAndDeletedAtIsNull(reviewId))
+                    .thenReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> reviewService.getReview(reviewId))
                     .isInstanceOf(ApiException.class)
                     .hasFieldOrPropertyWithValue("responseCode", GeneralResponseCode.REVIEW_NOT_FOUND);
         }

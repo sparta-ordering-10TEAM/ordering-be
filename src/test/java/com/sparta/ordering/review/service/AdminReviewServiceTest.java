@@ -3,6 +3,9 @@ package com.sparta.ordering.review.service;
 import com.sparta.ordering.global.code.AuthResponseCode;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
+import com.sparta.ordering.order.entity.Order;
+import com.sparta.ordering.restaurant.entity.Restaurant;
+import com.sparta.ordering.restaurant.repository.RestaurantRepository;
 import com.sparta.ordering.review.entity.Review;
 import com.sparta.ordering.review.repository.ReviewRepository;
 import com.sparta.ordering.user.entity.Role;
@@ -22,7 +25,12 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AdminReviewServiceTest {
@@ -32,6 +40,9 @@ class AdminReviewServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private RestaurantRepository restaurantRepository;
 
     @InjectMocks
     private AdminReviewService adminReviewService;
@@ -50,11 +61,16 @@ class AdminReviewServiceTest {
             User admin = mock(User.class);
             when(admin.getRole()).thenReturn(Role.MANAGER);
 
-            Review review = spy(Review.builder().rating(4).comment("무난합니다").build());
+            Restaurant restaurant = mock(Restaurant.class);
+            when(restaurant.getId()).thenReturn(UUID.randomUUID());
+            Order order = mock(Order.class);
+            when(order.getRestaurant()).thenReturn(restaurant);
+
+            Review review = spy(Review.builder().rating(4).comment("무난합니다").order(order).build());
             ReflectionTestUtils.setField(review, "id", reviewId);
 
             when(userRepository.findByIdAndDeletedAtIsNull(adminId)).thenReturn(Optional.of(admin));
-            when(reviewRepository.findByIdAndDeletedAtIsNull(reviewId)).thenReturn(Optional.of(review));
+            when(reviewRepository.findByIdAndDeletedAtIsNullWithOrder(reviewId)).thenReturn(Optional.of(review));
 
             // when
             adminReviewService.softDeleteReview(reviewId, adminId);
@@ -76,11 +92,16 @@ class AdminReviewServiceTest {
             User admin = mock(User.class);
             when(admin.getRole()).thenReturn(Role.MASTER);
 
-            Review review = spy(Review.builder().rating(5).comment("최고의 맛!").build());
+            Restaurant restaurant = mock(Restaurant.class);
+            when(restaurant.getId()).thenReturn(UUID.randomUUID());
+            Order order = mock(Order.class);
+            when(order.getRestaurant()).thenReturn(restaurant);
+
+            Review review = spy(Review.builder().rating(5).comment("최고의 맛!").order(order).build());
             ReflectionTestUtils.setField(review, "id", reviewId);
 
             when(userRepository.findByIdAndDeletedAtIsNull(adminId)).thenReturn(Optional.of(admin));
-            when(reviewRepository.findByIdAndDeletedAtIsNull(reviewId)).thenReturn(Optional.of(review));
+            when(reviewRepository.findByIdAndDeletedAtIsNullWithOrder(reviewId)).thenReturn(Optional.of(review));
 
             // when
             adminReviewService.softDeleteReview(reviewId, adminId);
@@ -140,7 +161,7 @@ class AdminReviewServiceTest {
             when(admin.getRole()).thenReturn(Role.MASTER);
 
             when(userRepository.findByIdAndDeletedAtIsNull(adminId)).thenReturn(Optional.of(admin));
-            when(reviewRepository.findByIdAndDeletedAtIsNull(reviewId)).thenReturn(Optional.empty());
+            when(reviewRepository.findByIdAndDeletedAtIsNullWithOrder(reviewId)).thenReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() -> adminReviewService.softDeleteReview(reviewId, adminId))
