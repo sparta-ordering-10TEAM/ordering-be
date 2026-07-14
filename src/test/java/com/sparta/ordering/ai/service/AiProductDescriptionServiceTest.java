@@ -19,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
 import java.util.List;
@@ -306,6 +307,55 @@ class AiProductDescriptionServiceTest {
 
             // when & then
             assertThatThrownBy(() -> aiProductDescriptionService.delete(aiDescriptionId, userId))
+                    .isInstanceOf(ApiException.class)
+                    .hasFieldOrPropertyWithValue("responseCode", GeneralResponseCode.AI_PRODUCT_DESCRIPTION_NOT_FOUND);
+        }
+    }
+
+    @Nested
+    @DisplayName("AI 상품 설명 단건 조회 (getAiProductDescription)")
+    class GetAiProductDescription {
+
+        @Test
+        @DisplayName("성공")
+        void success() {
+            // given
+            UUID aiDescriptionId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
+            Product product = mock(Product.class);
+            when(product.getId()).thenReturn(UUID.randomUUID());
+
+            AiProductDescription aiProductDescription = AiProductDescription.builder()
+                    .product(product)
+                    .prompt("prompt")
+                    .description("description")
+                    .build();
+            ReflectionTestUtils.setField(aiProductDescription, "id", aiDescriptionId);
+
+            when(aiProductDescriptionRepository.findByIdAndProduct_Restaurant_User_IdAndDeletedAtIsNull(aiDescriptionId, userId))
+                    .thenReturn(Optional.of(aiProductDescription));
+
+            // when
+            AiProductDescriptionResponse response = aiProductDescriptionService.getAiProductDescription(aiDescriptionId, userId);
+
+            // then
+            assertThat(response.id()).isEqualTo(aiDescriptionId);
+            assertThat(response.description()).isEqualTo("description");
+            assertThat(response.prompt()).isEqualTo("prompt");
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않거나 소유자가 아님")
+        void failDescriptionNotFound() {
+            // given
+            UUID aiDescriptionId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
+
+            when(aiProductDescriptionRepository.findByIdAndProduct_Restaurant_User_IdAndDeletedAtIsNull(aiDescriptionId, userId))
+                    .thenReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> aiProductDescriptionService.getAiProductDescription(aiDescriptionId, userId))
                     .isInstanceOf(ApiException.class)
                     .hasFieldOrPropertyWithValue("responseCode", GeneralResponseCode.AI_PRODUCT_DESCRIPTION_NOT_FOUND);
         }

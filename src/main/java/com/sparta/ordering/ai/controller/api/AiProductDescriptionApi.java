@@ -3,6 +3,7 @@ package com.sparta.ordering.ai.controller.api;
 import com.sparta.ordering.ai.dto.AiProductDescriptionResponse;
 import com.sparta.ordering.ai.dto.GenerateAiProductDescriptionRequest;
 import com.sparta.ordering.ai.dto.UpdateAiProductDescriptionRequest;
+import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -11,6 +12,7 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 
 import java.util.UUID;
 
@@ -24,18 +26,30 @@ public interface AiProductDescriptionApi {
     )
     ResponseEntity<GeneralResponse<Page<AiProductDescriptionResponse>>> searchAiProductDescription(
             UUID productId,
-            UUID userId,
-            Pageable pageable
+            CustomUserDetails user,
+            Pageable pageable,
+            Authentication authentication
+    );
+
+    @Operation(
+            summary = "AI 상품 설명 단건 조회",
+            description = "특정 AI 상품 설명의 상세 내용을 조회합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    ResponseEntity<GeneralResponse<AiProductDescriptionResponse>> getAiProductDescription(
+            UUID aiDescriptionId,
+            CustomUserDetails user,
+            Authentication authentication
     );
 
     @Operation(
             summary = "AI 상품 설명 생성",
-            description = "입력된 프롬프트를 기반으로 AI 상품 설명을 자동 생성하고 저장합니다.",
+            description = "입력된 프롬프트를 기반으로 AI 상품 설명을 자동 생성하고 저장합니다. 생성된 AI 설명 ID가 반환됩니다.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    ResponseEntity<GeneralResponse<Void>> generateAiProductDescription(
+    ResponseEntity<GeneralResponse<UUID>> generateAiProductDescription(
             UUID productId,
-            UUID userId,
+            CustomUserDetails user,
             @Valid GenerateAiProductDescriptionRequest request
     );
 
@@ -46,7 +60,7 @@ public interface AiProductDescriptionApi {
     )
     ResponseEntity<GeneralResponse<Void>> updateAiProductDescription(
             UUID aiDescriptionId,
-            UUID userId,
+            CustomUserDetails user,
             @Valid UpdateAiProductDescriptionRequest request
     );
 
@@ -57,6 +71,7 @@ public interface AiProductDescriptionApi {
     )
     ResponseEntity<GeneralResponse<Void>> deleteAiProductDescription(
             UUID aiDescriptionId,
-            UUID userId
+            CustomUserDetails user,
+            Authentication authentication
     );
 }

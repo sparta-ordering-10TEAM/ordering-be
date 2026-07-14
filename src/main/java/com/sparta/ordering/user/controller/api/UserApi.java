@@ -1,5 +1,6 @@
 package com.sparta.ordering.user.controller.api;
 
+import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import com.sparta.ordering.user.dto.request.ChangePasswordRequest;
@@ -15,6 +16,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -75,6 +77,7 @@ public interface UserApi {
     })
     @PatchMapping
     ResponseEntity<GeneralResponse<ProfileResponse>> updateProfile(
+            @AuthenticationPrincipal CustomUserDetails loginUser,
             @PathVariable UUID userId,
             @Valid @RequestPart("request") ProfileUpdateRequest profileUpdateRequest,
             @RequestPart(value = "image",required = false) MultipartFile profileImage);
@@ -92,8 +95,10 @@ public interface UserApi {
             )
     })
     @PatchMapping
-    ResponseEntity<GeneralResponse<Void>> updatePassword(@PathVariable UUID userId,
-                                                         @Valid @RequestBody ChangePasswordRequest changePasswordRequest);
+    ResponseEntity<GeneralResponse<Void>> updatePassword(
+            @AuthenticationPrincipal CustomUserDetails loginUser,
+            @PathVariable UUID userId,
+            @Valid @RequestBody ChangePasswordRequest changePasswordRequest);
 
     @Operation(summary = "회원 탈퇴", description = "사용자가 탈퇴합니다.(논리 삭제)")
     @ApiResponses({
@@ -107,5 +112,7 @@ public interface UserApi {
                     content = @Content(schema = @Schema(implementation = GeneralResponseCode.class)))
     })
     @DeleteMapping
-    ResponseEntity<GeneralResponse<Void>> deleteAccount(@PathVariable UUID userId);
+    ResponseEntity<GeneralResponse<Void>> deleteAccount(
+            @AuthenticationPrincipal CustomUserDetails loginUser,
+            @PathVariable UUID userId);
 }
