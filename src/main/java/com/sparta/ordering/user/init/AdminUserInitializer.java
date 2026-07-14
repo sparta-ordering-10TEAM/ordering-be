@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
  * 사용자 관리 - 어드민 기능 서버 시작 시 어드민 계정 자동 초기화 email: system@ordering.io name: master password: Ordering1234!
  */
 @Component
+@Profile("!test")
 @RequiredArgsConstructor
 @Slf4j
 public class AdminUserInitializer implements ApplicationRunner {
