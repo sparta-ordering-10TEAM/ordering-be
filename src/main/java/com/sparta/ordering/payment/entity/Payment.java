@@ -101,4 +101,8 @@ public class Payment extends BaseUpdatableEntity {
         this.canceledAt = canceledAt;
     }
 
+    public void revertCancel() {
+        this.status = PaymentStatus.DONE;
+    }
+
 }

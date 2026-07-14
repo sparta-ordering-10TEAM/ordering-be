@@ -238,7 +238,7 @@ class PaymentServiceTest {
             // then
             verify(paymentRepository).findByIdAndDeletedAtIsNull(paymentId);
             verify(paymentRepository, never()).findByIdAndOrder_Restaurant_User_IdAndDeletedAtIsNull(any(), any());
-            verify(paymentRepository, never()).findByIdAndOrder_User_IdAndDeletedAtIsNull(any(), any());
+            verify(paymentRepository, never()).findByIdAndOrder_Customer_IdAndDeletedAtIsNull(any(), any());
             assertThat(response).isEqualTo(PaymentResponse.from(payment));
         }
 
@@ -271,14 +271,14 @@ class PaymentServiceTest {
             Order order = createOrder(customerId, UUID.randomUUID());
             Payment payment = createPayment(paymentId, order);
 
-            when(paymentRepository.findByIdAndOrder_User_IdAndDeletedAtIsNull(paymentId, customerId))
+            when(paymentRepository.findByIdAndOrder_Customer_IdAndDeletedAtIsNull(paymentId, customerId))
                     .thenReturn(Optional.of(payment));
 
             // when
             PaymentResponse response = paymentService.getPayment(paymentId, customerId, Role.CUSTOMER);
 
             // then
-            verify(paymentRepository).findByIdAndOrder_User_IdAndDeletedAtIsNull(paymentId, customerId);
+            verify(paymentRepository).findByIdAndOrder_Customer_IdAndDeletedAtIsNull(paymentId, customerId);
             assertThat(response).isEqualTo(PaymentResponse.from(payment));
         }
 
@@ -306,7 +306,7 @@ class PaymentServiceTest {
             UUID customerId = UUID.randomUUID();
             UUID paymentId = UUID.randomUUID();
 
-            when(paymentRepository.findByIdAndOrder_User_IdAndDeletedAtIsNull(paymentId, customerId))
+            when(paymentRepository.findByIdAndOrder_Customer_IdAndDeletedAtIsNull(paymentId, customerId))
                     .thenReturn(Optional.empty());
 
             // when & then
@@ -339,7 +339,7 @@ class PaymentServiceTest {
             // then
             verify(paymentRepository).findAllByDeletedAtIsNull(pageable);
             verify(paymentRepository, never()).findAllByOrder_Restaurant_User_IdAndDeletedAtIsNull(any(), any());
-            verify(paymentRepository, never()).findAllByOrder_User_IdAndDeletedAtIsNull(any(), any());
+            verify(paymentRepository, never()).findAllByOrder_Customer_IdAndDeletedAtIsNull(any(), any());
             assertThat(response.getContent()).containsExactly(PaymentResponse.from(payment));
         }
 
@@ -372,14 +372,14 @@ class PaymentServiceTest {
             Payment payment = createPayment(UUID.randomUUID(), createOrder(customerId, UUID.randomUUID()));
             Page<Payment> page = new PageImpl<>(List.of(payment), pageable, 1);
 
-            when(paymentRepository.findAllByOrder_User_IdAndDeletedAtIsNull(customerId, pageable))
+            when(paymentRepository.findAllByOrder_Customer_IdAndDeletedAtIsNull(customerId, pageable))
                     .thenReturn(page);
 
             // when
             Page<PaymentResponse> response = paymentService.getPayments(customerId, Role.CUSTOMER, pageable);
 
             // then
-            verify(paymentRepository).findAllByOrder_User_IdAndDeletedAtIsNull(customerId, pageable);
+            verify(paymentRepository).findAllByOrder_Customer_IdAndDeletedAtIsNull(customerId, pageable);
             assertThat(response.getContent()).containsExactly(PaymentResponse.from(payment));
         }
     }

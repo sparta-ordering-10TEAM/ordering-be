@@ -44,15 +44,20 @@ public class PaymentFacade {
 
     public PaymentResponse processCancelPayment(UUID paymentId, UUID userId, Role role, String reason) {
 
-        // 1. 취소 가능 여부 검증 (트랜잭션)
+        // 1. 취소 검증, 상태 변경 DONE -> CANCELED_REQUESTED
         Payment payment = paymentService.prepareCancelPayment(paymentId, userId, role);
 
-        // 2. 외부 PG 취소 요청 (트랜잭션 밖)
-        PGCancelResponse response = paymentClient.mockCancel(new PGCancelRequest(payment.getPaymentKey(), reason));
+        try {
+            // 2. 외부 PG 취소 요청 (트랜잭션 밖)
+            PGCancelResponse response = paymentClient.mockCancel(new PGCancelRequest(payment.getPaymentKey(), reason));
 
-        // 3. 결과 반영 (트랜잭션)
-        Payment completed = paymentService.cancelPayment(paymentId, response);
-        return PaymentResponse.from(completed);
-
+            // 3. 결과 반영 - 성공 (트랜잭션) CANCELED_REQUESTED -> CANCELED
+            Payment completed = paymentService.cancelPayment(paymentId, response);
+            return PaymentResponse.from(completed);
+        } catch (ApiException e) {
+            // 3. 결과 반영 - 실패 (트랜잭션) - CANCELED_REQUESTED -> DONE
+            paymentService.revertCancelPayment(paymentId);
+            throw e;
+        }
     }
 }

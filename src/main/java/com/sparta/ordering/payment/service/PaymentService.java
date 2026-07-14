@@ -88,28 +88,51 @@ public class PaymentService {
         Page<Payment> payments = switch (role) {
             case MANAGER, MASTER -> paymentRepository.findAllByDeletedAtIsNull(pageable); // master, manager 조회
             case OWNER -> paymentRepository.findAllByOrder_Restaurant_User_IdAndDeletedAtIsNull(userId, pageable); // owner는 자기 가게 주문인지 확인
-            case CUSTOMER -> paymentRepository.findAllByOrder_User_IdAndDeletedAtIsNull(userId, pageable); // customer는 자기 주문인지 확인
+            case CUSTOMER -> paymentRepository.findAllByOrder_Customer_IdAndDeletedAtIsNull(userId, pageable); // customer는 자기 주문인지 확인
         };
         return payments.map(PaymentResponse::from);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Payment prepareCancelPayment(UUID paymentId, UUID userId, Role role) {
+
+        // 사용자 검증
         Payment payment = findAccessiblePayment(paymentId, userId, role);
 
         if (!payment.getStatus().equals(PaymentStatus.DONE)) {
             throw new ApiException(GeneralResponseCode.PAYMENT_INVALID_PAYMENT_STATUS);
         }
 
+        // 중복 취소 요청 방지
+        int updated = paymentRepository.updateStatusByIdAndStatus(paymentId, PaymentStatus.DONE, PaymentStatus.CANCELED_REQUESTED);
+        if (updated == 0) {
+            throw new ApiException(GeneralResponseCode.PAYMENT_CANCEL_CONFLICT);
+        }
+
+        Payment refreshed = paymentRepository.findByIdAndDeletedAtIsNullWithOrder(paymentId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND));
+
         // 관리자(MANAGER/MASTER)는 5분 제한 없이 취소 가능
         if (role != Role.MANAGER && role != Role.MASTER) {
-            Instant cancelDeadline = payment.getOrder().getCreatedAt().plus(CANCEL_TIME_LIMIT);
+            Instant cancelDeadline = refreshed.getOrder().getCreatedAt().plus(CANCEL_TIME_LIMIT);
             if (Instant.now().isAfter(cancelDeadline)) {
                 throw new ApiException(GeneralResponseCode.ORDER_CANCELLATION_TIME_EXPIRED);
             }
         }
 
-        return payment;
+        return refreshed;
+    }
+
+    @Transactional
+    public void revertCancelPayment(UUID paymentId) {
+        Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND));
+
+        if (!payment.getStatus().equals(PaymentStatus.CANCELED_REQUESTED)) {
+            throw new ApiException(GeneralResponseCode.PAYMENT_INVALID_PAYMENT_STATUS);
+        }
+
+        payment.revertCancel();
     }
 
     @Transactional
@@ -127,7 +150,7 @@ public class PaymentService {
                     .orElseThrow(() -> new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND));
             case OWNER -> paymentRepository.findByIdAndOrder_Restaurant_User_IdAndDeletedAtIsNull(paymentId, userId) // owner는 자기 가게 주문인지 확인
                     .orElseThrow(() -> new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND));
-            case CUSTOMER -> paymentRepository.findByIdAndOrder_User_IdAndDeletedAtIsNull(paymentId, userId) // customer는 자기 주문인지 확인
+            case CUSTOMER -> paymentRepository.findByIdAndOrder_Customer_IdAndDeletedAtIsNull(paymentId, userId) // customer는 자기 주문인지 확인
                     .orElseThrow(() -> new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND));
         };
     }
