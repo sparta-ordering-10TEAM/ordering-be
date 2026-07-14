@@ -30,7 +30,7 @@ public class PaymentService {
     @Transactional
     public Payment preparePayment(UUID userId, PaymentRequest request) {
         // 1 . 주문 조회 & 소유자 검증
-        Order order = orderRepository.findByIdAndUser_IdAndDeletedAtIsNull(request.orderId(), userId)
+        Order order = orderRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(request.orderId(), userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
 
         // 가격 검증
