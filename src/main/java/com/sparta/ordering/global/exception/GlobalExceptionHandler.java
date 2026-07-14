@@ -46,6 +46,9 @@ public class GlobalExceptionHandler {
         if (message.contains("uk_cart_item_cart_product")) {
             code = GeneralResponseCode.CART_ITEM_ADD_CONFLICT;
         }
+        if (message.contains("uk_payment_order")) {
+            code = GeneralResponseCode.PAYMENT_ALREADY_IN_PROGRESS;
+        }
 
         return ErrorResponse.toResponseEntity(code, null);
     }
