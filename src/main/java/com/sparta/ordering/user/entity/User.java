@@ -34,7 +34,7 @@ public class User extends BaseUpdatableEntity {
     @Column(nullable = false)
     private String phoneNumber;
 
-    @Column(nullable = false, columnDefinition = "role DEFAULT 'CUSTOMER'")
+    @Column(nullable = false, columnDefinition = "role")
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     private Role role;
