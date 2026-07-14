@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 public record PaymentRequest (
@@ -15,6 +16,6 @@ public record PaymentRequest (
 
         @NotNull(message = "결제 금액은 필수입니다.")
         @Positive(message = "결제 금액은 0보다 커야 합니다.")
-        Long amount
+        BigDecimal amount
 ){
 }

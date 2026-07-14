@@ -18,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
@@ -38,7 +39,7 @@ public class PaymentService {
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
 
         // 가격 검증
-        if (!order.getTotalPrice().equals(request.amount())) {
+        if (BigDecimal.valueOf(order.getTotalPrice()).compareTo(request.amount()) != 0) {
             throw new ApiException(GeneralResponseCode.PAYMENT_AMOUNT_INVALID);
         }
 

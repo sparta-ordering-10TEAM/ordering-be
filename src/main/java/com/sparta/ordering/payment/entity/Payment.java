@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -45,7 +46,7 @@ public class Payment extends BaseUpdatableEntity {
     private PaymentMethod paymentMethod;
 
     @Column(name = "amount", nullable = false)
-    private Long amount;
+    private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
@@ -74,7 +75,7 @@ public class Payment extends BaseUpdatableEntity {
     private UUID uniqueVersion;
 
     @Builder
-    public Payment(Order order, Long amount, String paymentKey) {
+    public Payment(Order order, BigDecimal amount, String paymentKey) {
         this.order = order;
         this.amount = amount;
         this.paymentKey = paymentKey;

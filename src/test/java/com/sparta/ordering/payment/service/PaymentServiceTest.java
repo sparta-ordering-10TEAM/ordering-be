@@ -26,6 +26,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -64,7 +65,7 @@ class PaymentServiceTest {
             ReflectionTestUtils.setField(order, "totalPrice", 1000L);
             ReflectionTestUtils.setField(order, "id", orderId);
 
-            PaymentRequest request = new PaymentRequest(orderId, "paymentKey", 1000L);
+            PaymentRequest request = new PaymentRequest(orderId, "paymentKey", BigDecimal.valueOf(1000));
 
             when(orderRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(orderId, userId))
                     .thenReturn(Optional.of(order));
@@ -78,7 +79,7 @@ class PaymentServiceTest {
             verify(paymentRepository).save(payment);
 
             assertThat(payment.getPaymentKey()).isEqualTo("paymentKey");
-            assertThat(payment.getAmount()).isEqualTo(1000L);
+            assertThat(payment.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(1000));
             assertThat(payment.getOrder()).isEqualTo(order);
             assertThat(payment.getStatus()).isEqualTo(PaymentStatus.IN_PROGRESS);
             assertThat(payment.getUniqueVersion())
@@ -98,7 +99,7 @@ class PaymentServiceTest {
             ReflectionTestUtils.setField(order, "totalPrice", 2000L);
             ReflectionTestUtils.setField(order, "id", orderId);
 
-            PaymentRequest request = new PaymentRequest(orderId, "paymentKey", 1000L);
+            PaymentRequest request = new PaymentRequest(orderId, "paymentKey", BigDecimal.valueOf(1000));
 
             when(orderRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(orderId, userId))
                     .thenReturn(Optional.of(order));
@@ -118,7 +119,7 @@ class PaymentServiceTest {
 
             UUID orderId = UUID.randomUUID();
 
-            PaymentRequest request = new PaymentRequest(orderId, "paymentKey", 1000L);
+            PaymentRequest request = new PaymentRequest(orderId, "paymentKey", BigDecimal.valueOf(1000));
 
             when(orderRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(orderId, userId))
                     .thenReturn(Optional.empty());
@@ -140,7 +141,7 @@ class PaymentServiceTest {
             // given
             UUID paymentId = UUID.randomUUID();
             Payment payment = Payment.builder()
-                    .amount(1000L)
+                    .amount(BigDecimal.valueOf(1000))
                     .paymentKey("paymentKey")
                     .build();
             ReflectionTestUtils.setField(payment, "id", paymentId);
@@ -185,7 +186,7 @@ class PaymentServiceTest {
             // given
             UUID paymentId = UUID.randomUUID();
             Payment payment = Payment.builder()
-                    .amount(1000L)
+                    .amount(BigDecimal.valueOf(1000))
                     .paymentKey("paymentKey")
                     .build();
             ReflectionTestUtils.setField(payment, "id", paymentId);
@@ -399,7 +400,7 @@ class PaymentServiceTest {
     private Payment createPayment(UUID paymentId, Order order) {
         Payment payment = Payment.builder()
                 .order(order)
-                .amount(1000L)
+                .amount(BigDecimal.valueOf(1000))
                 .paymentKey("paymentKey")
                 .build();
         ReflectionTestUtils.setField(payment, "id", paymentId);
