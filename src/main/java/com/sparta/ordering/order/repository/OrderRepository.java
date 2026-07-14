@@ -15,8 +15,6 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     Optional<Order> findByIdAndCustomer_IdAndDeletedAtIsNull(UUID id, UUID customerId);
 
-    boolean existsByOrderNumber(String orderNumber);
-
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT o FROM Order o

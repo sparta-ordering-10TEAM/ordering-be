@@ -34,6 +34,9 @@ dependencies {
     // Java Mail Sender
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 
+    // TSID
+    implementation 'com.github.f4b6a3:tsid-creator:5.2.6'
+
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql'
     annotationProcessor 'org.projectlombok:lombok'
