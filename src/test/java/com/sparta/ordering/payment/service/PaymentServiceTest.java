@@ -66,7 +66,7 @@ class PaymentServiceTest {
 
             PaymentRequest request = new PaymentRequest(orderId, "paymentKey", 1000L);
 
-            when(orderRepository.findByIdAndUser_IdAndDeletedAtIsNull(orderId, userId))
+            when(orderRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(orderId, userId))
                     .thenReturn(Optional.of(order));
             when(paymentRepository.save(any(Payment.class)))
                     .thenAnswer(invocation -> invocation.getArgument(0));
@@ -100,7 +100,7 @@ class PaymentServiceTest {
 
             PaymentRequest request = new PaymentRequest(orderId, "paymentKey", 1000L);
 
-            when(orderRepository.findByIdAndUser_IdAndDeletedAtIsNull(orderId, userId))
+            when(orderRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(orderId, userId))
                     .thenReturn(Optional.of(order));
 
             //when & then
@@ -120,7 +120,7 @@ class PaymentServiceTest {
 
             PaymentRequest request = new PaymentRequest(orderId, "paymentKey", 1000L);
 
-            when(orderRepository.findByIdAndUser_IdAndDeletedAtIsNull(orderId, userId))
+            when(orderRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(orderId, userId))
                     .thenReturn(Optional.empty());
 
             //when & then

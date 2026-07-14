@@ -28,7 +28,6 @@ public enum GeneralResponseCode implements ApiResponseCode {
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 결제 내역을 찾을 수 없습니다."),
     PAYMENT_ALREADY_IN_PROGRESS(HttpStatus.CONFLICT, "이미 처리 중이거나 완료된 결제 요청입니다."),
     PAYMENT_INVALID_PAYMENT_STATUS(HttpStatus.BAD_REQUEST, "현재 상태에서는 요청을 처리할 수 없습니다"),
-    PAYMENT_CANCEL_TIME_EXPIRED(HttpStatus.BAD_REQUEST, "주문 생성 후 5분이 지나 취소할 수 없습니다."),
 
     // Review
     ALREADY_REVIEWED(HttpStatus.CONFLICT, "이미 리뷰를 작성한 주문입니다."),

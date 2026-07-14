@@ -34,7 +34,7 @@ public class PaymentService {
     @Transactional
     public Payment preparePayment(UUID userId, PaymentRequest request) {
         // 1 . 주문 조회 & 소유자 검증
-        Order order = orderRepository.findByIdAndUser_IdAndDeletedAtIsNull(request.orderId(), userId)
+        Order order = orderRepository.findByIdAndCustomer_IdAndDeletedAtIsNull(request.orderId(), userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
 
         // 가격 검증
@@ -105,7 +105,7 @@ public class PaymentService {
         if (role != Role.MANAGER && role != Role.MASTER) {
             Instant cancelDeadline = payment.getOrder().getCreatedAt().plus(CANCEL_TIME_LIMIT);
             if (Instant.now().isAfter(cancelDeadline)) {
-                throw new ApiException(GeneralResponseCode.PAYMENT_CANCEL_TIME_EXPIRED);
+                throw new ApiException(GeneralResponseCode.ORDER_CANCELLATION_TIME_EXPIRED);
             }
         }
 
