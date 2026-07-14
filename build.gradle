@@ -31,6 +31,10 @@ dependencies {
     // OpenAPI Docs
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 
+    // Cache
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
+
     // Java Mail Sender
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 

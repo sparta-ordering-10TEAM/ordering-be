@@ -7,7 +7,7 @@ import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.ErrorResponse;
 import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.user.entity.User;
-import com.sparta.ordering.user.repository.UserRepository;
+import com.sparta.ordering.user.service.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,7 +32,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtSessionService jwtSessionService;
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -45,7 +45,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             //인증 처리
             UUID userId = jwtSessionService.extractUserId(token);
 
-            User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+            User user = userService.findCachedById(userId)
                     .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
             CustomUserDetails userDetails = new CustomUserDetails(
@@ -74,7 +74,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             objectMapper.writeValue(response.getWriter(), errorResponse);
         }else {
             //토큰이 없는 경우
-            // TODO: 인증이 필요없는 경로면 다음 필터 진행, 아니면 401 응답
+            // 인증이 필요없는 경로면 다음 필터 진행, 아니면 401 응답
             filterChain.doFilter(request, response);
         }
 

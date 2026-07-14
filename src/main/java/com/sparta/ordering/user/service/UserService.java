@@ -12,21 +12,29 @@ import com.sparta.ordering.user.dto.response.UserResponse;
 import com.sparta.ordering.user.entity.User;
 import com.sparta.ordering.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtSessionService jwtSessionService;
 
+    @Cacheable(cacheNames = "users", key = "#userId")
+    public Optional<User> findCachedById(UUID userId) {
+        return userRepository.findByIdAndDeletedAtIsNull(userId);
+    }
+
+    @Transactional
     public UserResponse create(UserCreateRequest userCreateRequest) {
         // 중복 검사
         if (userRepository.existsByUserNameAndDeletedAtIsNull(userCreateRequest.userName()) ||
@@ -59,7 +67,7 @@ public class UserService {
         return ProfileResponse.from(user);
     }
 
-
+    @Transactional
     public ProfileResponse updateProfile(UUID loginUserId, UUID userId, ProfileUpdateRequest profileUpdateRequest,
                                          MultipartFile profileImage) {
         validateOwnership(loginUserId, userId);
@@ -72,6 +80,8 @@ public class UserService {
         return ProfileResponse.from(user);
     }
 
+    @CacheEvict(cacheNames = "users", key = "#userId")
+    @Transactional
     public void updatePassword(UUID loginUserId, UUID userId, ChangePasswordRequest changePasswordRequest) {
         validateOwnership(loginUserId, userId);
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
@@ -82,6 +92,8 @@ public class UserService {
         jwtSessionService.invalidateToken(userId);
     }
 
+    @CacheEvict(cacheNames = "users", key = "#userId")
+    @Transactional
     public void deactivate(UUID loginUserId, UUID userId) {
         validateOwnership(loginUserId, userId);
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)

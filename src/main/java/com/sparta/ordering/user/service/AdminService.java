@@ -11,6 +11,7 @@ import com.sparta.ordering.user.entity.User;
 import com.sparta.ordering.user.repository.UserRepository;
 import com.sparta.ordering.user.repository.UserSpecification;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -26,7 +27,7 @@ public class AdminService {
     private final UserRepository userRepository;
     private final JwtSessionService jwtSessionService;
 
-
+    @CacheEvict(cacheNames = "users", key = "#userId")
     public UUID lock(UUID userId) {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
@@ -43,6 +44,7 @@ public class AdminService {
         return user.getId();
     }
 
+    @CacheEvict(cacheNames = "users", key = "#userId")
     public UUID unlock(UUID userId) {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
@@ -56,6 +58,7 @@ public class AdminService {
         return user.getId();
     }
 
+    @CacheEvict(cacheNames = "users", key = "#userId")
     public UserResponse updateRole(UUID userId, UserRoleUpdateRequest userRoleUpdateRequest) {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
@@ -81,6 +84,7 @@ public class AdminService {
                 .map(AdminUserDetailResponse::from);
     }
 
+    @CacheEvict(cacheNames = "users", key = "#userId")
     public UserResponse approveOwner(UUID userId, UUID approverId) {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
