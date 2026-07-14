@@ -3,6 +3,7 @@ package com.sparta.ordering.restaurant.controller;
 import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
+import com.sparta.ordering.restaurant.controller.api.RegionApi;
 import com.sparta.ordering.restaurant.dto.RegionCreateRequest;
 import com.sparta.ordering.restaurant.dto.RegionResponse;
 import com.sparta.ordering.restaurant.dto.RegionUpdateRequest;
@@ -28,10 +29,11 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
-public class RegionController {
+public class RegionController implements RegionApi {
 
     private final RegionService regionService;
 
+    @Override
     @GetMapping("/regions")
     public ResponseEntity<GeneralResponse<List<RegionResponse>>> getRegions(
             @RequestParam(required = false) UUID parentId) {
@@ -41,6 +43,7 @@ public class RegionController {
                 regionService.getRegions(parentId));
     }
 
+    @Override
     @PreAuthorize("hasAnyRole('MANAGER', 'MASTER')")
     @PostMapping("/regions")
     public ResponseEntity<GeneralResponse<RegionResponse>> createRegion(
@@ -52,6 +55,7 @@ public class RegionController {
                 regionService.createRegion(request, user.getUserId()));
     }
 
+    @Override
     @PreAuthorize("hasAnyRole('MANAGER', 'MASTER')")
     @PutMapping("/regions/{regionId}")
     public ResponseEntity<GeneralResponse<RegionResponse>> updateRegion(
@@ -64,6 +68,7 @@ public class RegionController {
                 regionService.updateRegion(regionId, request, user.getUserId()));
     }
 
+    @Override
     @PreAuthorize("hasAnyRole('MANAGER', 'MASTER')")
     @DeleteMapping("/regions/{regionId}")
     public ResponseEntity<GeneralResponse<Void>> deleteRegion(
