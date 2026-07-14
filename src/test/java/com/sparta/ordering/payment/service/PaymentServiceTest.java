@@ -4,6 +4,7 @@ import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.order.entity.Order;
 import com.sparta.ordering.order.repository.OrderRepository;
+import com.sparta.ordering.payment.dto.PGCancelResponse;
 import com.sparta.ordering.payment.dto.PGResponse;
 import com.sparta.ordering.payment.dto.PaymentRequest;
 import com.sparta.ordering.payment.dto.PaymentResponse;
@@ -27,6 +28,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -382,6 +384,191 @@ class PaymentServiceTest {
             // then
             verify(paymentRepository).findAllByOrder_Customer_IdAndDeletedAtIsNull(customerId, pageable);
             assertThat(response.getContent()).containsExactly(PaymentResponse.from(payment));
+        }
+    }
+
+    @Nested
+    @DisplayName("결제 취소 준비")
+    class PrepareCancelPayment {
+
+        @Test
+        @DisplayName("성공 - customer, 취소 가능 시간 이내")
+        void test1() {
+            // given
+            UUID customerId = UUID.randomUUID();
+            UUID paymentId = UUID.randomUUID();
+            Order order = createOrder(customerId, UUID.randomUUID());
+            ReflectionTestUtils.setField(order, "createdAt", Instant.now());
+
+            Payment payment = createPayment(paymentId, order);
+            payment.approve(Instant.now(), "신한카드");
+
+            Payment refreshed = createPayment(paymentId, order);
+            refreshed.approve(Instant.now(), "신한카드");
+
+            when(paymentRepository.findByIdAndOrder_Customer_IdAndDeletedAtIsNull(paymentId, customerId))
+                    .thenReturn(Optional.of(payment));
+            when(paymentRepository.updateStatusByIdAndStatus(paymentId, PaymentStatus.DONE, PaymentStatus.CANCELED_REQUESTED))
+                    .thenReturn(1);
+            when(paymentRepository.findByIdAndDeletedAtIsNullWithOrder(paymentId))
+                    .thenReturn(Optional.of(refreshed));
+
+            // when
+            Payment result = paymentService.prepareCancelPayment(paymentId, customerId, Role.CUSTOMER);
+
+            // then
+            assertThat(result).isEqualTo(refreshed);
+        }
+
+        @Test
+        @DisplayName("실패 - DONE 상태가 아님")
+        void test2() {
+            // given
+            UUID customerId = UUID.randomUUID();
+            UUID paymentId = UUID.randomUUID();
+            Order order = createOrder(customerId, UUID.randomUUID());
+            Payment payment = createPayment(paymentId, order); // 기본 상태 IN_PROGRESS
+
+            when(paymentRepository.findByIdAndOrder_Customer_IdAndDeletedAtIsNull(paymentId, customerId))
+                    .thenReturn(Optional.of(payment));
+
+            // when & then
+            assertThatThrownBy(() -> paymentService.prepareCancelPayment(paymentId, customerId, Role.CUSTOMER))
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(GeneralResponseCode.PAYMENT_INVALID_PAYMENT_STATUS);
+
+            verify(paymentRepository, never()).updateStatusByIdAndStatus(any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("실패 - 취소 가능 시간(5분) 초과")
+        void test3() {
+            // given
+            UUID customerId = UUID.randomUUID();
+            UUID paymentId = UUID.randomUUID();
+            Order order = createOrder(customerId, UUID.randomUUID());
+            ReflectionTestUtils.setField(order, "createdAt", Instant.now().minus(Duration.ofMinutes(10)));
+
+            Payment payment = createPayment(paymentId, order);
+            payment.approve(Instant.now(), "신한카드");
+
+            Payment refreshed = createPayment(paymentId, order);
+            refreshed.approve(Instant.now(), "신한카드");
+
+            when(paymentRepository.findByIdAndOrder_Customer_IdAndDeletedAtIsNull(paymentId, customerId))
+                    .thenReturn(Optional.of(payment));
+            when(paymentRepository.updateStatusByIdAndStatus(paymentId, PaymentStatus.DONE, PaymentStatus.CANCELED_REQUESTED))
+                    .thenReturn(1);
+            when(paymentRepository.findByIdAndDeletedAtIsNullWithOrder(paymentId))
+                    .thenReturn(Optional.of(refreshed));
+
+            // when & then
+            assertThatThrownBy(() -> paymentService.prepareCancelPayment(paymentId, customerId, Role.CUSTOMER))
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(GeneralResponseCode.ORDER_CANCELLATION_TIME_EXPIRED);
+        }
+    }
+
+    @Nested
+    @DisplayName("결제 취소 되돌리기")
+    class RevertCancelPayment {
+
+        @Test
+        @DisplayName("성공")
+        void test1() {
+            // given
+            UUID paymentId = UUID.randomUUID();
+            Payment payment = createPayment(paymentId, createOrder(UUID.randomUUID(), UUID.randomUUID()));
+            ReflectionTestUtils.setField(payment, "status", PaymentStatus.CANCELED_REQUESTED);
+
+            when(paymentRepository.findByIdAndDeletedAtIsNull(paymentId))
+                    .thenReturn(Optional.of(payment));
+
+            // when
+            paymentService.revertCancelPayment(paymentId);
+
+            // then
+            assertThat(payment.getStatus()).isEqualTo(PaymentStatus.DONE);
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 결제")
+        void test2() {
+            // given
+            UUID paymentId = UUID.randomUUID();
+
+            when(paymentRepository.findByIdAndDeletedAtIsNull(paymentId))
+                    .thenReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> paymentService.revertCancelPayment(paymentId))
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(GeneralResponseCode.PAYMENT_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("실패 - CANCELED_REQUESTED 상태가 아님")
+        void test3() {
+            // given
+            UUID paymentId = UUID.randomUUID();
+            Payment payment = createPayment(paymentId, createOrder(UUID.randomUUID(), UUID.randomUUID()));
+            payment.approve(Instant.now(), "신한카드"); // 상태: DONE (CANCELED_REQUESTED 아님)
+
+            when(paymentRepository.findByIdAndDeletedAtIsNull(paymentId))
+                    .thenReturn(Optional.of(payment));
+
+            // when & then
+            assertThatThrownBy(() -> paymentService.revertCancelPayment(paymentId))
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(GeneralResponseCode.PAYMENT_INVALID_PAYMENT_STATUS);
+        }
+    }
+
+    @Nested
+    @DisplayName("결제 취소 처리")
+    class CancelPayment {
+
+        @Test
+        @DisplayName("성공")
+        void test1() {
+            // given
+            UUID paymentId = UUID.randomUUID();
+            Payment payment = createPayment(paymentId, createOrder(UUID.randomUUID(), UUID.randomUUID()));
+
+            Instant canceledAt = Instant.now();
+            PGCancelResponse response = new PGCancelResponse(canceledAt, "고객 변심");
+
+            when(paymentRepository.findByIdAndDeletedAtIsNull(paymentId))
+                    .thenReturn(Optional.of(payment));
+
+            // when
+            Payment result = paymentService.cancelPayment(paymentId, response);
+
+            // then
+            assertThat(result.getStatus()).isEqualTo(PaymentStatus.CANCELED);
+            assertThat(result.getCancelReason()).isEqualTo("고객 변심");
+            assertThat(result.getCanceledAt()).isEqualTo(canceledAt);
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 결제")
+        void test2() {
+            // given
+            UUID paymentId = UUID.randomUUID();
+            PGCancelResponse response = new PGCancelResponse(Instant.now(), "고객 변심");
+
+            when(paymentRepository.findByIdAndDeletedAtIsNull(paymentId))
+                    .thenReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> paymentService.cancelPayment(paymentId, response))
+                    .isInstanceOf(ApiException.class)
+                    .extracting("responseCode")
+                    .isEqualTo(GeneralResponseCode.PAYMENT_NOT_FOUND);
         }
     }
 
