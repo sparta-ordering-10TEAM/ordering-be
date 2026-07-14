@@ -1,5 +1,6 @@
 package com.sparta.ordering.user.service;
 
+import com.sparta.ordering.global.code.AuthResponseCode;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.user.dto.request.ChangePasswordRequest;
@@ -57,8 +58,9 @@ public class UserService {
     }
 
 
-    public ProfileResponse updateProfile(UUID userId, ProfileUpdateRequest profileUpdateRequest,
+    public ProfileResponse updateProfile(UUID loginUserId, UUID userId, ProfileUpdateRequest profileUpdateRequest,
                                          MultipartFile profileImage) {
+        validateOwnership(loginUserId, userId);
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
@@ -68,7 +70,8 @@ public class UserService {
         return ProfileResponse.from(user);
     }
 
-    public void updatePassword(UUID userId, ChangePasswordRequest changePasswordRequest) {
+    public void updatePassword(UUID loginUserId, UUID userId, ChangePasswordRequest changePasswordRequest) {
+        validateOwnership(loginUserId, userId);
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
@@ -76,9 +79,16 @@ public class UserService {
         user.updatePassword(newPassword);
     }
 
-    public void deactivate(UUID userId) {
+    public void deactivate(UUID loginUserId, UUID userId) {
+        validateOwnership(loginUserId, userId);
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
         user.softDelete(userId);
+    }
+
+    private void validateOwnership(UUID loginUserId, UUID targetUserId) {
+        if (!loginUserId.equals(targetUserId)) {
+            throw new ApiException(AuthResponseCode.FORBIDDEN);
+        }
     }
 }

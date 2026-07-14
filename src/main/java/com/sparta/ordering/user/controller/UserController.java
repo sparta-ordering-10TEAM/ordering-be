@@ -8,10 +8,12 @@ import com.sparta.ordering.user.dto.request.ProfileUpdateRequest;
 import com.sparta.ordering.user.dto.request.UserCreateRequest;
 import com.sparta.ordering.user.dto.response.ProfileResponse;
 import com.sparta.ordering.user.dto.response.UserResponse;
+import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
 import com.sparta.ordering.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -49,27 +51,32 @@ public class UserController implements UserApi {
     @Override
     @PatchMapping("/{userId}/profiles")
     public ResponseEntity<GeneralResponse<ProfileResponse>> updateProfile(
+            @AuthenticationPrincipal CustomUserDetails loginUser,
             @PathVariable UUID userId,
             @Valid @RequestPart("request") ProfileUpdateRequest profileUpdateRequest,
             @RequestPart(value = "image", required = false) MultipartFile profileImage) {
 
         // TODO: 인프라 세팅 후 프로필 이미지 업데이트 추가
-        ProfileResponse result = userService.updateProfile(userId, profileUpdateRequest, profileImage);
+        ProfileResponse result = userService.updateProfile(loginUser.getUserId(), userId, profileUpdateRequest, profileImage);
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, result);
     }
 
     @Override
     @PatchMapping("/{userId}/password")
-    public ResponseEntity<GeneralResponse<Void>> updatePassword(@PathVariable UUID userId,
-                                                                @RequestBody @Valid ChangePasswordRequest changePasswordRequest) {
-        userService.updatePassword(userId, changePasswordRequest);
+    public ResponseEntity<GeneralResponse<Void>> updatePassword(
+            @AuthenticationPrincipal CustomUserDetails loginUser,
+            @PathVariable UUID userId,
+            @RequestBody @Valid ChangePasswordRequest changePasswordRequest) {
+        userService.updatePassword(loginUser.getUserId(), userId, changePasswordRequest);
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK,null);
     }
 
     @Override
     @DeleteMapping("/{userId}")
-    public ResponseEntity<GeneralResponse<Void>> deleteAccount(@PathVariable UUID userId) {
-        userService.deactivate(userId);
+    public ResponseEntity<GeneralResponse<Void>> deleteAccount(
+            @AuthenticationPrincipal CustomUserDetails loginUser,
+            @PathVariable UUID userId) {
+        userService.deactivate(loginUser.getUserId(), userId);
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK,null);
     }
 }
