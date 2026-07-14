@@ -1,6 +1,7 @@
 package com.sparta.ordering.auth.controller;
 
 import com.sparta.ordering.auth.dto.ResetPasswordRequest;
+import com.sparta.ordering.auth.dto.SignInRequest;
 import com.sparta.ordering.auth.dto.TokenRotationResult;
 import com.sparta.ordering.auth.security.session.JwtSessionService;
 import com.sparta.ordering.auth.service.AuthService;
@@ -56,5 +57,15 @@ public class AuthController {
     public ResponseEntity<GeneralResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request);
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, null);
+    }
+
+    @PostMapping("/sign-in")
+    public void signIn(SignInRequest signInRequest) {
+        throw new UnsupportedOperationException("Only for Documentation");
+    }
+
+    @PostMapping("/sign-out")
+    public void signOut() {
+        throw new UnsupportedOperationException("Only for Documentation");
     }
 }
