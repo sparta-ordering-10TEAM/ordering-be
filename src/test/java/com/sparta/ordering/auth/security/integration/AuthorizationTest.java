@@ -1,4 +1,4 @@
-package com.sparta.ordering.auth.security;
+package com.sparta.ordering.auth.security.integration;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,12 +43,14 @@ public class AuthorizationTest {
 
     private static final String OWNER_NAME = "authowner";
     private static final String CUSTOMER_NAME = "authcustomer";
+    private static final String MASTER_NAME = "authmaster";
     private static final String PASSWORD = "Test1234!";
 
     @BeforeEach
     void setUp() {
         userRepository.findByUserNameAndDeletedAtIsNull(OWNER_NAME).ifPresent(userRepository::delete);
         userRepository.findByUserNameAndDeletedAtIsNull(CUSTOMER_NAME).ifPresent(userRepository::delete);
+        userRepository.findByUserNameAndDeletedAtIsNull(MASTER_NAME).ifPresent(userRepository::delete);
 
         userRepository.save(User.builder()
                 .userName(OWNER_NAME)
@@ -69,23 +71,41 @@ public class AuthorizationTest {
                 .password(passwordEncoder.encode(PASSWORD))
                 .locked(false)
                 .build());
+
+        userRepository.save(User.builder()
+                .userName(MASTER_NAME)
+                .nickName("인가테스트마스터")
+                .email("authmaster@test.com")
+                .phoneNumber("010-3333-0001")
+                .role(Role.MASTER)
+                .password(passwordEncoder.encode(PASSWORD))
+                .locked(false)
+                .build());
     }
 
     @AfterEach
     void tearDown() {
         userRepository.findByUserNameAndDeletedAtIsNull(OWNER_NAME).ifPresent(userRepository::delete);
         userRepository.findByUserNameAndDeletedAtIsNull(CUSTOMER_NAME).ifPresent(userRepository::delete);
+        userRepository.findByUserNameAndDeletedAtIsNull(MASTER_NAME).ifPresent(userRepository::delete);
     }
 
     @Test
-    @DisplayName("CUSTOMER 역할은 상품 삭제 요청 시 403 반환")
-    void deleteProduct_customer_returns_403() throws Exception {
-         String accessToken = login(CUSTOMER_NAME, PASSWORD);
+    @DisplayName("CUSTOMER은 권한을 수정할 수 없다: hasRole('MASTER') 테스트")
+    void updateRole_customer_returns_403() throws Exception {
+        String accessToken = login(CUSTOMER_NAME, PASSWORD);
+        UUID targetUserId = userRepository.findByUserNameAndDeletedAtIsNull(OWNER_NAME)
+                .orElseThrow().getId();
+
+        String body = objectMapper.writeValueAsString(Map.of("role", "OWNER"));
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        headers.setContentType(MediaType.APPLICATION_JSON);
 
         ResponseEntity<String> response = restTemplate.exchange(
-                "/api/products/" + UUID.randomUUID(),
-                HttpMethod.DELETE,
-                bearerEntity(accessToken),
+                "/api/admin/users/" + targetUserId + "/role",
+                HttpMethod.PATCH,
+                new HttpEntity<>(body, headers),
                 String.class
         );
 
@@ -93,18 +113,24 @@ public class AuthorizationTest {
     }
 
     @Test
-    @DisplayName("OWNER 역할은 상품 삭제 요청 시 인가 통과 (403 아님)")
-    void deleteProduct_owner_passes_authorization() throws Exception {
-        String accessToken = login(OWNER_NAME, PASSWORD);
+    @DisplayName("MASTER은 권한을 수정할 수 있다: hasRole('MASTER') 테스트")
+    void updateRole_master_passes_authorization() throws Exception {
+        String accessToken = login(MASTER_NAME, PASSWORD);
+        UUID targetUserId = userRepository.findByUserNameAndDeletedAtIsNull(OWNER_NAME)
+                .orElseThrow().getId();
+
+        String body = objectMapper.writeValueAsString(Map.of("role", "OWNER"));
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        headers.setContentType(MediaType.APPLICATION_JSON);
 
         ResponseEntity<String> response = restTemplate.exchange(
-                "/api/products/" + UUID.randomUUID(),
-                HttpMethod.DELETE,
-                bearerEntity(accessToken),
+                "/api/admin/users/" + targetUserId + "/role",
+                HttpMethod.PATCH,
+                new HttpEntity<>(body, headers),
                 String.class
         );
 
-        // 인가 통과 여부만 검증 — 실제 상품이 없으므로 404가 반환되지만 403은 아님
         assertThat(response.getStatusCode()).isNotEqualTo(HttpStatus.FORBIDDEN);
     }
 
