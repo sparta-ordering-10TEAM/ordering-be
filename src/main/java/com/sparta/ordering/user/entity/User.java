@@ -10,8 +10,6 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -33,10 +31,9 @@ public class User extends BaseUpdatableEntity {
 
     @Column(nullable = false)
     private String phoneNumber;
-
-    @Column(nullable = false, columnDefinition = "role")
+  
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     private Role role;
 
     @Column(nullable = false)
