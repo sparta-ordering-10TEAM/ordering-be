@@ -68,7 +68,7 @@ class GeminiClientTest {
                     .andRespond(withSuccess(mockResponseJson, MediaType.APPLICATION_JSON));
 
             // when
-            String result = geminiClient.generateDescription(null, prompt);
+            String result = geminiClient.generateText(null, prompt);
 
             // then
             assertThat(result).isEqualTo(expectedText);
@@ -91,7 +91,7 @@ class GeminiClientTest {
                     .andRespond(withSuccess(mockResponseJson, MediaType.APPLICATION_JSON));
 
             // when & then
-            assertThatThrownBy(() -> geminiClient.generateDescription(null, prompt))
+            assertThatThrownBy(() -> geminiClient.generateText(null, prompt))
                     .isInstanceOf(ApiException.class)
                     .hasFieldOrPropertyWithValue("responseCode", ExternalResponseCode.GEMINI_API_INVALID_RESPONSE);
             mockServer.verify();
@@ -108,7 +108,7 @@ class GeminiClientTest {
                     .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
 
             // when & then
-            assertThatThrownBy(() -> geminiClient.generateDescription(null, prompt))
+            assertThatThrownBy(() -> geminiClient.generateText(null, prompt))
                     .isInstanceOf(ApiException.class)
                     .hasFieldOrPropertyWithValue("responseCode", ExternalResponseCode.GEMINI_API_ERROR);
             mockServer.verify();

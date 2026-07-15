@@ -51,9 +51,6 @@ jwt:
   refresh-token:
     validity-seconds: ${JWT_REFRESH_EXPIRATION}
 
-time:
-  zone-id: ${TIME_ZONE_ID:Asia/Seoul}
-
 resetpassword:
   validity-seconds: 600 # 10분
 

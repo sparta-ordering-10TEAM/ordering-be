@@ -3,6 +3,7 @@ package com.sparta.ordering.user.service;
 import com.sparta.ordering.global.code.AuthResponseCode;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
+import com.sparta.ordering.global.storage.FileStorageService;
 import com.sparta.ordering.user.dto.request.ChangePasswordRequest;
 import com.sparta.ordering.user.dto.request.ProfileUpdateRequest;
 import com.sparta.ordering.user.dto.request.UserCreateRequest;
@@ -19,6 +20,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -48,6 +50,9 @@ class UserServiceTest {
 
     @Mock
     private JwtSessionService jwtSessionService;
+
+    @Mock
+    private FileStorageService fileStorageService;
 
     @Spy
     private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -117,6 +122,53 @@ class UserServiceTest {
         // then
         assertThat(result.getNickName()).isEqualTo("newName");
         assertThat(result.getPhoneNumber()).isEqualTo("010-1111-1111");
+    }
+
+    @Test
+    @DisplayName("프로필 업데이트 성공 - 이미지 포함")
+    void update_profile_with_image() {
+        // given
+        UUID userId = UUID.randomUUID();
+        ProfileUpdateRequest request = new ProfileUpdateRequest("newName", "010-1111-1111");
+        MockMultipartFile image = new MockMultipartFile(
+                "image", "photo.jpg", "image/jpeg", "fake-image-bytes".getBytes()
+        );
+        String expectedUrl = "http://localhost:8080/uploads/profiles/" + userId + "/some-uuid.jpg";
+
+        User user = User.builder().nickName("originalName").phoneNumber("010-1234-1234").build();
+        when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
+        when(fileStorageService.upload(image, userId)).thenReturn(expectedUrl);
+
+        // when
+        ProfileResponse result = userService.updateProfile(userId, userId, request, image);
+
+        // then
+        assertThat(result.getProfileImageUrl()).isEqualTo(expectedUrl);
+        verify(fileStorageService).upload(image, userId);
+    }
+
+    @Test
+    @DisplayName("프로필 업데이트 성공 - 기존 이미지 교체")
+    void update_profile_replaces_existing_image() {
+        // given
+        UUID userId = UUID.randomUUID();
+        String oldUrl = "http://localhost:8080/uploads/profiles/" + userId + "/old.jpg";
+        ProfileUpdateRequest request = new ProfileUpdateRequest(null, null);
+        MockMultipartFile image = new MockMultipartFile(
+                "image", "new.jpg", "image/jpeg", "fake-image-bytes".getBytes()
+        );
+        String newUrl = "http://localhost:8080/uploads/profiles/" + userId + "/new-uuid.jpg";
+
+        User user = User.builder().nickName("name").phoneNumber("010-0000-0000").profileImageUrl(oldUrl).build();
+        when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
+        when(fileStorageService.upload(image, userId)).thenReturn(newUrl);
+
+        // when
+        userService.updateProfile(userId, userId, request, image);
+
+        // then
+        verify(fileStorageService).delete(oldUrl);
+        verify(fileStorageService).upload(image, userId);
     }
 
     @Test

@@ -40,8 +40,23 @@ public class AiPromptController implements AiPromptApi {
     public ResponseEntity<GeneralResponse<String>> generateProductDescription(
             @RequestBody @Valid GenerateProductDescriptionRequest request
     ) {
-        String description = aiPromptFacade.generateProductDescription(request.prompt());
-        return GeneralResponse.toResponseEntity(GeneralResponseCode.CREATED, description);
+        return GeneralResponse.toResponseEntity(
+                GeneralResponseCode.CREATED,
+                aiPromptFacade.generateProductDescription(request.prompt())
+        );
+    }
+
+    @Override
+    @PreAuthorize("hasRole('OWNER')")
+    @PostMapping("/reviews/{reviewId}/generate-reply")
+    public ResponseEntity<GeneralResponse<String>> generateReviewReply(
+            @PathVariable UUID reviewId,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        return GeneralResponse.toResponseEntity(
+                GeneralResponseCode.CREATED,
+                aiPromptFacade.generateReviewReply(reviewId, user.getUserId())
+        );
     }
 
     @Override

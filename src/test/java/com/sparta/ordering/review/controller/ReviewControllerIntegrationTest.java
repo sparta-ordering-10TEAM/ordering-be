@@ -13,8 +13,10 @@ import com.sparta.ordering.restaurant.entity.RestaurantCategory;
 import com.sparta.ordering.restaurant.repository.RestaurantCategoryRepository;
 import com.sparta.ordering.restaurant.repository.RestaurantRepository;
 import com.sparta.ordering.review.dto.PostReviewRequest;
+import com.sparta.ordering.review.dto.ReplyReviewRequest;
 import com.sparta.ordering.review.dto.UpdateReviewRequest;
 import com.sparta.ordering.review.entity.Review;
+import com.sparta.ordering.review.repository.ReviewReplyRepository;
 import com.sparta.ordering.review.repository.ReviewRepository;
 import com.sparta.ordering.user.entity.Role;
 import com.sparta.ordering.user.entity.User;
@@ -83,8 +85,11 @@ class ReviewControllerIntegrationTest {
 
     private String customerToken;
     private String managerToken;
+    private String ownerToken;
     @Autowired
     private JwtSessionService jwtSessionService;
+    @Autowired
+    private ReviewReplyRepository reviewReplyRepository;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -166,6 +171,7 @@ class ReviewControllerIntegrationTest {
         // 테스트 계정별 JWT Access Token 생성
         customerToken = jwtSessionService.createJwtSession(customer.getId()).getAccessToken();
         managerToken = jwtSessionService.createJwtSession(manager.getId()).getAccessToken();
+        ownerToken = jwtSessionService.createJwtSession(owner.getId()).getAccessToken();
     }
 
     @Nested
@@ -671,6 +677,102 @@ class ReviewControllerIntegrationTest {
                             .header("Authorization", "Bearer " + customerToken))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.status").value(404));
+        }
+    }
+
+    @Nested
+    @DisplayName("리뷰 답글 CRUD 통합 테스트")
+    class ReviewReplyCrud {
+
+        private Review savedReview;
+
+        @BeforeEach
+        void createReview() {
+            // 답글을 작성할 대상 리뷰 사전 생성
+            savedReview = Review.builder()
+                    .order(order)
+                    .customer(customer)
+                    .rating(5)
+                    .comment("정말 최고의 맛이네요!")
+                    .build();
+            savedReview = reviewRepository.save(savedReview);
+        }
+
+        @Test
+        @DisplayName("성공 - 사장님 권한으로 리뷰 답글 작성 및 수정, 삭제 시나리오")
+        void successReplyLifecycle() throws Exception {
+            // 1. 답글 작성 (POST)
+            ReplyReviewRequest postRequest = new ReplyReviewRequest("답글을 등록합니다. 맛있게 드셔주셔서 감사합니다.");
+            String responseBody = mockMvc.perform(post("/api/reviews/{reviewId}/reply", savedReview.getId())
+                            .header("Authorization", "Bearer " + ownerToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(postRequest)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.status").value(201))
+                    .andReturn().getResponse().getContentAsString();
+
+            // 생성된 답글 ID 추출
+            String replyIdStr = objectMapper.readTree(responseBody).get("data").asText();
+            UUID replyId = UUID.fromString(replyIdStr);
+
+            // 2. 답글 수정 (PATCH)
+            ReplyReviewRequest patchRequest = new ReplyReviewRequest("수정된 답글 내용입니다.");
+            mockMvc.perform(patch("/api/reviews/replies/{reviewReplyId}", replyId)
+                            .header("Authorization", "Bearer " + ownerToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(patchRequest)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.status").value(200));
+
+            // 3. 답글 삭제 (DELETE)
+            mockMvc.perform(delete("/api/reviews/replies/{reviewReplyId}", replyId)
+                            .header("Authorization", "Bearer " + ownerToken))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.status").value(200));
+
+            // DB에서 soft delete 상태 확인
+            boolean exists = reviewReplyRepository.findByIdAndDeletedAtIsNull(replyId).isPresent();
+            assertThat(exists).isFalse();
+        }
+
+        @Test
+        @DisplayName("실패 - 일반 고객(CUSTOMER) 권한으로 답글 작성 시도 시 403 Forbidden")
+        void failCustomerCannotReply() throws Exception {
+            // given
+            ReplyReviewRequest postRequest = new ReplyReviewRequest("고객이 쓰는 답글");
+
+            // when & then
+            mockMvc.perform(post("/api/reviews/{reviewId}/reply", savedReview.getId())
+                            .header("Authorization", "Bearer " + customerToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(postRequest)))
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("성공 - 관리자(MANAGER) 권한으로 타인의 답글 강제 삭제")
+        void successAdminDeleteReply() throws Exception {
+            // given - 사장님이 작성한 답글 사전 등록
+            ReplyReviewRequest postRequest = new ReplyReviewRequest("사장님이 남긴 답글");
+            String responseBody = mockMvc.perform(post("/api/reviews/{reviewId}/reply", savedReview.getId())
+                            .header("Authorization", "Bearer " + ownerToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(postRequest)))
+                    .andExpect(status().isCreated())
+                    .andReturn().getResponse().getContentAsString();
+
+            String replyIdStr = objectMapper.readTree(responseBody).get("data").asText();
+            UUID replyId = UUID.fromString(replyIdStr);
+
+            // when - 관리자 권한으로 삭제 수행 (DELETE)
+            mockMvc.perform(delete("/api/reviews/replies/{reviewReplyId}", replyId)
+                            .header("Authorization", "Bearer " + managerToken))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.status").value(200));
+
+            // then - 삭제 완료 확인
+            boolean exists = reviewReplyRepository.findByIdAndDeletedAtIsNull(replyId).isPresent();
+            assertThat(exists).isFalse();
         }
     }
 }
