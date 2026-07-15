@@ -1,7 +1,9 @@
 package com.sparta.ordering.restaurant.controller;
 
+import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
+import com.sparta.ordering.restaurant.controller.api.RestaurantApi;
 import com.sparta.ordering.restaurant.dto.RestaurantCreateRequest;
 import com.sparta.ordering.restaurant.dto.RestaurantResponse;
 import com.sparta.ordering.restaurant.dto.RestaurantUpdateRequest;
@@ -29,10 +31,11 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
-public class RestaurantController {
+public class RestaurantController implements RestaurantApi {
 
     private final RestaurantService restaurantService;
 
+    @Override
     @GetMapping("/restaurants")
     public ResponseEntity<GeneralResponse<Page<RestaurantResponse>>> getRestaurants(
             @RequestParam(required = false) String category,
@@ -44,6 +47,7 @@ public class RestaurantController {
         );
     }
 
+    @Override
     @GetMapping("/restaurants/{restaurantId}")
     public ResponseEntity<GeneralResponse<RestaurantResponse>> getRestaurant(@PathVariable UUID restaurantId) {
         return GeneralResponse.toResponseEntity(
@@ -52,50 +56,54 @@ public class RestaurantController {
         );
     }
 
+    @Override
     @PreAuthorize("hasRole('OWNER')")
     @GetMapping("/users/me/restaurants")
     public ResponseEntity<GeneralResponse<Page<RestaurantResponse>>> getOwnerRestaurants(
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails user,
             @PageableDefault Pageable pageable
     ) {
         return GeneralResponse.toResponseEntity(
                 GeneralResponseCode.OK,
-                restaurantService.getOwnerRestaurants(userId, pageable)
+                restaurantService.getOwnerRestaurants(user.getUserId(), pageable)
         );
     }
 
+    @Override
     @PreAuthorize("hasRole('OWNER')")
     @PostMapping("/restaurants")
     public ResponseEntity<GeneralResponse<RestaurantResponse>> createRestaurant(
             @Valid @RequestBody RestaurantCreateRequest request,
-            @AuthenticationPrincipal UUID userId
+            @AuthenticationPrincipal CustomUserDetails user
     ) {
         return GeneralResponse.toResponseEntity(
                 GeneralResponseCode.CREATED,
-                restaurantService.createRestaurant(request, userId)
+                restaurantService.createRestaurant(request, user.getUserId())
         );
     }
 
+    @Override
     @PreAuthorize("hasAnyRole('MANAGER', 'MASTER', 'OWNER')")
     @PatchMapping("/restaurants/{restaurantId}")
     public ResponseEntity<GeneralResponse<RestaurantResponse>> updateRestaurant(
             @PathVariable UUID restaurantId,
             @Valid @RequestBody RestaurantUpdateRequest request,
-            @AuthenticationPrincipal UUID userId
+            @AuthenticationPrincipal CustomUserDetails user
     ) {
         return GeneralResponse.toResponseEntity(
                 GeneralResponseCode.OK,
-                restaurantService.updateRestaurant(restaurantId, request, userId)
+                restaurantService.updateRestaurant(restaurantId, request, user.getUserId())
         );
     }
 
+    @Override
     @PreAuthorize("hasAnyRole('MANAGER', 'MASTER', 'OWNER')")
     @DeleteMapping("/restaurants/{restaurantId}")
     public ResponseEntity<GeneralResponse<Void>> deleteRestaurant(
             @PathVariable UUID restaurantId,
-            @AuthenticationPrincipal UUID userId
+            @AuthenticationPrincipal CustomUserDetails user
     ) {
-        restaurantService.deleteRestaurant(restaurantId, userId);
+        restaurantService.deleteRestaurant(restaurantId, user.getUserId());
 
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, null);
     }

@@ -81,7 +81,7 @@ class AiPromptServiceTest {
             // given
             String prompt = "치킨 설명 생성";
             String generatedText = "바삭하고 고소한 후라이드 치킨";
-            when(geminiClient.generateDescription(anyString())).thenReturn(generatedText);
+            when(geminiClient.generateDescription(anyString(), anyString())).thenReturn(generatedText);
 
             AiPromptFacade facade = new AiPromptFacade(geminiClient, aiPromptService);
 
@@ -90,7 +90,7 @@ class AiPromptServiceTest {
 
             // then
             assertThat(result).isEqualTo(generatedText);
-            verify(geminiClient, times(1)).generateDescription(contains(prompt));
+            verify(geminiClient, times(1)).generateDescription(anyString(), eq(prompt));
             verify(aiPromptLogRepository, times(1)).save(any(AiPromptLog.class));
         }
 
@@ -100,7 +100,7 @@ class AiPromptServiceTest {
             // given
             String prompt = "치킨 설명 생성";
             String generatedText = "A".repeat(60);
-            when(geminiClient.generateDescription(anyString())).thenReturn(generatedText);
+            when(geminiClient.generateDescription(anyString(), anyString())).thenReturn(generatedText);
 
             AiPromptFacade facade = new AiPromptFacade(geminiClient, aiPromptService);
 
@@ -111,7 +111,7 @@ class AiPromptServiceTest {
             String expected = "A".repeat(47) + "...";
             assertThat(result).isEqualTo(expected);
             assertThat(result.length()).isEqualTo(50);
-            verify(geminiClient, times(1)).generateDescription(contains(prompt));
+            verify(geminiClient, times(1)).generateDescription(anyString(), eq(prompt));
             verify(aiPromptLogRepository, times(1)).save(any(AiPromptLog.class));
         }
 
@@ -121,7 +121,7 @@ class AiPromptServiceTest {
             // given
             String prompt = "치킨 설명 생성";
             String generatedText = "A".repeat(50);
-            when(geminiClient.generateDescription(anyString())).thenReturn(generatedText);
+            when(geminiClient.generateDescription(anyString(), anyString())).thenReturn(generatedText);
 
             AiPromptFacade facade = new AiPromptFacade(geminiClient, aiPromptService);
 
@@ -131,7 +131,7 @@ class AiPromptServiceTest {
             // then
             assertThat(result).isEqualTo(generatedText);
             assertThat(result.length()).isEqualTo(50);
-            verify(geminiClient, times(1)).generateDescription(contains(prompt));
+            verify(geminiClient, times(1)).generateDescription(anyString(), eq(prompt));
             verify(aiPromptLogRepository, times(1)).save(any(AiPromptLog.class));
         }
     }

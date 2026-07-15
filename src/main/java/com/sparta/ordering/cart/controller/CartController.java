@@ -8,6 +8,8 @@ import com.sparta.ordering.cart.dto.CartResponse;
 import com.sparta.ordering.cart.service.CartService;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
+@Tag(name = "Cart", description = "장바구니 관련 API")
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
