@@ -93,9 +93,10 @@ public class Order extends BaseUpdatableEntity {
         this.orderStatus = OrderStatus.CANCELLED;
     }
 
-    public void delete(UUID deletedBy) {
+    @Override
+    public void softDelete(UUID deletedBy) {
         validateDeleteStatus();
-        softDelete(deletedBy);
+        super.softDelete(deletedBy);
     }
 
     private void validateStatus(OrderStatus requestStatus) {

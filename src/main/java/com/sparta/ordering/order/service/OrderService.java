@@ -161,7 +161,7 @@ public class OrderService {
                     .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
         };
 
-        order.delete(userId);
+        order.softDelete(userId);
     }
 
 
