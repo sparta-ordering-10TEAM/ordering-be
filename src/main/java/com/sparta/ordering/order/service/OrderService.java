@@ -84,7 +84,7 @@ public class OrderService {
 
         Page<Order> orders = switch (user.getRole()) {
             case CUSTOMER -> orderRepository.findAllByCustomerIdWithRestaurant(userId, pageable);
-            case OWNER -> orderRepository.findAllByOwnerIdWithRestaurant(userId, pageable);
+            case OWNER -> orderRepository.findAllByRestaurantOwnerIdWithRestaurant(userId, pageable);
             case MANAGER, MASTER -> orderRepository.findAllWithRestaurant(pageable);
         };
 
@@ -114,13 +114,13 @@ public class OrderService {
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
         Order order = switch (user.getRole()) {
-            case CUSTOMER -> orderRepository.findByCustomerIdWithRestaurantAndOrderItems(userId, orderId)
+            case CUSTOMER -> orderRepository.findDetailByIdAndCustomerId(orderId, userId)
                     .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
 
-            case OWNER -> orderRepository.findByOwnerIdWithRestaurantAndOrderItems(userId, orderId)
+            case OWNER -> orderRepository.findDetailByIdAndRestaurantOwnerId(orderId, userId)
                     .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
 
-            case MANAGER, MASTER -> orderRepository.findByIdWithRestaurantAndOrderItems(orderId)
+            case MANAGER, MASTER -> orderRepository.findDetailById(orderId)
                     .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
         };
 
@@ -129,7 +129,7 @@ public class OrderService {
 
     @Transactional
     public OrderStatusResponse updateStatus(UUID orderId, UUID ownerId, OrderStatus requestStatus) {
-        Order order = orderRepository.findByIdAndOwnerIdForUpdate(orderId, ownerId)
+        Order order = orderRepository.findByIdAndRestaurantOwnerIdForStatusUpdate(orderId, ownerId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
         order.changeStatus(requestStatus);
 
@@ -138,11 +138,30 @@ public class OrderService {
 
     @Transactional
     public OrderStatusResponse cancelOrder(UUID orderId, UUID customerId) {
-        Order order = orderRepository.findByIdAndCustomerIdForUpdate(orderId, customerId)
+        Order order = orderRepository.findByIdAndCustomerIdForCancel(orderId, customerId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
         order.cancel(Instant.now());
 
         return OrderStatusResponse.from(order);
+    }
+
+    @Transactional
+    public void deleteOrder(UUID orderId, UUID userId) {
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
+
+        Order order = switch (user.getRole()) {
+            case CUSTOMER -> orderRepository.findByIdAndCustomerIdForDelete(orderId, userId)
+                    .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
+
+            case OWNER -> orderRepository.findByIdAndRestaurantOwnerIdForDelete(orderId, userId)
+                    .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
+
+            case MANAGER, MASTER -> orderRepository.findByIdForDelete(orderId)
+                    .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
+        };
+
+        order.delete(userId);
     }
 
 

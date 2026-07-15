@@ -280,7 +280,7 @@ class OrderServiceTest {
 
             Order order = createOrder(orderId, currentStatus, Instant.now());
 
-            when(orderRepository.findByIdAndOwnerIdForUpdate(orderId, ownerId))
+            when(orderRepository.findByIdAndRestaurantOwnerIdForStatusUpdate(orderId, ownerId))
                     .thenReturn(Optional.of(order));
 
             // when
@@ -300,7 +300,7 @@ class OrderServiceTest {
 
             Order order = createOrder(orderId, OrderStatus.REQUESTED, Instant.now());
 
-            when(orderRepository.findByIdAndOwnerIdForUpdate(orderId, ownerId))
+            when(orderRepository.findByIdAndRestaurantOwnerIdForStatusUpdate(orderId, ownerId))
                     .thenReturn(Optional.of(order));
 
             // when & then
@@ -320,7 +320,7 @@ class OrderServiceTest {
             UUID orderId = UUID.randomUUID();
             UUID ownerId = UUID.randomUUID();
 
-            when(orderRepository.findByIdAndOwnerIdForUpdate(
+            when(orderRepository.findByIdAndRestaurantOwnerIdForStatusUpdate(
                     orderId,
                     ownerId
             )).thenReturn(Optional.empty());
@@ -360,7 +360,7 @@ class OrderServiceTest {
                     Instant.now().minus(Duration.ofMinutes(4))
             );
 
-            when(orderRepository.findByIdAndCustomerIdForUpdate(
+            when(orderRepository.findByIdAndCustomerIdForCancel(
                     orderId,
                     customerId
             )).thenReturn(Optional.of(order));
@@ -382,7 +382,7 @@ class OrderServiceTest {
                     .isEqualTo(OrderStatus.CANCELLED);
 
             verify(orderRepository)
-                    .findByIdAndCustomerIdForUpdate(
+                    .findByIdAndCustomerIdForCancel(
                             orderId,
                             customerId
                     );
@@ -401,7 +401,7 @@ class OrderServiceTest {
                     Instant.now().minus(Duration.ofMinutes(6))
             );
 
-            when(orderRepository.findByIdAndCustomerIdForUpdate(
+            when(orderRepository.findByIdAndCustomerIdForCancel(
                     orderId,
                     customerId
             )).thenReturn(Optional.of(order));
@@ -436,7 +436,7 @@ class OrderServiceTest {
                     Instant.now().minus(Duration.ofMinutes(1))
             );
 
-            when(orderRepository.findByIdAndCustomerIdForUpdate(
+            when(orderRepository.findByIdAndCustomerIdForCancel(
                     orderId,
                     customerId
             )).thenReturn(Optional.of(order));
@@ -465,7 +465,7 @@ class OrderServiceTest {
             UUID orderId = UUID.randomUUID();
             UUID customerId = UUID.randomUUID();
 
-            when(orderRepository.findByIdAndCustomerIdForUpdate(
+            when(orderRepository.findByIdAndCustomerIdForCancel(
                     orderId,
                     customerId
             )).thenReturn(Optional.empty());
@@ -481,6 +481,12 @@ class OrderServiceTest {
                     .extracting("responseCode")
                     .isEqualTo(GeneralResponseCode.ORDER_NOT_FOUND);
         }
+    }
+
+    @Nested
+    @DisplayName("주문 삭제")
+    class DeleteOrder {
+
     }
 
     private User createUser(UUID userId, Role role) {

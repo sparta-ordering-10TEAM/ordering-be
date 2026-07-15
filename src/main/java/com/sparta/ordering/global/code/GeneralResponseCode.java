@@ -21,8 +21,9 @@ public enum GeneralResponseCode implements ApiResponseCode {
     ORDER_ONLY_CUSTOMER(HttpStatus.FORBIDDEN, "고객만 주문할 수 있습니다."),
     ORDER_RESTAURANT_NOT_OPEN(HttpStatus.BAD_REQUEST, "영업 중인 식당에만 주문할 수 있습니다."),
     ORDER_PRODUCT_RESTAURANT_MISMATCH(HttpStatus.BAD_REQUEST, "해당 식당의 상품만 주문할 수 있습니다."),
+    ORDER_DELETE_STATUS_INVALID(HttpStatus.CONFLICT, "진행 중인 주문은 삭제할 수 없습니다."),
 
-    // Payment
+            // Payment
     PAYMENT_AMOUNT_INVALID(HttpStatus.BAD_REQUEST, "결제 금액이 주문 금액과 일치하지 않습니다."),
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 결제 내역을 찾을 수 없습니다."),
     PAYMENT_ALREADY_IN_PROGRESS(HttpStatus.CONFLICT, "이미 처리 중이거나 완료된 결제 요청입니다."),

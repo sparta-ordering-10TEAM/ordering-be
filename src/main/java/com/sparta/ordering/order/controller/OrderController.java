@@ -20,6 +20,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -83,4 +84,14 @@ public class OrderController implements OrderApi {
         OrderStatusResponse response = orderService.cancelOrder(orderId, userDetails.getUserId());
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
+
+    @Override
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
+    @DeleteMapping("/orders/{orderId}")
+    public ResponseEntity<GeneralResponse<Void>> deleteOrder(@PathVariable UUID orderId,
+                                                             @AuthenticationPrincipal CustomUserDetails userDetails) {
+        orderService.deleteOrder(orderId, userDetails.getUserId());
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, null);
+    }
+
 }
