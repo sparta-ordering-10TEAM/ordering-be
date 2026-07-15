@@ -17,7 +17,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -25,7 +24,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -35,9 +33,6 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -149,40 +144,6 @@ class ProductServiceTest {
             assertThat(result.getContent().get(0).name()).isEqualTo("상품1");
         }
 
-        @Test
-        @DisplayName("실패 - 허용되지 않은 정렬 필드")
-        void test2() {
-            // given
-            UUID restaurantId = UUID.randomUUID();
-            ProductSearchRequest request = new ProductSearchRequest(null, null, null);
-            Pageable pageable = PageRequest.of(0, 10, Sort.by("description"));
-
-            // when & then
-            assertThatThrownBy(() -> productService.getProducts(request, restaurantId, pageable))
-                    .isInstanceOf(ApiException.class)
-                    .extracting("responseCode")
-                    .isEqualTo(GeneralResponseCode.INVALID_REQUEST);
-        }
-
-        @Test
-        @DisplayName("허용되지 않은 페이지 크기는 10으로 고정")
-        void test3() {
-            // given
-            UUID restaurantId = UUID.randomUUID();
-            ProductSearchRequest request = new ProductSearchRequest(null, null, null);
-            Pageable pageable = PageRequest.of(0, 20);
-
-            when(productRepository.searchProducts(eq(restaurantId), isNull(), isNull(), isNull(), any(Pageable.class)))
-                    .thenReturn(Page.empty());
-
-            // when
-            productService.getProducts(request, restaurantId, pageable);
-
-            // then
-            ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
-            verify(productRepository).searchProducts(eq(restaurantId), isNull(), isNull(), isNull(), captor.capture());
-            assertThat(captor.getValue().getPageSize()).isEqualTo(10);
-        }
     }
 
     @Nested

@@ -4,6 +4,7 @@ import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.order.entity.Order;
 import com.sparta.ordering.order.repository.OrderRepository;
+import com.sparta.ordering.payment.dto.PGCancelResponse;
 import com.sparta.ordering.payment.dto.PGResponse;
 import com.sparta.ordering.payment.dto.PaymentRequest;
 import com.sparta.ordering.payment.dto.PaymentResponse;
@@ -12,10 +13,14 @@ import com.sparta.ordering.payment.entity.PaymentStatus;
 import com.sparta.ordering.payment.repository.PaymentRepository;
 import com.sparta.ordering.user.entity.Role;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Set;
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.UUID;
 
 @Service
@@ -25,7 +30,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
 
-    private static final Set<Role> PRIVILEGED_ROLES = Set.of(Role.MANAGER, Role.MASTER);
+    private static final Duration CANCEL_TIME_LIMIT = Duration.ofMinutes(5);
 
     @Transactional
     public Payment preparePayment(UUID userId, PaymentRequest request) {
@@ -34,7 +39,7 @@ public class PaymentService {
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
 
         // 가격 검증
-        if (!order.getTotalPrice().equals(request.amount())) {
+        if (BigDecimal.valueOf(order.getTotalPrice()).compareTo(request.amount()) != 0) {
             throw new ApiException(GeneralResponseCode.PAYMENT_AMOUNT_INVALID);
         }
 
@@ -75,22 +80,77 @@ public class PaymentService {
 
     @Transactional(readOnly = true)
     public PaymentResponse getPayment(UUID paymentId, UUID userId, Role role) {
+        Payment payment = findAccessiblePayment(paymentId, userId, role);
+        return PaymentResponse.from(payment);
+    }
 
+    @Transactional(readOnly = true)
+    public Page<PaymentResponse> getPayments(UUID userId, Role role, Pageable pageable) {
+        Page<Payment> payments = switch (role) {
+            case MANAGER, MASTER -> paymentRepository.findAllByDeletedAtIsNull(pageable); // master, manager 조회
+            case OWNER -> paymentRepository.findAllByOrder_Restaurant_User_IdAndDeletedAtIsNull(userId, pageable); // owner는 자기 가게 주문인지 확인
+            case CUSTOMER -> paymentRepository.findAllByOrder_Customer_IdAndDeletedAtIsNull(userId, pageable); // customer는 자기 주문인지 확인
+        };
+        return payments.map(PaymentResponse::from);
+    }
 
-        Payment payment;
-        if (PRIVILEGED_ROLES.contains(role)) {
-            payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId) // master, manager 조회 가능
-                    .orElseThrow(() -> new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND));
-        } else if (role.equals(Role.OWNER)) { // owner는 자기 가게 주문인지 확인
-            payment = paymentRepository.findByIdAndOrder_Restaurant_User_IdAndDeletedAtIsNull(paymentId, userId)
-                    .orElseThrow(() -> new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND));
-        } else if (role.equals(Role.CUSTOMER)) { // customer는 자기 주문인지 확인
-            payment = paymentRepository.findByIdAndOrder_Customer_IdAndDeletedAtIsNull(paymentId, userId)
-                    .orElseThrow(() -> new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND));
-        } else {
-            throw new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND);
+    @Transactional
+    public Payment prepareCancelPayment(UUID paymentId, UUID userId, Role role) {
+
+        // 사용자 검증
+        Payment payment = findAccessiblePayment(paymentId, userId, role);
+
+        if (!payment.getStatus().equals(PaymentStatus.DONE)) {
+            throw new ApiException(GeneralResponseCode.PAYMENT_INVALID_PAYMENT_STATUS);
         }
 
-        return PaymentResponse.from(payment);
+        // 중복 취소 요청 방지
+        int updated = paymentRepository.updateStatusByIdAndStatus(paymentId, PaymentStatus.DONE, PaymentStatus.CANCELED_REQUESTED);
+        if (updated == 0) {
+            throw new ApiException(GeneralResponseCode.PAYMENT_CANCEL_CONFLICT);
+        }
+
+        Payment refreshed = paymentRepository.findByIdAndDeletedAtIsNullWithOrder(paymentId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND));
+
+        // Order와 동일하게 역할 관계없이 5분 제한 적용
+        Instant cancelDeadline = refreshed.getOrder().getCreatedAt().plus(CANCEL_TIME_LIMIT);
+        if (Instant.now().isAfter(cancelDeadline)) {
+            throw new ApiException(GeneralResponseCode.ORDER_CANCELLATION_TIME_EXPIRED);
+        }
+
+        return refreshed;
+    }
+
+    @Transactional
+    public void revertCancelPayment(UUID paymentId) {
+        Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND));
+
+        if (!payment.getStatus().equals(PaymentStatus.CANCELED_REQUESTED)) {
+            throw new ApiException(GeneralResponseCode.PAYMENT_INVALID_PAYMENT_STATUS);
+        }
+
+        payment.revertCancel();
+    }
+
+    @Transactional
+    public Payment cancelPayment(UUID paymentId, PGCancelResponse response) {
+        Payment payment = paymentRepository.findByIdAndDeletedAtIsNull(paymentId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND));
+
+        payment.cancel(response.reason(), response.canceledAt());
+        return payment;
+    }
+
+    private Payment findAccessiblePayment(UUID paymentId, UUID userId, Role role) {
+        return switch (role) {
+            case MANAGER, MASTER -> paymentRepository.findByIdAndDeletedAtIsNull(paymentId) // master, manager 조회 가능
+                    .orElseThrow(() -> new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND));
+            case OWNER -> paymentRepository.findByIdAndOrder_Restaurant_User_IdAndDeletedAtIsNull(paymentId, userId) // owner는 자기 가게 주문인지 확인
+                    .orElseThrow(() -> new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND));
+            case CUSTOMER -> paymentRepository.findByIdAndOrder_Customer_IdAndDeletedAtIsNull(paymentId, userId) // customer는 자기 주문인지 확인
+                    .orElseThrow(() -> new ApiException(GeneralResponseCode.PAYMENT_NOT_FOUND));
+        };
     }
 }
