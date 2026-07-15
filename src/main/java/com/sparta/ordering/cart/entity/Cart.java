@@ -37,7 +37,7 @@ public class Cart extends BaseUpdatableEntity {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "restaurant_id")
+    @JoinColumn(name = "restaurant_id", nullable = false)
     private Restaurant restaurant;
 
     @Column(name = "unique_version", nullable = false, columnDefinition = "uuid")
