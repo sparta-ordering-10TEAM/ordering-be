@@ -10,6 +10,7 @@ import com.sparta.ordering.user.dto.response.ProfileResponse;
 import com.sparta.ordering.user.dto.response.UserResponse;
 import com.sparta.ordering.user.entity.Role;
 import com.sparta.ordering.user.entity.User;
+import com.sparta.ordering.auth.security.session.JwtSessionService;
 import com.sparta.ordering.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,6 +45,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private JwtSessionService jwtSessionService;
 
     @Spy
     private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();

@@ -65,3 +65,11 @@ logging:
   level:
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: trace
+
+app:
+  admin:
+    email: ${MASTER_INITIAL_EMAIL}
+    name: ${MASTER_INITIAL_NAME}
+    nickName: ${MASTER_INITIAL_NICKNAME}
+    password: ${MASTER_INITIAL_PASSWORD}
+    phoneNumber: ${MASTER_INITIAL_PHONE_NUMBER}
