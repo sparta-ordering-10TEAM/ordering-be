@@ -4,6 +4,7 @@ import com.sparta.ordering.payment.entity.Payment;
 import com.sparta.ordering.payment.entity.PaymentMethod;
 import com.sparta.ordering.payment.entity.PaymentStatus;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -11,9 +12,10 @@ public record PaymentResponse(
         UUID paymentId,
         UUID orderId,
         PaymentMethod paymentMethod,
-        Long amount,
+        BigDecimal amount,
         PaymentStatus status,
         String cancelReason,
+        Instant canceledAt,
         Instant approvedAt,
         String cardCompany
 ) {
@@ -25,6 +27,7 @@ public record PaymentResponse(
                 payment.getAmount(),
                 payment.getStatus(),
                 payment.getCancelReason(),
+                payment.getCanceledAt(),
                 payment.getApprovedAt(),
                 payment.getCardCompany()
         );

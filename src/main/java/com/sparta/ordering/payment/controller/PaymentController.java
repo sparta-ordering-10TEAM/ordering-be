@@ -1,8 +1,10 @@
 package com.sparta.ordering.payment.controller;
 
+import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import com.sparta.ordering.global.security.SecurityUtil;
+import com.sparta.ordering.payment.dto.PaymentCancelRequest;
 import com.sparta.ordering.payment.dto.PaymentRequest;
 import com.sparta.ordering.payment.dto.PaymentResponse;
 import com.sparta.ordering.payment.facade.PaymentFacade;
@@ -38,10 +40,10 @@ public class PaymentController {
     @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping("/payments")
     public ResponseEntity<GeneralResponse<PaymentResponse>> createPayment(
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody PaymentRequest request
     ) {
-        PaymentResponse response = paymentFacade.processPayment(userId, request);
+        PaymentResponse response = paymentFacade.processPayment(userDetails.getUserId(), request);
         return  GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 
@@ -49,29 +51,36 @@ public class PaymentController {
     @GetMapping("/payments/{paymentId}")
     public ResponseEntity<GeneralResponse<PaymentResponse>> getPayment(
             @PathVariable UUID paymentId,
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             Authentication authentication
     ) {
         Role role = SecurityUtil.getRole(authentication);
-        PaymentResponse response = paymentService.getPayment(paymentId, userId, role);
+        PaymentResponse response = paymentService.getPayment(paymentId, userDetails.getUserId(), role);
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 
     @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/payments")
     public ResponseEntity<GeneralResponse<Page<PaymentResponse>>> getPayments(
-            @AuthenticationPrincipal UUID userId,
-            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            Authentication authentication,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return null;
+        Role role = SecurityUtil.getRole(authentication);
+        Page<PaymentResponse> paymentResponse = paymentService.getPayments(userDetails.getUserId(), role, pageable);
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, paymentResponse);
     }
 
     @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
     @PostMapping("/payments/{paymentId}/cancel")
     public ResponseEntity<GeneralResponse<PaymentResponse>> cancelPayment(
             @PathVariable UUID paymentId,
-            @AuthenticationPrincipal UUID userId
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            Authentication authentication,
+            @Valid @RequestBody PaymentCancelRequest request
     ) {
-        return null;
+        Role role = SecurityUtil.getRole(authentication);
+        PaymentResponse response = paymentFacade.processCancelPayment(paymentId, userDetails.getUserId(), role, request.reason());
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 }

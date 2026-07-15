@@ -28,6 +28,7 @@ public enum GeneralResponseCode implements ApiResponseCode {
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 결제 내역을 찾을 수 없습니다."),
     PAYMENT_ALREADY_IN_PROGRESS(HttpStatus.CONFLICT, "이미 처리 중이거나 완료된 결제 요청입니다."),
     PAYMENT_INVALID_PAYMENT_STATUS(HttpStatus.BAD_REQUEST, "현재 상태에서는 요청을 처리할 수 없습니다"),
+    PAYMENT_CANCEL_CONFLICT(HttpStatus.CONFLICT, "이미 취소가 진행 중이거나 처리된 결제입니다."),
 
     // Review
     ALREADY_REVIEWED(HttpStatus.CONFLICT, "이미 리뷰를 작성한 주문입니다."),
@@ -38,6 +39,12 @@ public enum GeneralResponseCode implements ApiResponseCode {
     RESTAURANT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 가게를 찾을 수 없습니다."),
     RESTAURANT_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 카테고리를 찾을 수 없습니다."),
     RESTAURANT_STATUS_INVALID(HttpStatus.BAD_REQUEST, "영업 상태가 빈 값입니다."),
+
+    // Region
+    REGION_ALREADY_EXISTS(HttpStatus.CONFLICT, "같은 계층에 이미 존재하는 지역입니다."),
+    REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 지역을 찾을 수 없습니다."),
+    REGION_DEPTH_EXCEEDED(HttpStatus.BAD_REQUEST, "지역의 최대 깊이를 초과했습니다."),
+    REGION_HAS_CHILDREN(HttpStatus.BAD_REQUEST, "지역에 하위 지역이 존재합니다."),
 
     // Product
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 상품을 찾을 수 없습니다."),
