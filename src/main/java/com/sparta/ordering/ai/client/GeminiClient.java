@@ -26,7 +26,7 @@ public class GeminiClient {
                 .build();
     }
 
-    public String generateDescription(String systemInstruction, String prompt) {
+    public String generateText(String systemInstruction, String prompt) {
         try {
             GeminiResponse response = geminiRestClient.post()
                     .contentType(MediaType.APPLICATION_JSON)
