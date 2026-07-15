@@ -46,7 +46,7 @@ public class PaymentController implements PaymentApi {
             @Valid @RequestBody PaymentRequest request
     ) {
         PaymentResponse response = paymentFacade.processPayment(userDetails.getUserId(), request);
-        return  GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
+        return  GeneralResponse.toResponseEntity(GeneralResponseCode.CREATED, response);
     }
 
     @Override

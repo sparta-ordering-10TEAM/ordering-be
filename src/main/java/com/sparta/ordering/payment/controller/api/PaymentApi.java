@@ -36,7 +36,7 @@ public interface PaymentApi {
     @Operation(summary = "결제 생성", description = "CUSTOMER 본인 주문에 대해 결제를 생성하고 PG 승인을 요청합니다.")
     @ApiResponses({
             @ApiResponse(
-                    responseCode = "200",
+                    responseCode = "201",
                     description = "결제 성공",
                     content = @Content(schema = @Schema(implementation = PaymentResponse.class))),
             @ApiResponse(
