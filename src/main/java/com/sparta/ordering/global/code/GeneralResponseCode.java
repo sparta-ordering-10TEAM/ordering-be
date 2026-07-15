@@ -34,6 +34,7 @@ public enum GeneralResponseCode implements ApiResponseCode {
     ALREADY_REVIEWED(HttpStatus.CONFLICT, "이미 리뷰를 작성한 주문입니다."),
     REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 리뷰를 찾을 수 없습니다."),
     ORDER_NOT_COMPLETED(HttpStatus.BAD_REQUEST, "주문이 아직 완료되지 않았습니다."),
+    REVIEW_REPLY_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 리뷰 답변을 찾을 수 없습니다."),
 
     // Restaurant
     RESTAURANT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 가게를 찾을 수 없습니다."),
@@ -63,9 +64,6 @@ public enum GeneralResponseCode implements ApiResponseCode {
     ALREADY_EXISTS_USER(HttpStatus.CONFLICT, "사용자가 이미 존재합니다."),
     ALREADY_EXISTS_NICKNAME(HttpStatus.CONFLICT, "이미 존재하는 닉네임 입니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 사용자를 찾을 수 없습니다."),
-
-    // AI Product Description
-    AI_PRODUCT_DESCRIPTION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 AI 상품 설명을 찾을 수 없습니다."),
     
     // AI Prompt Log
     AI_PROMPT_LOG_NOT_FOUND(HttpStatus.NOT_FOUND, "해당하는 AI 프롬프트 로그를 찾을 수 없습니다.");
