@@ -2,6 +2,7 @@ package com.sparta.ordering.restaurant.service;
 
 import com.sparta.ordering.global.code.AuthResponseCode;
 import com.sparta.ordering.global.code.GeneralResponseCode;
+import com.sparta.ordering.global.config.CacheConfig;
 import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.restaurant.dto.CategoryCreateRequest;
 import com.sparta.ordering.restaurant.dto.CategoryResponse;
@@ -12,6 +13,8 @@ import com.sparta.ordering.restaurant.repository.RestaurantRepository;
 import com.sparta.ordering.user.entity.User;
 import com.sparta.ordering.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +29,7 @@ public class RestaurantCategoryService {
     private final RestaurantRepository restaurantRepository;
     private final UserRepository userRepository;
 
+    @Cacheable(CacheConfig.CATEGORIES)
     @Transactional(readOnly = true)
     public List<CategoryResponse> getCategories() {
         return restaurantCategoryRepository.findByDeletedAtIsNull().stream()
@@ -33,6 +37,7 @@ public class RestaurantCategoryService {
                 .toList();
     }
 
+    @CacheEvict(value = CacheConfig.CATEGORIES, allEntries = true)
     @Transactional
     public CategoryResponse createCategory(CategoryCreateRequest request, UUID userId) {
         validateAdminPermission(userId);
@@ -48,6 +53,7 @@ public class RestaurantCategoryService {
         return CategoryResponse.from(restaurantCategoryRepository.save(category));
     }
 
+    @CacheEvict(value = CacheConfig.CATEGORIES, allEntries = true)
     @Transactional
     public CategoryResponse updateCategory(UUID categoryId, CategoryUpdateRequest request, UUID userId) {
         validateAdminPermission(userId);
@@ -64,6 +70,7 @@ public class RestaurantCategoryService {
         return CategoryResponse.from(category);
     }
 
+    @CacheEvict(value = CacheConfig.CATEGORIES, allEntries = true)
     @Transactional
     public void deleteCategory(UUID categoryId, UUID userId) {
         validateAdminPermission(userId);
