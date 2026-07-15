@@ -38,6 +38,17 @@ public interface AiPromptApi {
     );
 
     @Operation(
+            summary = "AI 리뷰 답변  생성",
+            description = "리뷰의 내용을 토대로 AI(Gemini)를 통해 리뷰 답변 문구를 생성하여 직접 반환합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PostMapping("/reviews/{reviewId}/generate-reply")
+    ResponseEntity<GeneralResponse<String>> generateReviewReply(
+            @PathVariable UUID reviewId,
+            @AuthenticationPrincipal CustomUserDetails user
+    );
+
+    @Operation(
             summary = "[관리자] AI 프롬프트 로그 목록 조회",
             description = "생성된 전체 AI 프롬프트 및 응답 로그 목록을 페이징 조회합니다.",
             security = @SecurityRequirement(name = "bearerAuth")
