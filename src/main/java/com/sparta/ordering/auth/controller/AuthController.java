@@ -60,7 +60,7 @@ public class AuthController {
     }
 
     @PostMapping("/sign-in")
-    public void signIn(SignInRequest signInRequest) {
+    public void signIn(@RequestBody @Valid SignInRequest signInRequest) {
         throw new UnsupportedOperationException("Only for Documentation");
     }
 

@@ -1,5 +1,6 @@
 package com.sparta.ordering.user.service;
 
+import com.sparta.ordering.auth.security.session.JwtSessionService;
 import com.sparta.ordering.global.code.AuthResponseCode;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
@@ -24,6 +25,7 @@ import java.util.UUID;
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtSessionService jwtSessionService;
 
     public UserResponse create(UserCreateRequest userCreateRequest) {
         // 중복 검사
@@ -77,6 +79,7 @@ public class UserService {
 
         String newPassword = passwordEncoder.encode(changePasswordRequest.password());
         user.updatePassword(newPassword);
+        jwtSessionService.invalidateToken(userId);
     }
 
     public void deactivate(UUID loginUserId, UUID userId) {

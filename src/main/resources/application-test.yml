@@ -3,6 +3,11 @@ spring:
     url: jdbc:postgresql://localhost:5432/ordering_test
     username: ordering_test
     password: ordering_test
+  scheduling:
+    enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
 jwt:
   secret: local-dev-secret-key-that-is-at-least-256-bits-long-for-hs256
   access-token:
@@ -13,11 +18,3 @@ jwt:
 gemini:
   url: test
   api-key: test
-
-app:
-  admin:
-    email: master_test@mail.com
-    name: master
-    password: masterTest1!
-    phoneNumber: 010-0000-0000
-    nickName: testMaster
