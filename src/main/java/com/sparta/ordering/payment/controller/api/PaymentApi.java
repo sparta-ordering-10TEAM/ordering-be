@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -33,7 +34,11 @@ import java.util.UUID;
 @RequestMapping("/api")
 public interface PaymentApi {
 
-    @Operation(summary = "결제 생성", description = "CUSTOMER 본인 주문에 대해 결제를 생성하고 PG 승인을 요청합니다.")
+    @Operation(
+            summary = "결제 생성",
+            description = "CUSTOMER 본인 주문에 대해 결제를 생성하고 PG 승인을 요청합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "201",
@@ -79,7 +84,11 @@ public interface PaymentApi {
             @Valid @RequestBody PaymentRequest request
     );
 
-    @Operation(summary = "결제 단건 조회", description = "결제 ID로 결제 내역을 조회합니다. CUSTOMER/OWNER는 본인과 연관된 결제만 조회할 수 있습니다.")
+    @Operation(
+            summary = "결제 단건 조회",
+            description = "결제 ID로 결제 내역을 조회합니다. CUSTOMER/OWNER는 본인과 연관된 결제만 조회할 수 있습니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -101,7 +110,11 @@ public interface PaymentApi {
             Authentication authentication
     );
 
-    @Operation(summary = "결제 목록 조회", description = "결제 목록을 페이징 조회합니다. CUSTOMER는 본인 주문 결제만, OWNER는 본인 가게 주문 결제만, MANAGER/MASTER는 전체를 조회합니다.")
+    @Operation(
+            summary = "결제 목록 조회",
+            description = "결제 목록을 페이징 조회합니다. CUSTOMER는 본인 주문 결제만, OWNER는 본인 가게 주문 결제만, MANAGER/MASTER는 전체를 조회합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -123,7 +136,11 @@ public interface PaymentApi {
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     );
 
-    @Operation(summary = "결제 취소", description = "결제 완료 후 5분 이내에 결제를 취소합니다.")
+    @Operation(
+            summary = "결제 취소",
+            description = "결제 완료 후 5분 이내에 결제를 취소합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
