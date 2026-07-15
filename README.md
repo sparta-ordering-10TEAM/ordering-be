@@ -30,9 +30,9 @@
 
 ### Database & Infra
 
-* **Database:** PostgreSQL
+* **Database:** PostgreSQL 17
 * **OR/M:** Spring Data JPA
-* **Cloud & Deployment:** AWS or Oracle Cloud (Free Tier), Docker (Optional)
+* **Deployment:** On-Premise Ubuntu 24.04 LTS, Docker, NGINX
 * **Documentation:** Swagger / Spring RestDocs
 * **Logging:** Logback
 
