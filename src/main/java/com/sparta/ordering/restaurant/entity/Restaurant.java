@@ -9,8 +9,6 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 
@@ -52,7 +50,6 @@ public class Restaurant extends BaseUpdatableEntity {
     @Column(name = "delivery_fee", nullable = false)
     private Integer deliveryFee;
 
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RestaurantStatus status;
@@ -65,6 +62,12 @@ public class Restaurant extends BaseUpdatableEntity {
 
     @Column(name = "delivery_radius_km", nullable = false, precision = 4, scale = 1)
     private BigDecimal deliveryRadiusKm;
+
+    @Column(name = "average_rating", nullable = false)
+    private Double averageRating = 0.0;
+
+    @Column(name = "review_count", nullable = false)
+    private Long reviewCount = 0L;
 
     @Builder
     public Restaurant(
@@ -97,6 +100,8 @@ public class Restaurant extends BaseUpdatableEntity {
         this.latitude = latitude;
         this.longitude = longitude;
         this.deliveryRadiusKm = deliveryRadiusKm;
+        this.averageRating = 0.0;
+        this.reviewCount = 0L;
     }
 
     public void update(

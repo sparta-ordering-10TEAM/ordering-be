@@ -11,7 +11,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:15
+        image: postgres:17
         env:
           POSTGRES_DB: ordering_test
           POSTGRES_USER: ordering_test
@@ -20,15 +20,6 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd="pg_isready -U ordering_test -d ordering_test"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-      redis:
-        image: redis:7
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd="redis-cli ping"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5

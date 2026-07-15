@@ -1,5 +1,6 @@
 package com.sparta.ordering.user.service;
 
+import com.sparta.ordering.global.code.AuthResponseCode;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.user.dto.request.ChangePasswordRequest;
@@ -9,6 +10,7 @@ import com.sparta.ordering.user.dto.response.ProfileResponse;
 import com.sparta.ordering.user.dto.response.UserResponse;
 import com.sparta.ordering.user.entity.Role;
 import com.sparta.ordering.user.entity.User;
+import com.sparta.ordering.auth.security.session.JwtSessionService;
 import com.sparta.ordering.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,6 +45,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private JwtSessionService jwtSessionService;
 
     @Spy
     private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -107,26 +112,38 @@ class UserServiceTest {
         when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
 
         // when
-        ProfileResponse result = userService.updateProfile(userId, request, null);
+        ProfileResponse result = userService.updateProfile(userId, userId, request, null);
 
         // then
         assertThat(result.getNickName()).isEqualTo("newName");
         assertThat(result.getPhoneNumber()).isEqualTo("010-1111-1111");
-
     }
 
     @Test
-    @DisplayName("프로필 업데이트 실패")
+    @DisplayName("프로필 업데이트 실패 - 본인이 아닌 경우")
+    void update_profile_forbidden() {
+        // given
+        UUID loginUserId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        ProfileUpdateRequest request = new ProfileUpdateRequest("newName", "010-1111-1111");
+
+        // when & then
+        ApiException ex = assertThrows(ApiException.class,
+                () -> userService.updateProfile(loginUserId, userId, request, null));
+        assertEquals(AuthResponseCode.FORBIDDEN, ex.getResponseCode());
+    }
+
+    @Test
+    @DisplayName("프로필 업데이트 실패 - 사용자 없음")
     void validate_profile_update() {
         // given
         UUID userId = UUID.randomUUID();
-        ProfileUpdateRequest request = new ProfileUpdateRequest(
-                null, null
-        );
+        ProfileUpdateRequest request = new ProfileUpdateRequest(null, null);
         when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.empty());
 
         // when & then
-        ApiException ex = assertThrows(ApiException.class, () -> userService.updateProfile(userId, request, null));
+        ApiException ex = assertThrows(ApiException.class,
+                () -> userService.updateProfile(userId, userId, request, null));
         assertEquals(GeneralResponseCode.USER_NOT_FOUND, ex.getResponseCode());
     }
 
@@ -167,14 +184,28 @@ class UserServiceTest {
         when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
 
         // when
-        userService.updatePassword(userId, request);
+        userService.updatePassword(userId, userId, request);
 
         // then
         assertThat(passwordEncoder.matches("newPassword", user.getPassword())).isTrue();
     }
 
     @Test
-    @DisplayName("비밀번호 변경 실패")
+    @DisplayName("비밀번호 변경 실패 - 본인이 아닌 경우")
+    void update_password_forbidden() {
+        // given
+        UUID loginUserId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        ChangePasswordRequest request = new ChangePasswordRequest("newPassword");
+
+        // when & then
+        ApiException ex = assertThrows(ApiException.class,
+                () -> userService.updatePassword(loginUserId, userId, request));
+        assertEquals(AuthResponseCode.FORBIDDEN, ex.getResponseCode());
+    }
+
+    @Test
+    @DisplayName("비밀번호 변경 실패 - 사용자 없음")
     void validate_update_password() {
         // given
         UUID userId = UUID.randomUUID();
@@ -183,7 +214,8 @@ class UserServiceTest {
         ChangePasswordRequest request = new ChangePasswordRequest("newPassword");
 
         // when & then
-        ApiException ex = assertThrows(ApiException.class, () -> userService.updatePassword(userId, request));
+        ApiException ex = assertThrows(ApiException.class,
+                () -> userService.updatePassword(userId, userId, request));
         assertEquals(GeneralResponseCode.USER_NOT_FOUND, ex.getResponseCode());
     }
 
@@ -199,7 +231,7 @@ class UserServiceTest {
         when(userRepository.findByIdAndDeletedAtIsNull(userId))
                 .thenReturn(Optional.of(user));
 
-        userService.deactivate(userId);
+        userService.deactivate(userId, userId);
 
         verify(user, times(1)).softDelete(userId);
         assertThat(user.getDeletedAt()).isNotNull();
@@ -207,7 +239,20 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("비밀번호 변경 실패")
+    @DisplayName("회원 탈퇴 실패 - 본인이 아닌 경우")
+    void deactivate_forbidden() {
+        // given
+        UUID loginUserId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        // when & then
+        ApiException ex = assertThrows(ApiException.class,
+                () -> userService.deactivate(loginUserId, userId));
+        assertEquals(AuthResponseCode.FORBIDDEN, ex.getResponseCode());
+    }
+
+    @Test
+    @DisplayName("회원 탈퇴 실패 - 사용자 없음")
     void validate_soft_delete_user() {
         // given
         UUID userId = UUID.randomUUID();
@@ -215,7 +260,7 @@ class UserServiceTest {
         when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.empty());
 
         // when & then
-        ApiException ex = assertThrows(ApiException.class, () -> userService.deactivate(userId));
+        ApiException ex = assertThrows(ApiException.class, () -> userService.deactivate(userId, userId));
         assertEquals(GeneralResponseCode.USER_NOT_FOUND, ex.getResponseCode());
     }
 }

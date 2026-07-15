@@ -4,5 +4,9 @@ public enum Role {
     CUSTOMER,
     OWNER,
     MANAGER,
-    MASTER
+    MASTER;
+
+    public boolean isAdmin() {
+        return this == MANAGER || this == MASTER;
+    }
 }

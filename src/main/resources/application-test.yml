@@ -3,10 +3,17 @@ spring:
     url: jdbc:postgresql://localhost:5432/ordering_test
     username: ordering_test
     password: ordering_test
+  scheduling:
+    enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
 jwt:
   secret: local-dev-secret-key-that-is-at-least-256-bits-long-for-hs256
-  access-expiration: 3600000
-  refresh-expiration: 2592000000 #30일
+  access-token:
+    validity-seconds: 3600000
+  refresh-token:
+    validity-seconds: 2592000000 #30일
 
 gemini:
   url: test

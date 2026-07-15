@@ -1,5 +1,6 @@
 package com.sparta.ordering.product.controller.api;
 
+import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import com.sparta.ordering.product.dto.ProductCreateRequest;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -68,7 +70,11 @@ public interface ProductApi {
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     );
 
-    @Operation(summary = "상품 생성", description = "가게에 새 상품을 등록합니다.")
+    @Operation(
+            summary = "상품 생성",
+            description = "가게에 새 상품을 등록합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -88,11 +94,15 @@ public interface ProductApi {
     @PostMapping("/products")
     ResponseEntity<GeneralResponse<ProductResponse>> createProduct(
             @Valid @RequestBody ProductCreateRequest request,
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             Authentication authentication
     );
 
-    @Operation(summary = "상품 수정", description = "상품을 수정합니다.")
+    @Operation(
+            summary = "상품 수정",
+            description = "상품을 수정합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -113,11 +123,15 @@ public interface ProductApi {
     ResponseEntity<GeneralResponse<ProductResponse>> updateProduct(
             @PathVariable UUID productId,
             @Valid @RequestBody ProductUpdateRequest request,
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             Authentication authentication
     );
 
-    @Operation(summary = "상품 삭제", description = "상품을 삭제합니다.(논리 삭제)")
+    @Operation(
+            summary = "상품 삭제",
+            description = "상품을 삭제합니다.(논리 삭제)",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -137,7 +151,7 @@ public interface ProductApi {
     @DeleteMapping("/products/{productId}")
     ResponseEntity<GeneralResponse<Void>> softDeleteProduct(
             @PathVariable UUID productId,
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             Authentication authentication
     );
 }

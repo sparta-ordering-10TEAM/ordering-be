@@ -2,6 +2,7 @@ package com.sparta.ordering.cart.repository;
 
 import com.sparta.ordering.cart.entity.CartItem;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
@@ -19,4 +20,30 @@ public interface CartItemRepository extends JpaRepository<CartItem, UUID> {
     List<CartItem> findByCart_IdAndDeletedAtIsNullWithProduct(UUID cartId);
 
     Optional<CartItem> findByCart_IdAndProduct_IdAndDeletedAtIsNull(UUID cartId, UUID productId);
+
+    @Query("""
+                SELECT ci FROM CartItem ci
+                JOIN FETCH ci.cart c
+                WHERE ci.id = :cartItemId AND c.user.id = :userId AND ci.deletedAt IS NULL
+           """
+    )
+    Optional<CartItem> findByIdAndCart_User_IdAndDeletedAtIsNullWithCart(UUID cartItemId, UUID userId);
+
+    @Modifying
+    @Query("""
+                UPDATE CartItem ci
+                SET ci.deletedAt = CURRENT_TIMESTAMP, ci.deletedBy = :deletedBy, ci.uniqueVersion = ci.id
+                WHERE ci.cart.id = :cartId AND ci.deletedAt IS NULL
+           """
+    )
+    void softDeleteAllByCartId(UUID cartId, UUID deletedBy);
+
+    @Modifying(clearAutomatically = true)
+    @Query("""
+                UPDATE CartItem ci
+                SET ci.quantity = ci.quantity + :quantity
+                WHERE ci.id = :cartItemId AND ci.quantity + :quantity <= :maxQuantity
+            """
+    )
+    int increaseQuantityAtomic(UUID cartItemId, Integer quantity, int maxQuantity);
 }
