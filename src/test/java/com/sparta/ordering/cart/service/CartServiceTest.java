@@ -91,7 +91,7 @@ class CartServiceTest {
                     .build();
             ReflectionTestUtils.setField(cartItem, "id", UUID.randomUUID());
 
-            when(cartRepository.findByUser_Id(userId)).thenReturn(Optional.of(cart));
+            when(cartRepository.findByUser_IdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(cart));
             when(cartItemRepository.findByCart_IdAndDeletedAtIsNullWithProduct(cartId)).thenReturn(List.of(cartItem));
 
             // when
@@ -111,7 +111,7 @@ class CartServiceTest {
 
             // given
             UUID userId = UUID.randomUUID();
-            when(cartRepository.findByUser_Id(userId)).thenReturn(Optional.empty());
+            when(cartRepository.findByUser_IdAndDeletedAtIsNull(userId)).thenReturn(Optional.empty());
 
             // when
             CartResponse response = cartService.getMyCart(userId);
@@ -152,7 +152,7 @@ class CartServiceTest {
 
             when(productRepository.findByIdAndDeletedAtIsNullAndRestaurant_DeletedAtIsNull(productId))
                     .thenReturn(Optional.of(product));
-            when(cartRepository.findByUser_Id(userId)).thenReturn(Optional.empty());
+            when(cartRepository.findByUser_IdAndDeletedAtIsNull(userId)).thenReturn(Optional.empty());
             when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
             when(cartRepository.save(any(Cart.class))).thenAnswer(invocation -> {
                 Cart cart = invocation.getArgument(0);
@@ -209,7 +209,7 @@ class CartServiceTest {
 
             when(productRepository.findByIdAndDeletedAtIsNullAndRestaurant_DeletedAtIsNull(productId))
                     .thenReturn(Optional.of(product));
-            when(cartRepository.findByUser_Id(userId)).thenReturn(Optional.of(cart));
+            when(cartRepository.findByUser_IdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(cart));
             when(cartItemRepository.findByCart_IdAndProduct_IdAndDeletedAtIsNull(cartId, productId))
                     .thenReturn(Optional.of(existingItem));
             when(cartItemRepository.increaseQuantityAtomic(cartItemId, request.quantity(), CartPolicy.MAX_QUANTITY))
@@ -270,7 +270,7 @@ class CartServiceTest {
 
             when(productRepository.findByIdAndDeletedAtIsNullAndRestaurant_DeletedAtIsNull(productId))
                     .thenReturn(Optional.of(product));
-            when(cartRepository.findByUser_Id(userId)).thenReturn(Optional.of(cart));
+            when(cartRepository.findByUser_IdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(cart));
 
             // when & then
             assertThatThrownBy(() -> cartService.addItem(userId, request))
@@ -310,7 +310,7 @@ class CartServiceTest {
 
             when(productRepository.findByIdAndDeletedAtIsNullAndRestaurant_DeletedAtIsNull(productId))
                     .thenReturn(Optional.of(product));
-            when(cartRepository.findByUser_Id(userId)).thenReturn(Optional.of(cart));
+            when(cartRepository.findByUser_IdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(cart));
             when(cartItemRepository.findByCart_IdAndProduct_IdAndDeletedAtIsNull(cartId, productId))
                     .thenReturn(Optional.of(existingItem));
 
@@ -409,7 +409,7 @@ class CartServiceTest {
     class RemoveItem {
 
         @Test
-        @DisplayName("성공 - 마지막 아이템 restaurant null")
+        @DisplayName("성공 - 마지막 아이템 삭제 시 카트도 soft delete")
         void test1() {
 
             // given
@@ -440,7 +440,9 @@ class CartServiceTest {
             // then
             assertThat(response.items()).isEmpty();
             assertThat(response.restaurantId()).isNull();
-            assertThat(cart.getRestaurant()).isNull();
+            assertThat(response.cartId()).isNull();
+            assertThat(cart.getDeletedAt()).isNotNull();
+            assertThat(cart.getDeletedBy()).isEqualTo(userId);
         }
 
         @Test
@@ -480,7 +482,7 @@ class CartServiceTest {
             Cart cart = Cart.builder().restaurant(restaurant).build();
             ReflectionTestUtils.setField(cart, "id", cartId);
 
-            when(cartRepository.findByUser_Id(userId)).thenReturn(Optional.of(cart));
+            when(cartRepository.findByUser_IdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(cart));
 
             // when
             CartResponse response = cartService.clearCart(userId);
@@ -488,8 +490,10 @@ class CartServiceTest {
             // then
             verify(cartItemRepository).softDeleteAllByCartId(cartId, userId);
             assertThat(response.restaurantId()).isNull();
-            assertThat(response.cartId()).isEqualTo(cartId);
+            assertThat(response.cartId()).isNull();
             assertThat(response.items()).isEmpty();
+            assertThat(cart.getDeletedAt()).isNotNull();
+            assertThat(cart.getDeletedBy()).isEqualTo(userId);
         }
 
         @Test
@@ -497,7 +501,7 @@ class CartServiceTest {
         void test2() {
             // given
             UUID userId = UUID.randomUUID();
-            when(cartRepository.findByUser_Id(userId)).thenReturn(Optional.empty());
+            when(cartRepository.findByUser_IdAndDeletedAtIsNull(userId)).thenReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() -> cartService.clearCart(userId))

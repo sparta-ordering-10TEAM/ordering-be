@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -63,7 +64,11 @@ public interface UserApi {
     @GetMapping
     ResponseEntity<GeneralResponse<ProfileResponse>> findProfile(@PathVariable UUID userId);
 
-    @Operation(summary = "프로필 업데이트", description = "사용자의 프로필 정보를 업데이트합니다.")
+    @Operation(
+            summary = "프로필 업데이트",
+            description = "사용자의 프로필 정보를 업데이트합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -82,7 +87,11 @@ public interface UserApi {
             @Valid @RequestPart("request") ProfileUpdateRequest profileUpdateRequest,
             @RequestPart(value = "image",required = false) MultipartFile profileImage);
 
-    @Operation(summary = "비밀번호 변경", description = "비밀번호를 변경합니다.")
+    @Operation(
+            summary = "비밀번호 변경",
+            description = "비밀번호를 변경합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -100,7 +109,11 @@ public interface UserApi {
             @PathVariable UUID userId,
             @Valid @RequestBody ChangePasswordRequest changePasswordRequest);
 
-    @Operation(summary = "회원 탈퇴", description = "사용자가 탈퇴합니다.(논리 삭제)")
+    @Operation(
+            summary = "회원 탈퇴",
+            description = "사용자가 탈퇴합니다.(논리 삭제)",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",

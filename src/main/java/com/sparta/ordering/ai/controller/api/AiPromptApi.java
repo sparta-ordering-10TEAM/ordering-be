@@ -13,7 +13,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,7 +32,6 @@ public interface AiPromptApi {
             description = "프롬프트를 입력받아 AI(Gemini)를 통해 상품 설명 문구를 생성하여 직접 반환합니다.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @PreAuthorize("hasRole('OWNER')")
     @PostMapping("/products/generate-description")
     ResponseEntity<GeneralResponse<String>> generateProductDescription(
             @RequestBody @Valid GenerateProductDescriptionRequest request
@@ -44,7 +42,6 @@ public interface AiPromptApi {
             description = "생성된 전체 AI 프롬프트 및 응답 로그 목록을 페이징 조회합니다.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @PreAuthorize("hasAnyRole('MANAGER', 'MASTER')")
     @GetMapping("/admin/ai-prompts")
     ResponseEntity<GeneralResponse<Page<AiPromptLogResponse>>> searchAiPromptLogs(
             @AuthenticationPrincipal CustomUserDetails user,
@@ -56,7 +53,6 @@ public interface AiPromptApi {
             description = "특정 AI 프롬프트 로그의 상세 내역을 조회합니다.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @PreAuthorize("hasAnyRole('MANAGER', 'MASTER')")
     @GetMapping("/admin/ai-prompts/{logId}")
     ResponseEntity<GeneralResponse<AiPromptLogResponse>> getAiPromptLog(
             @PathVariable UUID logId,
@@ -68,7 +64,6 @@ public interface AiPromptApi {
             description = "특정 AI 프롬프트 로그를 삭제(Soft Delete) 처리합니다.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @PreAuthorize("hasAnyRole('MANAGER', 'MASTER')")
     @DeleteMapping("/admin/ai-prompts/{logId}")
     ResponseEntity<GeneralResponse<Void>> deleteAiPromptLog(
             @PathVariable UUID logId,

@@ -1,12 +1,15 @@
 package com.sparta.ordering.cart.controller;
 
 import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
+import com.sparta.ordering.cart.controller.api.CartApi;
 import com.sparta.ordering.cart.dto.CartItemQuantityRequest;
 import com.sparta.ordering.cart.dto.CartItemRequest;
 import com.sparta.ordering.cart.dto.CartResponse;
 import com.sparta.ordering.cart.service.CartService;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -23,13 +26,16 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
+@Tag(name = "Cart", description = "장바구니 관련 API")
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
-public class CartController {
+public class CartController implements CartApi {
 
     private final CartService cartService;
 
+    @Override
     @GetMapping("/cart")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<GeneralResponse<CartResponse>> getMyCart(
@@ -39,6 +45,7 @@ public class CartController {
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 
+    @Override
     @PostMapping("/cart/items")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<GeneralResponse<CartResponse>> addItem(
@@ -49,6 +56,7 @@ public class CartController {
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 
+    @Override
     @PatchMapping("/cart/items/{cartItemId}")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<GeneralResponse<CartResponse>> updateItemQuantity(
@@ -60,6 +68,7 @@ public class CartController {
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 
+    @Override
     @DeleteMapping("/cart/items/{cartItemId}")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<GeneralResponse<CartResponse>> removeItem(
@@ -70,6 +79,7 @@ public class CartController {
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 
+    @Override
     @DeleteMapping("/cart")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<GeneralResponse<CartResponse>> clearCart(
@@ -78,6 +88,4 @@ public class CartController {
         CartResponse response = cartService.clearCart(userDetails.getUserId());
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
-
-
 }
