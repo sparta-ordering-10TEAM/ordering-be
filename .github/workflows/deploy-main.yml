@@ -53,6 +53,16 @@ jobs:
           echo "JWT_REFRESH_EXPIRATION=${{ secrets.JWT_REFRESH_EXPIRATION }}" >> .env
           echo "IMAGE_NAME=${{ secrets.IMAGE_NAME }}" >> .env
           echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" >> .env
+          
+          echo "MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}" >> .env
+          echo "MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}" >> .env
+          echo "GEMINI_URL=${{ secrets.GEMINI_URL }}" >> .env
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
+          echo "MASTER_INITIAL_EMAIL=${{ secrets.MASTER_INITIAL_EMAIL }}" >> .env
+          echo "MASTER_INITIAL_NAME=${{ secrets.MASTER_INITIAL_NAME }}" >> .env
+          echo "MASTER_INITIAL_NICKNAME=${{ secrets.MASTER_INITIAL_NICKNAME }}" >> .env
+          echo "MASTER_INITIAL_PASSWORD=${{ secrets.MASTER_INITIAL_PASSWORD }}" >> .env
+          echo "MASTER_INITIAL_PHONE_NUMBER=${{ secrets.MASTER_INITIAL_PHONE_NUMBER }}" >> .env 
 
       - name: Copy docker-compose.yml and .env to SERVER
         uses: appleboy/scp-action@v0.1.7

@@ -80,7 +80,7 @@ public class AuthorizationTest {
     @Test
     @DisplayName("CUSTOMER 역할은 상품 삭제 요청 시 403 반환")
     void deleteProduct_customer_returns_403() throws Exception {
-        String accessToken = login(CUSTOMER_NAME, PASSWORD);
+         String accessToken = login(CUSTOMER_NAME, PASSWORD);
 
         ResponseEntity<String> response = restTemplate.exchange(
                 "/api/products/" + UUID.randomUUID(),
@@ -120,7 +120,7 @@ public class AuthorizationTest {
         );
 
         log.debug("login response status: {}", response.getStatusCode());
-        return objectMapper.readValue(response.getBody(), String.class);
+        return objectMapper.readTree(response.getBody()).path("data").path("accessToken").asText();
     }
 
     private HttpEntity<Void> bearerEntity(String accessToken) {

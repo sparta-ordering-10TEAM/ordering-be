@@ -12,7 +12,6 @@ import com.sparta.ordering.global.security.SecurityRequestMatcher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,6 +29,10 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -44,12 +47,20 @@ public class SecurityConfig {
                                                    JwtLogoutHandler jwtLogoutHandler,
                                                    SecurityRequestMatcher securityRequestMatcher) throws Exception {
         http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(securityRequestMatcher.getPublicMatchers()).permitAll()
+                        .requestMatchers( // Swagger 설정으로, 임시적으로 추가했습니다.
+                                "/api/api-docs",
+                                "/api/swagger-ui/*",
+                                "/api/api-spec/swagger-config",
+                                "/api/api-spec"
+                        ).permitAll()
+                        .requestMatchers(PathPatternRequestMatcher.withDefaults().matcher("/api/test/**")).permitAll()
                         .requestMatchers(PathPatternRequestMatcher.withDefaults().matcher("/api/**")).authenticated()
                         .anyRequest().authenticated()
                 )
@@ -64,6 +75,19 @@ public class SecurityConfig {
                         .addLogoutHandler(jwtLogoutHandler)
                 );
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*")); // 인증 성공 후 토큰을 Header에 포함해 Client에 전달할 경우 필요
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     @Bean

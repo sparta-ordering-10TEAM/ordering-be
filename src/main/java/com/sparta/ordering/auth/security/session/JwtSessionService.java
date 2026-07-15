@@ -1,6 +1,7 @@
 package com.sparta.ordering.auth.security.session;
 
 import com.sparta.ordering.auth.dto.TokenRotationResult;
+import com.sparta.ordering.auth.security.JwtBlackList;
 import com.sparta.ordering.auth.security.properties.JwtProperties;
 import com.sparta.ordering.global.code.AuthResponseCode;
 import com.sparta.ordering.global.code.GeneralResponseCode;
@@ -33,13 +34,20 @@ public class JwtSessionService {
     private final JwtSessionRepository jwtSessionRepository;
     private final JwtProperties jwtProperties;
     private final Clock clock;
-    /*getSigningKey() 메서드가 호출될 때마다 새로운 SecretKey 인스턴스를 생성하고 있어 성능에 영향을 줄 가능성 존재
-    -> 서명키를 캐시하도록 수정:*/
     private SecretKey signingKey;
     private final UserRepository userRepository;
+    private final JwtBlackList jwtBlackList;
 
-    public enum TokenType{
+    public enum TokenType {
         ACCESS, REFRESH
+    }
+
+    public class JwtClaimNames {
+        public static final String TYPE = "type";
+        public static final String USER_ID = "userId";
+        public static final String NAME = "name";
+        public static final String ROLE = "role";
+        public static final String EMAIL = "email";
     }
 
     @Transactional
@@ -69,17 +77,22 @@ public class JwtSessionService {
 
     // 토큰 유효성 검증
     public boolean isValidToken(String token) {
-        try{
+        try {
             JwtParser parser = Jwts.parser()
                     .verifyWith(getSignKey())
                     .build();
             parser.parseSignedClaims(token).getPayload();
 
+            // 블랙리스트에 있는 토큰이면 유효하지 않음
+            if (jwtBlackList.existsInBlacklist(token)) {
+                return false;
+            }
+
             return true;
-        }catch (ExpiredJwtException e) {
-            log.warn("JWT expired: {}", e.getMessage());
+        } catch (ExpiredJwtException e) {
+            log.debug("JWT expired: {}", e.getMessage());
         } catch (JwtException e) {
-            log.warn("JWT validation failed: {}", e.getMessage());
+            log.debug("JWT validation failed: {}", e.getMessage());
         }
         return false;
     }
@@ -103,9 +116,9 @@ public class JwtSessionService {
             String userId = claims.get("userId", String.class);
             return UUID.fromString(userId);
         } catch (JwtException e) {
-            log.error("Failed to extract user ID from token", e);
+            log.debug("Failed to extract user ID from token", e);
             throw new ApiException(AuthResponseCode.INVALID_JWT);
-        }catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             log.error("Invalid UUID format in token subject", e);
             throw new ApiException(AuthResponseCode.INVALID_JWT);
         }
@@ -116,10 +129,11 @@ public class JwtSessionService {
     public void invalidateToken(String refreshToken) {
         jwtSessionRepository.findByRefreshToken(refreshToken)
                 .ifPresentOrElse(jwtSession -> {
-                   // TODO:토큰을 블랙리스트에 추가
-                    jwtSessionRepository.delete(jwtSession);
+                            // 더 이상 사용하지 않을 액세스 토큰을 블랙리스트에 저장
+                            jwtBlackList.addBlackList(jwtSession.getAccessToken(), jwtSession.getExpirationTime());
+                            jwtSessionRepository.delete(jwtSession);
                         },
-                        ()->log.info("No active JwtSession found for refreshToken: {}", refreshToken)
+                        () -> log.debug("No active JwtSession found for refreshToken: {}", refreshToken)
                 );
     }
 
@@ -128,10 +142,11 @@ public class JwtSessionService {
     public void invalidateToken(UUID userId) {
         jwtSessionRepository.findByUserId(userId)
                 .ifPresentOrElse(jwtSession -> {
-                   // TODO:토큰을 블랙리스트에 추가
-                    jwtSessionRepository.delete(jwtSession);
+                            /// 더 이상 사용하지 않을 액세스 토큰을 블랙리스트에 저장
+                            jwtBlackList.addBlackList(jwtSession.getAccessToken(), jwtSession.getExpirationTime());
+                            jwtSessionRepository.delete(jwtSession);
                         },
-                        ()->log.info("No active JwtSession found for userId: {}", userId)
+                        () -> log.debug("No active JwtSession found for userId: {}", userId)
                 );
     }
 
@@ -152,8 +167,16 @@ public class JwtSessionService {
         JwtSession jwtSession = jwtSessionRepository.findByRefreshToken(refreshToken)
                 .orElseThrow(() -> new ApiException(AuthResponseCode.JWT_SESSION_NOT_FOUND));
 
+        // 기존 액세스 토큰을 블랙리스트에 추가
+        jwtBlackList.addBlackList(jwtSession.getAccessToken(), jwtSession.getExpirationTime());
+
         User user = userRepository.findByIdAndDeletedAtIsNull(jwtSession.getUserId())
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
+
+        if (user.isLocked()) {
+            invalidateToken(refreshToken);
+            throw new ApiException(AuthResponseCode.ACCOUNT_LOCKED);
+        }
 
         Instant now = clock.instant();
         Instant newAccessTokenExpirationTime = now
@@ -180,11 +203,11 @@ public class JwtSessionService {
                 .subject(user.getEmail())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expirationTime))
-                .claim("type", tokenType.name())
-                .claim("userId", user.getId().toString())
-                .claim("name",user.getUserName())
-                .claim("role",user.getRole())
-                .claim("email",user.getEmail());
+                .claim(JwtClaimNames.TYPE, tokenType.name())
+                .claim(JwtClaimNames.USER_ID, user.getId().toString())
+                .claim(JwtClaimNames.NAME, user.getUserName())
+                .claim(JwtClaimNames.ROLE, user.getRole())
+                .claim(JwtClaimNames.EMAIL, user.getEmail());
 
         return builder.signWith(getSignKey(), Jwts.SIG.HS256)
                 .compact();

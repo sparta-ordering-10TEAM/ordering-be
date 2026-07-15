@@ -1,5 +1,6 @@
 package com.sparta.ordering.product.controller.api;
 
+import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import com.sparta.ordering.product.dto.ProductCreateRequest;
@@ -88,7 +89,7 @@ public interface ProductApi {
     @PostMapping("/products")
     ResponseEntity<GeneralResponse<ProductResponse>> createProduct(
             @Valid @RequestBody ProductCreateRequest request,
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             Authentication authentication
     );
 
@@ -113,7 +114,7 @@ public interface ProductApi {
     ResponseEntity<GeneralResponse<ProductResponse>> updateProduct(
             @PathVariable UUID productId,
             @Valid @RequestBody ProductUpdateRequest request,
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             Authentication authentication
     );
 
@@ -137,7 +138,7 @@ public interface ProductApi {
     @DeleteMapping("/products/{productId}")
     ResponseEntity<GeneralResponse<Void>> softDeleteProduct(
             @PathVariable UUID productId,
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             Authentication authentication
     );
 }

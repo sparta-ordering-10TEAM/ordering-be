@@ -43,7 +43,7 @@ public class SwaggerConfig {
                         | **주문 & 상품 (Order & Product)**              | 한원태   | -                                         |
                         | **결제 & 배송 (Payment & Delivery)**           | 김우태   | -                                         |
                         | **음식점 (Restaurant)**                       | 안병규   | 음식점 CRUD와 카테고리, 영업 상태, 배달 조건, 위치 정보 관리 기능 |
-                        | **리뷰/평점 & AI 상품 설명 & CI/CD (Review & AI)** | 김태현   | 리뷰 도메인, AI 상품 설명 도메인 구현 및 CI/CD 담당 |
+                        | **리뷰/평점 & AI 상품 설명 & CI/CD (Review & AI)** | 김태현   | 리뷰 및 AI 도메인 개발, GitHub 레포지토리 관리, Nginx HTTPS 기반 서버 배포 및 CI/CD 구축 |
                         
                         """)
                 .version("1.0.0");
