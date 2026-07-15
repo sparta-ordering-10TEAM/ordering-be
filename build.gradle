@@ -33,6 +33,9 @@ dependencies {
 
     // Java Mail Sender
     implementation 'org.springframework.boot:spring-boot-starter-mail'
+    
+    // Connection Pool for RestClient
+    implementation 'org.apache.httpcomponents.client5:httpclient5'
 
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql'

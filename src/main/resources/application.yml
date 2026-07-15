@@ -18,8 +18,8 @@ spring:
         impl.uuid_binary_compatibility: true # PostgreSQL UUID 매핑 최적화용 (남겨두는 것 권장)
   http:
     client:
-      connect-timeout: 15s  # 연결 지연 타임아웃 (10초)
-      read-timeout: 15s     # 응답 지연 타임아웃 (10초)
+      connect-timeout: 10s  # 연결 지연 타임아웃 (10초)
+      read-timeout: 10s     # 응답 지연 타임아웃 (10초)
   mail:
     host: smtp.gmail.com
     port: 587
@@ -68,8 +68,8 @@ logging:
 
 app:
   admin:
-    email: ${MASTER_INITIAL_EMAIL:admin@test.com}
-    name: ${MASTER_INITIAL_NAME:admin}
-    nickName: ${MASTER_INITIAL_NICKNAME:admin}
-    password: ${MASTER_INITIAL_PASSWORD:Admin1231!}
-    phoneNumber: ${MASTER_INITIAL_PHONE_NUMBER:010-1234-5678}
+    email: ${MASTER_INITIAL_EMAIL}
+    name: ${MASTER_INITIAL_NAME}
+    nickName: ${MASTER_INITIAL_NICKNAME}
+    password: ${MASTER_INITIAL_PASSWORD}
+    phoneNumber: ${MASTER_INITIAL_PHONE_NUMBER}
