@@ -54,7 +54,7 @@ public class RestaurantCategoryService {
 
         RestaurantCategory category = getActiveCategory(categoryId);
 
-        if (category.getCode().equals(request.code())
+        if (!category.getCode().equals(request.code())
                 && restaurantCategoryRepository.existsByCodeAndDeletedAtIsNull(request.code())) {
             throw new ApiException(GeneralResponseCode.RESTAURANT_CATEGORY_ALREADY_EXISTS);
         }
@@ -81,7 +81,7 @@ public class RestaurantCategoryService {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
-        if (user.getRole().isAdmin()) {
+        if (!user.getRole().isAdmin()) {
             throw new ApiException(AuthResponseCode.FORBIDDEN);
         }
     }
