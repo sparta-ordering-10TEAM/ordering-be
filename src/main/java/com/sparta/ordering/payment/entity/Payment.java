@@ -16,6 +16,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -42,7 +43,7 @@ public class Payment extends BaseUpdatableEntity {
     private PaymentMethod paymentMethod;
 
     @Column(name = "amount", nullable = false)
-    private Long amount;
+    private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
@@ -50,6 +51,9 @@ public class Payment extends BaseUpdatableEntity {
 
     @Column(name = "cancel_reason")
     private String cancelReason;
+
+    @Column(name = "canceled_at")
+    private Instant canceledAt;
 
     @Column(name = "fail_reason")
     private String failReason;
@@ -67,7 +71,7 @@ public class Payment extends BaseUpdatableEntity {
     private UUID uniqueVersion;
 
     @Builder
-    public Payment(Order order, Long amount, String paymentKey) {
+    public Payment(Order order, BigDecimal amount, String paymentKey) {
         this.order = order;
         this.amount = amount;
         this.paymentKey = paymentKey;
@@ -87,4 +91,15 @@ public class Payment extends BaseUpdatableEntity {
         this.failReason = reason;
         this.uniqueVersion = this.getId();
     }
+
+    public void cancel(String reason, Instant canceledAt) {
+        this.status = PaymentStatus.CANCELED;
+        this.cancelReason = reason;
+        this.canceledAt = canceledAt;
+    }
+
+    public void revertCancel() {
+        this.status = PaymentStatus.DONE;
+    }
+
 }

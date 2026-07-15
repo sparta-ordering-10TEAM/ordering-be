@@ -1,5 +1,6 @@
 package com.sparta.ordering.cart.controller;
 
+import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
 import com.sparta.ordering.cart.dto.CartItemQuantityRequest;
 import com.sparta.ordering.cart.dto.CartItemRequest;
 import com.sparta.ordering.cart.dto.CartResponse;
@@ -32,49 +33,49 @@ public class CartController {
     @GetMapping("/cart")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<GeneralResponse<CartResponse>> getMyCart(
-            @AuthenticationPrincipal UUID userId
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        CartResponse response = cartService.getMyCart(userId);
+        CartResponse response = cartService.getMyCart(userDetails.getUserId());
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 
     @PostMapping("/cart/items")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<GeneralResponse<CartResponse>> addItem(
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody CartItemRequest request
     ) {
-        CartResponse response = cartService.addItem(userId, request);
+        CartResponse response = cartService.addItem(userDetails.getUserId(), request);
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 
     @PatchMapping("/cart/items/{cartItemId}")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<GeneralResponse<CartResponse>> updateItemQuantity(
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable UUID cartItemId,
             @Valid @RequestBody CartItemQuantityRequest request
     ) {
-        CartResponse response = cartService.updateItemQuantity(userId, cartItemId, request);
+        CartResponse response = cartService.updateItemQuantity(userDetails.getUserId(), cartItemId, request);
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 
     @DeleteMapping("/cart/items/{cartItemId}")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<GeneralResponse<CartResponse>> removeItem(
-            @AuthenticationPrincipal UUID userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable UUID cartItemId
     ) {
-        CartResponse response = cartService.removeItem(userId, cartItemId);
+        CartResponse response = cartService.removeItem(userDetails.getUserId(), cartItemId);
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 
     @DeleteMapping("/cart")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<GeneralResponse<CartResponse>> clearCart(
-            @AuthenticationPrincipal UUID userId
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        CartResponse response = cartService.clearCart(userId);
+        CartResponse response = cartService.clearCart(userDetails.getUserId());
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 

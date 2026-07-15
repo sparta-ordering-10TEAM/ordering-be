@@ -3,7 +3,6 @@ package com.sparta.ordering.product.service;
 import com.sparta.ordering.global.code.AuthResponseCode;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
-import com.sparta.ordering.global.util.PageableUtils;
 import com.sparta.ordering.product.dto.ProductCreateRequest;
 import com.sparta.ordering.product.dto.ProductResponse;
 import com.sparta.ordering.product.dto.ProductSearchRequest;
@@ -30,7 +29,6 @@ public class ProductService {
     private final RestaurantRepository restaurantRepository;
 
     private static final Set<Role> PRIVILEGED_ROLES = Set.of(Role.MANAGER, Role.MASTER);
-    private static final Set<String> ALLOWED_SORT_FIELD = Set.of("name", "price", "createdAt");
 
     @Transactional(readOnly = true)
     public ProductResponse getProduct(UUID productId) {
@@ -43,10 +41,7 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public Page<ProductResponse> getProducts(ProductSearchRequest request, UUID restaurantId, Pageable pageable) {
-        PageableUtils.validateSort(pageable, ALLOWED_SORT_FIELD);
-        Pageable normalizedPageable = PageableUtils.normalizePageSize(pageable);
-
-        Page<Product> products = productRepository.searchProducts(restaurantId, request.name(), request.minPrice(), request.maxPrice(), normalizedPageable);
+        Page<Product> products = productRepository.searchProducts(restaurantId, request.name(), request.minPrice(), request.maxPrice(), pageable);
 
         return products.map(ProductResponse::from);
     }
