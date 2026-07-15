@@ -1,5 +1,6 @@
 package com.sparta.ordering.order.service;
 
+import com.github.f4b6a3.tsid.TsidCreator;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.order.dto.OrderCreateRequest;
@@ -21,13 +22,11 @@ import com.sparta.ordering.user.entity.Role;
 import com.sparta.ordering.user.entity.User;
 import com.sparta.ordering.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -38,18 +37,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OrderService {
 
-    private static final String ORDER_NUMBER_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    private static final int ORDER_NUMBER_LENGTH = 8;
-    private static final int ORDER_NUMBER_RETRY_COUNT = 10;
-    private static final int ORDER_SAVE_RETRY_COUNT = 3;
-    private static final String ORDER_NUMBER_CONSTRAINT_KEY = "order_number";
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final RestaurantRepository restaurantRepository;
-    private final OrderSaveService orderSaveService;
     private final OrderItemRepository orderItemRepository;
 
     @Transactional
@@ -78,7 +69,11 @@ public class OrderService {
         Map<UUID, Product> productMap = products.stream()
                 .collect(Collectors.toMap(Product::getId, product -> product));
 
-        return saveWithRetry(request, customer, restaurant, productMap);
+        Order newOrder = createNewOrder(request, customer, restaurant, productMap);
+
+        orderRepository.save(newOrder);
+
+        return OrderCreateResponse.from(newOrder);
     }
 
     @Transactional(readOnly = true)
@@ -89,7 +84,7 @@ public class OrderService {
 
         Page<Order> orders = switch (user.getRole()) {
             case CUSTOMER -> orderRepository.findAllByCustomerIdWithRestaurant(userId, pageable);
-            case OWNER -> orderRepository.findAllByOwnerIdWithRestaurant(userId, pageable);
+            case OWNER -> orderRepository.findAllByRestaurantOwnerIdWithRestaurant(userId, pageable);
             case MANAGER, MASTER -> orderRepository.findAllWithRestaurant(pageable);
         };
 
@@ -119,13 +114,13 @@ public class OrderService {
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
         Order order = switch (user.getRole()) {
-            case CUSTOMER -> orderRepository.findByCustomerIdWithRestaurantAndOrderItems(userId, orderId)
+            case CUSTOMER -> orderRepository.findDetailByIdAndCustomerId(orderId, userId)
                     .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
 
-            case OWNER -> orderRepository.findByOwnerIdWithRestaurantAndOrderItems(userId, orderId)
+            case OWNER -> orderRepository.findDetailByIdAndRestaurantOwnerId(orderId, userId)
                     .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
 
-            case MANAGER, MASTER -> orderRepository.findByIdWithRestaurantAndOrderItems(orderId)
+            case MANAGER, MASTER -> orderRepository.findDetailById(orderId)
                     .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
         };
 
@@ -134,7 +129,7 @@ public class OrderService {
 
     @Transactional
     public OrderStatusResponse updateStatus(UUID orderId, UUID ownerId, OrderStatus requestStatus) {
-        Order order = orderRepository.findByIdAndOwnerIdForUpdate(orderId, ownerId)
+        Order order = orderRepository.findByIdAndRestaurantOwnerIdForStatusUpdate(orderId, ownerId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
         order.changeStatus(requestStatus);
 
@@ -143,34 +138,32 @@ public class OrderService {
 
     @Transactional
     public OrderStatusResponse cancelOrder(UUID orderId, UUID customerId) {
-        Order order = orderRepository.findByIdAndCustomerIdForUpdate(orderId, customerId)
+        Order order = orderRepository.findByIdAndCustomerIdForCancel(orderId, customerId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
         order.cancel(Instant.now());
 
         return OrderStatusResponse.from(order);
     }
 
-    private OrderCreateResponse saveWithRetry(OrderCreateRequest request,
-                                                   User user,
-                                                   Restaurant restaurant,
-                                                   Map<UUID, Product> productMap) {
-        for (int i=0; i<ORDER_SAVE_RETRY_COUNT; i++) {
-            Order newOrder = createNewOrder(request, user, restaurant, productMap);
+    @Transactional
+    public void deleteOrder(UUID orderId, UUID userId) {
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
-            try {
-                orderSaveService.save(newOrder);
-                return OrderCreateResponse.from(newOrder);
-            } catch (DataIntegrityViolationException e) {
-                if (isOrderNumberUniqueViolation(e)) {
-                    continue;
-                }
-                throw e;
-            }
+        Order order = switch (user.getRole()) {
+            case CUSTOMER -> orderRepository.findByIdAndCustomerIdForDelete(orderId, userId)
+                    .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
 
-        }
+            case OWNER -> orderRepository.findByIdAndRestaurantOwnerIdForDelete(orderId, userId)
+                    .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
 
-        throw new ApiException(GeneralResponseCode.ORDER_NUMBER_GENERATION_FAILED);
+            case MANAGER, MASTER -> orderRepository.findByIdForDelete(orderId)
+                    .orElseThrow(() -> new ApiException(GeneralResponseCode.ORDER_NOT_FOUND));
+        };
+
+        order.softDelete(userId);
     }
+
 
     private Order createNewOrder(OrderCreateRequest request,
                                  User user,
@@ -208,31 +201,8 @@ public class OrderService {
         return newOrder;
     }
 
-    private boolean isOrderNumberUniqueViolation(DataIntegrityViolationException e) {
-        String message = e.getMostSpecificCause().getMessage();
-
-        return message != null && message.contains(ORDER_NUMBER_CONSTRAINT_KEY);
-    }
 
     private String generateOrderNumber() {
-        for (int i=0; i<ORDER_NUMBER_RETRY_COUNT; i++) {
-            String orderNumber = createRandomOrderNumber();
-
-            if (!orderRepository.existsByOrderNumber(orderNumber)) {
-                return orderNumber;
-            }
-        }
-
-        throw new ApiException(GeneralResponseCode.ORDER_NUMBER_GENERATION_FAILED);
-    }
-
-    private String createRandomOrderNumber() {
-        StringBuilder sb = new StringBuilder();
-
-        for (int i=0; i<ORDER_NUMBER_LENGTH; i++) {
-            int id = SECURE_RANDOM.nextInt(ORDER_NUMBER_CHARS.length());
-            sb.append(ORDER_NUMBER_CHARS.charAt(id));
-        }
-        return sb.toString();
+        return TsidCreator.getTsid().toString();
     }
 }

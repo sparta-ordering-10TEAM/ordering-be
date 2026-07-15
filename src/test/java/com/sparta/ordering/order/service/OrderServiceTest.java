@@ -1,5 +1,6 @@
 package com.sparta.ordering.order.service;
 
+import com.github.f4b6a3.tsid.Tsid;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.order.dto.OrderCreateRequest;
@@ -39,9 +40,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -60,9 +59,6 @@ class OrderServiceTest {
 
     @Mock
     private RestaurantRepository restaurantRepository;
-
-    @Mock
-    private OrderSaveService orderSaveService;
 
     @InjectMocks
     private OrderService orderService;
@@ -86,23 +82,24 @@ class OrderServiceTest {
 
             when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
             when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
-            when(orderRepository.existsByOrderNumber(anyString())).thenReturn(false);
             when(productRepository.findAllByIdInAndDeletedAtIsNull(List.of(productId))).thenReturn(List.of(product));
 
             OrderCreateResponse response = orderService.create(request, userId);
 
             assertThat(response.status()).isEqualTo(OrderStatus.REQUESTED);
             assertThat(response.totalPrice()).isEqualTo(36000L);
-            assertThat(response.orderNumber()).hasSize(8);
+            assertThat(Tsid.isValid(response.orderNumber())).isTrue();
 
             ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
-            verify(orderSaveService).save(orderCaptor.capture());
-
+            verify(orderRepository).save(orderCaptor.capture());
             Order savedOrder = orderCaptor.getValue();
+
             assertThat(savedOrder.getCustomer()).isEqualTo(user);
             assertThat(savedOrder.getRestaurant()).isEqualTo(restaurant);
             assertThat(savedOrder.getTotalPrice()).isEqualTo(36000L);
             assertThat(savedOrder.getOrderItems()).hasSize(1);
+            assertThat(Tsid.isValid(savedOrder.getOrderNumber())).isTrue();
+            assertThat(response.orderNumber()).isEqualTo(savedOrder.getOrderNumber());
 
             OrderItem savedOrderItem = savedOrder.getOrderItems().get(0);
             assertThat(savedOrderItem.getProduct()).isEqualTo(product);
@@ -144,7 +141,7 @@ class OrderServiceTest {
                     .isEqualTo(GeneralResponseCode.ORDER_ONLY_CUSTOMER);
 
             verifyNoInteractions(restaurantRepository, productRepository);
-            verify(orderSaveService, never()).save(any(Order.class));
+            verify(orderRepository, never()).save(any(Order.class));
         }
 
         @Test
@@ -165,7 +162,7 @@ class OrderServiceTest {
                     .isEqualTo(GeneralResponseCode.RESTAURANT_NOT_FOUND);
 
             verifyNoInteractions(productRepository);
-            verify(orderSaveService, never()).save(any(Order.class));
+            verify(orderRepository, never()).save(any(Order.class));
         }
 
         @Test
@@ -202,7 +199,6 @@ class OrderServiceTest {
 
             when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
             when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
-            when(orderRepository.existsByOrderNumber(anyString())).thenReturn(false);
             when(productRepository.findAllByIdInAndDeletedAtIsNull(List.of(productId))).thenReturn(List.of());
 
             assertThatThrownBy(() -> orderService.create(request, userId))
@@ -210,7 +206,7 @@ class OrderServiceTest {
                     .extracting("responseCode")
                     .isEqualTo(GeneralResponseCode.PRODUCT_NOT_FOUND);
 
-            verify(orderSaveService, never()).save(any(Order.class));
+            verify(orderRepository, never()).save(any(Order.class));
         }
 
         @Test
@@ -229,7 +225,6 @@ class OrderServiceTest {
 
             when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
             when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
-            when(orderRepository.existsByOrderNumber(anyString())).thenReturn(false);
             when(productRepository.findAllByIdInAndDeletedAtIsNull(List.of(productId))).thenReturn(List.of(product));
 
             assertThatThrownBy(() -> orderService.create(request, userId))
@@ -237,7 +232,7 @@ class OrderServiceTest {
                     .extracting("responseCode")
                     .isEqualTo(GeneralResponseCode.ORDER_PRODUCT_RESTAURANT_MISMATCH);
 
-            verify(orderSaveService, never()).save(any(Order.class));
+            verify(orderRepository, never()).save(any(Order.class));
         }
 
         @Test
@@ -254,7 +249,6 @@ class OrderServiceTest {
 
             when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
             when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
-            when(orderRepository.existsByOrderNumber(anyString())).thenReturn(false);
             when(productRepository.findAllByIdInAndDeletedAtIsNull(List.of(productId))).thenReturn(List.of(product));
 
             assertThatThrownBy(() -> orderService.create(request, userId))
@@ -262,30 +256,7 @@ class OrderServiceTest {
                     .extracting("responseCode")
                     .isEqualTo(GeneralResponseCode.ORDER_TOTAL_PRICE_INVALID);
 
-            verify(orderSaveService, never()).save(any(Order.class));
-        }
-
-        @Test
-        @DisplayName("실패 - 주문번호 생성 실패")
-        void failOrderNumberGeneration() {
-            UUID userId = UUID.randomUUID();
-            UUID restaurantId = UUID.randomUUID();
-
-            User user = createUser(userId, Role.CUSTOMER);
-            Restaurant restaurant = createRestaurant(restaurantId, RestaurantStatus.OPEN, 10000);
-            OrderCreateRequest request = createRequest(restaurantId, UUID.randomUUID(), 1);
-
-            when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
-            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
-            when(orderRepository.existsByOrderNumber(anyString())).thenReturn(true);
-
-            assertThatThrownBy(() -> orderService.create(request, userId))
-                    .isInstanceOf(ApiException.class)
-                    .extracting("responseCode")
-                    .isEqualTo(GeneralResponseCode.ORDER_NUMBER_GENERATION_FAILED);
-
-            verify(orderRepository, times(10)).existsByOrderNumber(anyString());
-            verify(orderSaveService, never()).save(any(Order.class));
+            verify(orderRepository, never()).save(any(Order.class));
         }
     }
 
@@ -309,7 +280,7 @@ class OrderServiceTest {
 
             Order order = createOrder(orderId, currentStatus, Instant.now());
 
-            when(orderRepository.findByIdAndOwnerIdForUpdate(orderId, ownerId))
+            when(orderRepository.findByIdAndRestaurantOwnerIdForStatusUpdate(orderId, ownerId))
                     .thenReturn(Optional.of(order));
 
             // when
@@ -329,7 +300,7 @@ class OrderServiceTest {
 
             Order order = createOrder(orderId, OrderStatus.REQUESTED, Instant.now());
 
-            when(orderRepository.findByIdAndOwnerIdForUpdate(orderId, ownerId))
+            when(orderRepository.findByIdAndRestaurantOwnerIdForStatusUpdate(orderId, ownerId))
                     .thenReturn(Optional.of(order));
 
             // when & then
@@ -349,7 +320,7 @@ class OrderServiceTest {
             UUID orderId = UUID.randomUUID();
             UUID ownerId = UUID.randomUUID();
 
-            when(orderRepository.findByIdAndOwnerIdForUpdate(
+            when(orderRepository.findByIdAndRestaurantOwnerIdForStatusUpdate(
                     orderId,
                     ownerId
             )).thenReturn(Optional.empty());
@@ -389,7 +360,7 @@ class OrderServiceTest {
                     Instant.now().minus(Duration.ofMinutes(4))
             );
 
-            when(orderRepository.findByIdAndCustomerIdForUpdate(
+            when(orderRepository.findByIdAndCustomerIdForCancel(
                     orderId,
                     customerId
             )).thenReturn(Optional.of(order));
@@ -411,7 +382,7 @@ class OrderServiceTest {
                     .isEqualTo(OrderStatus.CANCELLED);
 
             verify(orderRepository)
-                    .findByIdAndCustomerIdForUpdate(
+                    .findByIdAndCustomerIdForCancel(
                             orderId,
                             customerId
                     );
@@ -430,7 +401,7 @@ class OrderServiceTest {
                     Instant.now().minus(Duration.ofMinutes(6))
             );
 
-            when(orderRepository.findByIdAndCustomerIdForUpdate(
+            when(orderRepository.findByIdAndCustomerIdForCancel(
                     orderId,
                     customerId
             )).thenReturn(Optional.of(order));
@@ -465,7 +436,7 @@ class OrderServiceTest {
                     Instant.now().minus(Duration.ofMinutes(1))
             );
 
-            when(orderRepository.findByIdAndCustomerIdForUpdate(
+            when(orderRepository.findByIdAndCustomerIdForCancel(
                     orderId,
                     customerId
             )).thenReturn(Optional.of(order));
@@ -494,7 +465,7 @@ class OrderServiceTest {
             UUID orderId = UUID.randomUUID();
             UUID customerId = UUID.randomUUID();
 
-            when(orderRepository.findByIdAndCustomerIdForUpdate(
+            when(orderRepository.findByIdAndCustomerIdForCancel(
                     orderId,
                     customerId
             )).thenReturn(Optional.empty());
@@ -510,6 +481,12 @@ class OrderServiceTest {
                     .extracting("responseCode")
                     .isEqualTo(GeneralResponseCode.ORDER_NOT_FOUND);
         }
+    }
+
+    @Nested
+    @DisplayName("주문 삭제")
+    class DeleteOrder {
+
     }
 
     private User createUser(UUID userId, Role role) {

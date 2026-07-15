@@ -41,6 +41,9 @@ dependencies {
     // Connection Pool for RestClient
     implementation 'org.apache.httpcomponents.client5:httpclient5'
 
+    // TSID
+    implementation 'com.github.f4b6a3:tsid-creator:5.2.6'
+
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql'
     annotationProcessor 'org.projectlombok:lombok'
