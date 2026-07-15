@@ -88,7 +88,7 @@ public interface ProductApi {
     @Operation(summary = "상품 생성", description = "가게에 새 상품을 등록합니다. MASTER/MANAGER는 임의의 가게에, OWNER는 본인 소유 가게에만 등록할 수 있습니다.")
     @ApiResponses({
             @ApiResponse(
-                    responseCode = "200",
+                    responseCode = "201",
                     description = "상품 생성 성공",
                     content = @Content(schema = @Schema(implementation = ProductResponse.class))),
             @ApiResponse(
