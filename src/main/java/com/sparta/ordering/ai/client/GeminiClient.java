@@ -1,5 +1,6 @@
 package com.sparta.ordering.ai.client;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.sparta.ordering.global.code.ExternalResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
 import lombok.extern.slf4j.Slf4j;
@@ -25,11 +26,11 @@ public class GeminiClient {
                 .build();
     }
 
-    public String generateDescription(String prompt) {
+    public String generateDescription(String systemInstruction, String prompt) {
         try {
             GeminiResponse response = geminiRestClient.post()
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(GeminiRequest.from(prompt))
+                    .body(GeminiRequest.from(systemInstruction, prompt))
                     .retrieve()
                     .body(GeminiResponse.class);
 
@@ -54,12 +55,21 @@ public class GeminiClient {
     }
 
     // API 요청 규격 구조화 DTO
-    private record GeminiRequest(List<Content> contents) {
-        public static GeminiRequest from(String prompt) {
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private record GeminiRequest(
+            Content systemInstruction,
+            List<Content> contents,
+            GenerationConfig generationConfig
+    ) {
+        public static GeminiRequest from(String systemInstruction, String prompt) {
+            Content sysInstruction = (systemInstruction == null || systemInstruction.isBlank()) ? null 
+                    : new Content(List.of(new Part(systemInstruction)));
             return new GeminiRequest(
+                    sysInstruction,
                     List.of(new Content(
                             List.of(new Part(prompt))
-                    ))
+                    )),
+                    new GenerationConfig(100, 0.7)
             );
         }
 
@@ -67,6 +77,9 @@ public class GeminiClient {
         }
 
         private record Part(String text) {
+        }
+
+        private record GenerationConfig(int maxOutputTokens, double temperature) {
         }
     }
 

@@ -102,7 +102,7 @@ class AiPromptControllerIntegrationTest {
         customerToken = jwtSessionService.createJwtSession(customer.getId()).getAccessToken();
 
         // GeminiClient 기본 동작 모킹
-        when(geminiClient.generateDescription(anyString())).thenReturn("바삭바삭 매운 떡볶이 설명문구");
+        when(geminiClient.generateDescription(anyString(), anyString())).thenReturn("바삭바삭 매운 떡볶이 설명문구");
     }
 
     @Nested
