@@ -762,6 +762,167 @@ class RestaurantServiceTest {
     }
 
     @Nested
+    @DisplayName("음식점 상태 변경")
+    class ChangeRestaurantStatus {
+
+        @Test
+        @DisplayName("OWNER는 본인 음식점 상태를 변경할 수 있다")
+        void successOwnerChangesOwnRestaurantStatus() {
+            UUID restaurantId = UUID.randomUUID();
+            Restaurant restaurant = restaurant(restaurantCategory("한식"), "한식당");
+            ReflectionTestUtils.setField(restaurant, "id", restaurantId);
+            UUID ownerId = restaurant.getUser().getId();
+
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(userRepository.findByIdAndDeletedAtIsNull(ownerId)).thenReturn(Optional.of(restaurant.getUser()));
+
+            RestaurantResponse response = restaurantService.changeRestaurantStatus(
+                    restaurantId,
+                    RestaurantStatus.CLOSED,
+                    ownerId
+            );
+
+            assertThat(restaurant.getStatus()).isEqualTo(RestaurantStatus.CLOSED);
+            assertThat(response.status()).isEqualTo(RestaurantStatus.CLOSED);
+        }
+
+        @Test
+        @DisplayName("MANAGER는 모든 음식점 상태를 변경할 수 있다")
+        void successManagerChangesAnyRestaurantStatus() {
+            UUID restaurantId = UUID.randomUUID();
+            Restaurant restaurant = restaurant(restaurantCategory("치킨"), "치킨집");
+            ReflectionTestUtils.setField(restaurant, "id", restaurantId);
+            UUID managerId = UUID.randomUUID();
+            User manager = user(Role.MANAGER);
+            ReflectionTestUtils.setField(manager, "id", managerId);
+
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(userRepository.findByIdAndDeletedAtIsNull(managerId)).thenReturn(Optional.of(manager));
+
+            RestaurantResponse response = restaurantService.changeRestaurantStatus(
+                    restaurantId,
+                    RestaurantStatus.CLOSED,
+                    managerId
+            );
+
+            assertThat(restaurant.getStatus()).isEqualTo(RestaurantStatus.CLOSED);
+            assertThat(response.status()).isEqualTo(RestaurantStatus.CLOSED);
+        }
+
+        @Test
+        @DisplayName("MASTER는 모든 음식점 상태를 변경할 수 있다")
+        void successMasterChangesAnyRestaurantStatus() {
+            UUID restaurantId = UUID.randomUUID();
+            Restaurant restaurant = restaurant(restaurantCategory("피자"), "피자집");
+            ReflectionTestUtils.setField(restaurant, "id", restaurantId);
+            UUID masterId = UUID.randomUUID();
+            User master = user(Role.MASTER);
+            ReflectionTestUtils.setField(master, "id", masterId);
+
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(userRepository.findByIdAndDeletedAtIsNull(masterId)).thenReturn(Optional.of(master));
+
+            RestaurantResponse response = restaurantService.changeRestaurantStatus(
+                    restaurantId,
+                    RestaurantStatus.OPEN,
+                    masterId
+            );
+
+            assertThat(restaurant.getStatus()).isEqualTo(RestaurantStatus.OPEN);
+            assertThat(response.status()).isEqualTo(RestaurantStatus.OPEN);
+        }
+
+        @Test
+        @DisplayName("상태 변경 대상 음식점이 존재하지 않으면 변경할 수 없다")
+        void failRestaurantNotFound() {
+            UUID restaurantId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
+
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> restaurantService.changeRestaurantStatus(
+                    restaurantId,
+                    RestaurantStatus.CLOSED,
+                    userId
+            ))
+                    .isInstanceOf(ApiException.class)
+                    .hasFieldOrPropertyWithValue("responseCode", GeneralResponseCode.RESTAURANT_NOT_FOUND);
+
+            verifyNoInteractions(userRepository);
+        }
+
+        @Test
+        @DisplayName("OWNER는 다른 사용자의 음식점 상태를 변경할 수 없다")
+        void failOwnerChangesOthersRestaurantStatus() {
+            UUID restaurantId = UUID.randomUUID();
+            Restaurant restaurant = restaurant(restaurantCategory("한식"), "한식당");
+            ReflectionTestUtils.setField(restaurant, "id", restaurantId);
+            UUID otherOwnerId = UUID.randomUUID();
+            User otherOwner = user(Role.OWNER);
+            ReflectionTestUtils.setField(otherOwner, "id", otherOwnerId);
+
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(userRepository.findByIdAndDeletedAtIsNull(otherOwnerId)).thenReturn(Optional.of(otherOwner));
+
+            assertThatThrownBy(() -> restaurantService.changeRestaurantStatus(
+                    restaurantId,
+                    RestaurantStatus.CLOSED,
+                    otherOwnerId
+            ))
+                    .isInstanceOf(ApiException.class)
+                    .hasFieldOrPropertyWithValue("responseCode", AuthResponseCode.FORBIDDEN);
+
+            assertThat(restaurant.getStatus()).isEqualTo(RestaurantStatus.OPEN);
+        }
+
+        @Test
+        @DisplayName("상태 변경 요청 사용자가 존재하지 않으면 변경할 수 없다")
+        void failUserNotFound() {
+            UUID restaurantId = UUID.randomUUID();
+            Restaurant restaurant = restaurant(restaurantCategory("한식"), "한식당");
+            ReflectionTestUtils.setField(restaurant, "id", restaurantId);
+            UUID userId = UUID.randomUUID();
+
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> restaurantService.changeRestaurantStatus(
+                    restaurantId,
+                    RestaurantStatus.CLOSED,
+                    userId
+            ))
+                    .isInstanceOf(ApiException.class)
+                    .hasFieldOrPropertyWithValue("responseCode", GeneralResponseCode.USER_NOT_FOUND);
+
+            assertThat(restaurant.getStatus()).isEqualTo(RestaurantStatus.OPEN);
+        }
+
+        @Test
+        @DisplayName("DB 권한이 OWNER, MANAGER, MASTER가 아니면 본인 음식점이어도 상태를 변경할 수 없다")
+        void failWhenDbRoleIsNotAllowedEvenIfUserOwnsRestaurant() {
+            UUID restaurantId = UUID.randomUUID();
+            Restaurant restaurant = restaurant(restaurantCategory("한식"), "한식당");
+            ReflectionTestUtils.setField(restaurant, "id", restaurantId);
+            UUID ownerId = restaurant.getUser().getId();
+            User customer = user(Role.CUSTOMER);
+            ReflectionTestUtils.setField(customer, "id", ownerId);
+
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(userRepository.findByIdAndDeletedAtIsNull(ownerId)).thenReturn(Optional.of(customer));
+
+            assertThatThrownBy(() -> restaurantService.changeRestaurantStatus(
+                    restaurantId,
+                    RestaurantStatus.CLOSED,
+                    ownerId
+            ))
+                    .isInstanceOf(ApiException.class)
+                    .hasFieldOrPropertyWithValue("responseCode", AuthResponseCode.FORBIDDEN);
+
+            assertThat(restaurant.getStatus()).isEqualTo(RestaurantStatus.OPEN);
+        }
+    }
+
+    @Nested
     @DisplayName("음식점 삭제")
     class DeleteRestaurant {
 
