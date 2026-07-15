@@ -26,7 +26,6 @@ public class Restaurant extends BaseUpdatableEntity {
     @JoinColumn(name = "category_id", nullable = false)
     private RestaurantCategory category;
 
-    // 기존 dev 데이터 호환을 위해 nullable. 적용 완료 후 NOT NULL 전환 예정
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "region_id", nullable = false)
     private Region region;
