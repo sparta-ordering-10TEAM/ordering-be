@@ -8,6 +8,7 @@ import com.sparta.ordering.restaurant.dto.RegionResponse;
 import com.sparta.ordering.restaurant.dto.RegionUpdateRequest;
 import com.sparta.ordering.restaurant.entity.Region;
 import com.sparta.ordering.restaurant.repository.RegionRepository;
+import com.sparta.ordering.restaurant.repository.RestaurantRepository;
 import com.sparta.ordering.user.entity.Role;
 import com.sparta.ordering.user.entity.User;
 import com.sparta.ordering.user.repository.UserRepository;
@@ -26,6 +27,7 @@ public class RegionService {
     private static final Set<Role> ADMIN_ROLES = Set.of(Role.MASTER, Role.MANAGER);
 
     private final RegionRepository regionRepository;
+    private final RestaurantRepository restaurantRepository;
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
@@ -85,6 +87,10 @@ public class RegionService {
 
         if (regionRepository.existsByParent_IdAndDeletedAtIsNull(regionId)) {
             throw new ApiException(GeneralResponseCode.REGION_HAS_CHILDREN);
+        }
+
+        if (restaurantRepository.existsByRegion_IdAndDeletedAtIsNull(regionId)) {
+            throw new ApiException(GeneralResponseCode.REGION_IN_USE);
         }
 
         region.softDelete(userId);

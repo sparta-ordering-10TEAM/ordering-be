@@ -5,7 +5,9 @@ import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import com.sparta.ordering.restaurant.dto.RestaurantCreateRequest;
 import com.sparta.ordering.restaurant.dto.RestaurantResponse;
+import com.sparta.ordering.restaurant.dto.RestaurantStatusUpdateRequest;
 import com.sparta.ordering.restaurant.dto.RestaurantUpdateRequest;
+import com.sparta.ordering.restaurant.entity.RestaurantStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -34,7 +36,7 @@ import java.util.UUID;
 @RequestMapping("/api")
 public interface RestaurantApi {
 
-    @Operation(summary = "음식점 목록 조회", description = "카테고리 조건으로 음식점 목록을 페이징 조회합니다.")
+    @Operation(summary = "음식점 목록 조회", description = "카테고리/지역/상태 조건으로 음식점 목록을 페이징 조회합니다.")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -49,6 +51,8 @@ public interface RestaurantApi {
     @GetMapping("/restaurants")
     ResponseEntity<GeneralResponse<Page<RestaurantResponse>>> getRestaurants(
             @RequestParam(required = false) String category,
+            @RequestParam(required = false) UUID regionId,
+            @RequestParam(required = false) RestaurantStatus status,
             @PageableDefault Pageable pageable
     );
 
@@ -141,6 +145,34 @@ public interface RestaurantApi {
     ResponseEntity<GeneralResponse<RestaurantResponse>> updateRestaurant(
             @PathVariable UUID restaurantId,
             @Valid @RequestBody RestaurantUpdateRequest request,
+            @AuthenticationPrincipal CustomUserDetails user
+    );
+
+    @Operation(
+            summary = "음식점 영업 상태 변경",
+            description = "음식점 영업 상태를 변경합니다. OWNER는 본인 가게만, MANAGER/MASTER는 모든 가게를 변경할 수 있습니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "음식점 영업 상태 변경 성공",
+                    content = @Content(schema = @Schema(implementation = RestaurantResponse.class))),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "음식점 영업 상태 변경 실패 (권한 없음)",
+                    content = @Content(schema = @Schema(implementation = GeneralResponseCode.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "음식점 영업 상태 변경 실패 (음식점 없음)",
+                    content = @Content(schema = @Schema(implementation = GeneralResponseCode.class))
+            )
+    })
+    @PatchMapping("/restaurants/{restaurantId}/status")
+    ResponseEntity<GeneralResponse<RestaurantResponse>> changeRestaurantStatus(
+            @PathVariable UUID restaurantId,
+            @Valid @RequestBody RestaurantStatusUpdateRequest request,
             @AuthenticationPrincipal CustomUserDetails user
     );
 

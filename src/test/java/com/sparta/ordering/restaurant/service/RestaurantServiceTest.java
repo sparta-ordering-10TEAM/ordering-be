@@ -6,9 +6,11 @@ import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.restaurant.dto.RestaurantCreateRequest;
 import com.sparta.ordering.restaurant.dto.RestaurantResponse;
 import com.sparta.ordering.restaurant.dto.RestaurantUpdateRequest;
+import com.sparta.ordering.restaurant.entity.Region;
 import com.sparta.ordering.restaurant.entity.Restaurant;
 import com.sparta.ordering.restaurant.entity.RestaurantCategory;
 import com.sparta.ordering.restaurant.entity.RestaurantStatus;
+import com.sparta.ordering.restaurant.repository.RegionRepository;
 import com.sparta.ordering.restaurant.repository.RestaurantCategoryRepository;
 import com.sparta.ordering.restaurant.repository.RestaurantRepository;
 import com.sparta.ordering.user.entity.Role;
@@ -56,6 +58,9 @@ class RestaurantServiceTest {
     private RestaurantCategoryRepository restaurantCategoryRepository;
 
     @Mock
+    private RegionRepository regionRepository;
+
+    @Mock
     private UserRepository userRepository;
 
     @InjectMocks
@@ -68,25 +73,24 @@ class RestaurantServiceTest {
         @ParameterizedTest(name = "[{index}] category=''{0}''")
         @NullAndEmptySource
         @ValueSource(strings = {" ", "\t", "\n"})
-        @DisplayName("카테고리가 없거나 공백이면 삭제되지 않은 음식점을 전체 조회한다")
+        @DisplayName("카테고리가 없거나 공백이면 필터 없이 음식점을 조회한다")
         void getAllActiveRestaurants(String category) {
             Pageable pageable = PageRequest.of(0, 10);
             RestaurantCategory korean = restaurantCategory("한식");
             Restaurant restaurant = restaurant(korean, "한식당");
             Page<Restaurant> restaurantPage = new PageImpl<>(List.of(restaurant), pageable, 1);
 
-            when(restaurantRepository.findByDeletedAtIsNull(pageable)).thenReturn(restaurantPage);
+            when(restaurantRepository.findWithFilters(null, null, null, pageable)).thenReturn(restaurantPage);
 
-            Page<RestaurantResponse> result = restaurantService.getRestaurants(category, pageable);
+            Page<RestaurantResponse> result = restaurantService.getRestaurants(category, null, null, pageable);
 
             assertThat(result.getContent()).containsExactly(RestaurantResponse.from(restaurant));
-            verify(restaurantRepository).findByDeletedAtIsNull(pageable);
+            verify(restaurantRepository).findWithFilters(null, null, null, pageable);
             verifyNoInteractions(restaurantCategoryRepository);
-            verify(restaurantRepository, never()).findByCategoryAndDeletedAtIsNull(korean, pageable);
         }
 
         @Test
-        @DisplayName("카테고리가 있으면 해당 카테고리의 삭제되지 않은 음식점만 조회한다")
+        @DisplayName("카테고리가 있으면 해당 카테고리 ID로 필터 조회한다")
         void getActiveRestaurantsByCategory() {
             Pageable pageable = PageRequest.of(0, 10);
             RestaurantCategory chicken = restaurantCategory("치킨");
@@ -95,18 +99,40 @@ class RestaurantServiceTest {
 
             when(restaurantCategoryRepository.findByCodeAndDeletedAtIsNull("치킨"))
                     .thenReturn(Optional.of(chicken));
-            when(restaurantRepository.findByCategoryAndDeletedAtIsNull(chicken, pageable))
+            when(restaurantRepository.findWithFilters(chicken.getId(), null, null, pageable))
                     .thenReturn(restaurantPage);
 
-            Page<RestaurantResponse> result = restaurantService.getRestaurants("치킨", pageable);
+            Page<RestaurantResponse> result = restaurantService.getRestaurants("치킨", null, null, pageable);
 
             assertThat(result).hasSize(1);
             assertThat(result.getContent().get(0).restaurantId()).isEqualTo(restaurant.getId());
             assertThat(result.getContent().get(0).category()).isEqualTo("치킨");
             assertThat(result.getContent().get(0).name()).isEqualTo("치킨집");
             verify(restaurantCategoryRepository).findByCodeAndDeletedAtIsNull("치킨");
-            verify(restaurantRepository).findByCategoryAndDeletedAtIsNull(chicken, pageable);
-            verify(restaurantRepository, never()).findByDeletedAtIsNull(pageable);
+            verify(restaurantRepository).findWithFilters(chicken.getId(), null, null, pageable);
+        }
+
+        @Test
+        @DisplayName("지역과 상태 필터가 있으면 findWithFilters에 동일한 값이 전달된다")
+        void getRestaurantsWithRegionAndStatusFilters() {
+            Pageable pageable = PageRequest.of(0, 10);
+            UUID regionId = UUID.randomUUID();
+            Restaurant restaurant = restaurant(restaurantCategory("한식"), "한식당");
+            Page<Restaurant> restaurantPage = new PageImpl<>(List.of(restaurant), pageable, 1);
+
+            when(restaurantRepository.findWithFilters(null, regionId, RestaurantStatus.OPEN, pageable))
+                    .thenReturn(restaurantPage);
+
+            Page<RestaurantResponse> result = restaurantService.getRestaurants(
+                    null,
+                    regionId,
+                    RestaurantStatus.OPEN,
+                    pageable
+            );
+
+            assertThat(result.getContent()).hasSize(1);
+            verify(restaurantRepository).findWithFilters(null, regionId, RestaurantStatus.OPEN, pageable);
+            verifyNoInteractions(restaurantCategoryRepository);
         }
 
         @Test
@@ -116,7 +142,7 @@ class RestaurantServiceTest {
             when(restaurantCategoryRepository.findByCodeAndDeletedAtIsNull("UNKNOWN"))
                     .thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> restaurantService.getRestaurants("UNKNOWN", pageable))
+            assertThatThrownBy(() -> restaurantService.getRestaurants("UNKNOWN", null, null, pageable))
                     .isInstanceOf(ApiException.class)
                     .hasFieldOrPropertyWithValue("responseCode", GeneralResponseCode.RESTAURANT_CATEGORY_NOT_FOUND);
 
@@ -142,6 +168,8 @@ class RestaurantServiceTest {
             assertThat(response.restaurantId()).isEqualTo(restaurantId);
             assertThat(response.category()).isEqualTo("피자");
             assertThat(response.name()).isEqualTo("피자집");
+            assertThat(response.regionId()).isEqualTo(restaurant.getRegion().getId());
+            assertThat(response.regionName()).isEqualTo(restaurant.getRegion().getName());
         }
 
         @Test
@@ -206,11 +234,13 @@ class RestaurantServiceTest {
             User owner = user(Role.OWNER);
             ReflectionTestUtils.setField(owner, "id", ownerId);
             RestaurantCategory category = restaurantCategory("한식");
-            RestaurantCreateRequest request = validRestaurantCreateRequest();
+            Region region = leafRegion("역삼동");
+            RestaurantCreateRequest request = validRestaurantCreateRequest(region.getId());
 
             when(userRepository.findByIdAndDeletedAtIsNull(ownerId)).thenReturn(Optional.of(owner));
             when(restaurantCategoryRepository.findByCodeAndDeletedAtIsNull(request.category()))
                     .thenReturn(Optional.of(category));
+            when(regionRepository.findByIdAndDeletedAtIsNull(region.getId())).thenReturn(Optional.of(region));
             when(restaurantRepository.save(any(Restaurant.class))).thenAnswer(invocation -> {
                 Restaurant savedRestaurant = invocation.getArgument(0);
                 ReflectionTestUtils.setField(savedRestaurant, "id", restaurantId);
@@ -224,6 +254,7 @@ class RestaurantServiceTest {
             Restaurant savedRestaurant = captor.getValue();
             assertThat(savedRestaurant.getUser()).isSameAs(owner);
             assertThat(savedRestaurant.getCategory()).isSameAs(category);
+            assertThat(savedRestaurant.getRegion()).isSameAs(region);
             assertThat(savedRestaurant.getName()).isEqualTo(request.name());
             assertThat(savedRestaurant.getPhone()).isEqualTo(request.phone());
             assertThat(savedRestaurant.getDescription()).isEqualTo(request.description());
@@ -238,20 +269,22 @@ class RestaurantServiceTest {
             assertThat(savedRestaurant.getDeliveryRadiusKm()).isEqualByComparingTo(request.deliveryRadiusKm());
             assertThat(response).isEqualTo(RestaurantResponse.from(savedRestaurant));
             assertThat(response.restaurantId()).isEqualTo(restaurantId);
+            assertThat(response.regionId()).isEqualTo(region.getId());
+            assertThat(response.regionName()).isEqualTo(region.getName());
         }
 
         @Test
         @DisplayName("생성 요청 사용자가 존재하지 않으면 음식점을 생성할 수 없다")
         void failUserNotFound() {
             UUID userId = UUID.randomUUID();
-            RestaurantCreateRequest request = validRestaurantCreateRequest();
+            RestaurantCreateRequest request = validRestaurantCreateRequest(UUID.randomUUID());
             when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> restaurantService.createRestaurant(request, userId))
                     .isInstanceOf(ApiException.class)
                     .hasFieldOrPropertyWithValue("responseCode", GeneralResponseCode.USER_NOT_FOUND);
 
-            verifyNoInteractions(restaurantCategoryRepository, restaurantRepository);
+            verifyNoInteractions(restaurantCategoryRepository, regionRepository, restaurantRepository);
         }
 
         @ParameterizedTest(name = "[{index}] DB 권한={0}")
@@ -261,14 +294,14 @@ class RestaurantServiceTest {
             UUID userId = UUID.randomUUID();
             User requestUser = user(role);
             ReflectionTestUtils.setField(requestUser, "id", userId);
-            RestaurantCreateRequest request = validRestaurantCreateRequest();
+            RestaurantCreateRequest request = validRestaurantCreateRequest(UUID.randomUUID());
             when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(requestUser));
 
             assertThatThrownBy(() -> restaurantService.createRestaurant(request, userId))
                     .isInstanceOf(ApiException.class)
                     .hasFieldOrPropertyWithValue("responseCode", AuthResponseCode.FORBIDDEN);
 
-            verifyNoInteractions(restaurantCategoryRepository, restaurantRepository);
+            verifyNoInteractions(restaurantCategoryRepository, regionRepository, restaurantRepository);
         }
 
         @Test
@@ -277,7 +310,7 @@ class RestaurantServiceTest {
             UUID ownerId = UUID.randomUUID();
             User owner = user(Role.OWNER);
             ReflectionTestUtils.setField(owner, "id", ownerId);
-            RestaurantCreateRequest request = validRestaurantCreateRequest();
+            RestaurantCreateRequest request = validRestaurantCreateRequest(UUID.randomUUID());
             when(userRepository.findByIdAndDeletedAtIsNull(ownerId)).thenReturn(Optional.of(owner));
             when(restaurantCategoryRepository.findByCodeAndDeletedAtIsNull(request.category()))
                     .thenReturn(Optional.empty());
@@ -288,6 +321,51 @@ class RestaurantServiceTest {
                             "responseCode",
                             GeneralResponseCode.RESTAURANT_CATEGORY_NOT_FOUND
                     );
+
+            verify(restaurantRepository, never()).save(any(Restaurant.class));
+            verifyNoInteractions(regionRepository);
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 지역으로 음식점을 생성할 수 없다")
+        void failRegionNotFound() {
+            UUID ownerId = UUID.randomUUID();
+            User owner = user(Role.OWNER);
+            ReflectionTestUtils.setField(owner, "id", ownerId);
+            RestaurantCategory category = restaurantCategory("한식");
+            UUID regionId = UUID.randomUUID();
+            RestaurantCreateRequest request = validRestaurantCreateRequest(regionId);
+
+            when(userRepository.findByIdAndDeletedAtIsNull(ownerId)).thenReturn(Optional.of(owner));
+            when(restaurantCategoryRepository.findByCodeAndDeletedAtIsNull(request.category()))
+                    .thenReturn(Optional.of(category));
+            when(regionRepository.findByIdAndDeletedAtIsNull(regionId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> restaurantService.createRestaurant(request, ownerId))
+                    .isInstanceOf(ApiException.class)
+                    .hasFieldOrPropertyWithValue("responseCode", GeneralResponseCode.REGION_NOT_FOUND);
+
+            verify(restaurantRepository, never()).save(any(Restaurant.class));
+        }
+
+        @Test
+        @DisplayName("최하위 지역이 아니면 음식점을 생성할 수 없다")
+        void failRegionNotLeaf() {
+            UUID ownerId = UUID.randomUUID();
+            User owner = user(Role.OWNER);
+            ReflectionTestUtils.setField(owner, "id", ownerId);
+            RestaurantCategory category = restaurantCategory("한식");
+            Region region = nonLeafRegion("강남구");
+            RestaurantCreateRequest request = validRestaurantCreateRequest(region.getId());
+
+            when(userRepository.findByIdAndDeletedAtIsNull(ownerId)).thenReturn(Optional.of(owner));
+            when(restaurantCategoryRepository.findByCodeAndDeletedAtIsNull(request.category()))
+                    .thenReturn(Optional.of(category));
+            when(regionRepository.findByIdAndDeletedAtIsNull(region.getId())).thenReturn(Optional.of(region));
+
+            assertThatThrownBy(() -> restaurantService.createRestaurant(request, ownerId))
+                    .isInstanceOf(ApiException.class)
+                    .hasFieldOrPropertyWithValue("responseCode", GeneralResponseCode.REGION_NOT_LEAF);
 
             verify(restaurantRepository, never()).save(any(Restaurant.class));
         }
@@ -303,11 +381,13 @@ class RestaurantServiceTest {
             UUID restaurantId = UUID.randomUUID();
             RestaurantCategory oldCategory = restaurantCategory("한식");
             RestaurantCategory newCategory = restaurantCategory("치킨");
+            Region newRegion = leafRegion("삼성동");
             Restaurant restaurant = restaurant(oldCategory, "한식당");
             ReflectionTestUtils.setField(restaurant, "id", restaurantId);
             UUID ownerId = restaurant.getUser().getId();
             RestaurantUpdateRequest request = new RestaurantUpdateRequest(
                     "치킨",
+                    newRegion.getId(),
                     "치킨집",
                     "02-1111-2222",
                     "바삭한 치킨",
@@ -325,11 +405,14 @@ class RestaurantServiceTest {
             when(userRepository.findByIdAndDeletedAtIsNull(ownerId)).thenReturn(Optional.of(restaurant.getUser()));
             when(restaurantCategoryRepository.findByCodeAndDeletedAtIsNull("치킨"))
                     .thenReturn(Optional.of(newCategory));
+            when(regionRepository.findByIdAndDeletedAtIsNull(newRegion.getId())).thenReturn(Optional.of(newRegion));
 
             RestaurantResponse response = restaurantService.updateRestaurant(restaurantId, request, ownerId);
 
             assertThat(response.restaurantId()).isEqualTo(restaurantId);
             assertThat(response.category()).isEqualTo("치킨");
+            assertThat(response.regionId()).isEqualTo(newRegion.getId());
+            assertThat(response.regionName()).isEqualTo(newRegion.getName());
             assertThat(response.name()).isEqualTo("치킨집");
             assertThat(response.phone()).isEqualTo("02-1111-2222");
             assertThat(response.description()).isEqualTo("바삭한 치킨");
@@ -363,6 +446,7 @@ class RestaurantServiceTest {
                     null,
                     null,
                     null,
+                    null,
                     null
             );
 
@@ -372,7 +456,7 @@ class RestaurantServiceTest {
             RestaurantResponse response = restaurantService.updateRestaurant(restaurantId, request, ownerId);
 
             assertThat(response).isEqualTo(originalResponse);
-            verifyNoInteractions(restaurantCategoryRepository);
+            verifyNoInteractions(restaurantCategoryRepository, regionRepository);
         }
 
         @Test
@@ -383,6 +467,7 @@ class RestaurantServiceTest {
             Restaurant restaurant = restaurant(category, "피자집");
             ReflectionTestUtils.setField(restaurant, "id", restaurantId);
             RestaurantUpdateRequest request = new RestaurantUpdateRequest(
+                    null,
                     null,
                     "관리자 수정 피자집",
                     null,
@@ -412,7 +497,7 @@ class RestaurantServiceTest {
             assertThat(response.category()).isEqualTo("피자");
             assertThat(response.name()).isEqualTo("관리자 수정 피자집");
             assertThat(response.phone()).isEqualTo("02-000-0000");
-            verifyNoInteractions(restaurantCategoryRepository);
+            verifyNoInteractions(restaurantCategoryRepository, regionRepository);
         }
 
         @Test
@@ -422,6 +507,7 @@ class RestaurantServiceTest {
             Restaurant restaurant = restaurant(restaurantCategory("피자"), "피자집");
             ReflectionTestUtils.setField(restaurant, "id", restaurantId);
             RestaurantUpdateRequest request = new RestaurantUpdateRequest(
+                    null,
                     null,
                     "마스터 수정 피자집",
                     null,
@@ -447,7 +533,7 @@ class RestaurantServiceTest {
 
             assertThat(response.name()).isEqualTo("마스터 수정 피자집");
             assertThat(response.ownerUserId()).isEqualTo(restaurant.getUser().getId());
-            verifyNoInteractions(restaurantCategoryRepository);
+            verifyNoInteractions(restaurantCategoryRepository, regionRepository);
         }
 
         @Test
@@ -458,6 +544,7 @@ class RestaurantServiceTest {
             ReflectionTestUtils.setField(restaurant, "id", restaurantId);
             RestaurantUpdateRequest request = new RestaurantUpdateRequest(
                     "치킨",
+                    null,
                     null,
                     null,
                     null,
@@ -486,7 +573,7 @@ class RestaurantServiceTest {
                     .hasFieldOrPropertyWithValue("responseCode", AuthResponseCode.FORBIDDEN);
 
             assertThat(restaurant.getCategory().getCode()).isEqualTo("한식");
-            verifyNoInteractions(restaurantCategoryRepository);
+            verifyNoInteractions(restaurantCategoryRepository, regionRepository);
         }
 
         @Test
@@ -494,6 +581,7 @@ class RestaurantServiceTest {
         void failRestaurantNotFound() {
             UUID restaurantId = UUID.randomUUID();
             RestaurantUpdateRequest request = new RestaurantUpdateRequest(
+                    null,
                     null,
                     "수정",
                     null,
@@ -517,7 +605,7 @@ class RestaurantServiceTest {
                     .isInstanceOf(ApiException.class)
                     .hasFieldOrPropertyWithValue("responseCode", GeneralResponseCode.RESTAURANT_NOT_FOUND);
 
-            verifyNoInteractions(restaurantCategoryRepository);
+            verifyNoInteractions(restaurantCategoryRepository, regionRepository);
         }
 
         @Test
@@ -529,6 +617,7 @@ class RestaurantServiceTest {
             UUID userId = UUID.randomUUID();
             RestaurantUpdateRequest request = new RestaurantUpdateRequest(
                     "치킨",
+                    null,
                     "치킨집",
                     null,
                     null,
@@ -551,7 +640,7 @@ class RestaurantServiceTest {
 
             assertThat(restaurant.getCategory().getCode()).isEqualTo("한식");
             assertThat(restaurant.getName()).isEqualTo("한식당");
-            verifyNoInteractions(restaurantCategoryRepository);
+            verifyNoInteractions(restaurantCategoryRepository, regionRepository);
         }
 
         @Test
@@ -562,6 +651,7 @@ class RestaurantServiceTest {
             ReflectionTestUtils.setField(restaurant, "id", restaurantId);
             RestaurantUpdateRequest request = new RestaurantUpdateRequest(
                     "UNKNOWN",
+                    null,
                     null,
                     null,
                     null,
@@ -603,6 +693,7 @@ class RestaurantServiceTest {
             ReflectionTestUtils.setField(customer, "id", userId);
             RestaurantUpdateRequest request = new RestaurantUpdateRequest(
                     null,
+                    null,
                     "수정 이름",
                     null,
                     null,
@@ -641,6 +732,7 @@ class RestaurantServiceTest {
             ReflectionTestUtils.setField(customer, "id", ownerId);
             RestaurantUpdateRequest request = new RestaurantUpdateRequest(
                     null,
+                    null,
                     "수정 이름",
                     null,
                     null,
@@ -666,6 +758,167 @@ class RestaurantServiceTest {
                     .hasFieldOrPropertyWithValue("responseCode", AuthResponseCode.FORBIDDEN);
 
             assertThat(restaurant.getName()).isEqualTo("한식당");
+        }
+    }
+
+    @Nested
+    @DisplayName("음식점 상태 변경")
+    class ChangeRestaurantStatus {
+
+        @Test
+        @DisplayName("OWNER는 본인 음식점 상태를 변경할 수 있다")
+        void successOwnerChangesOwnRestaurantStatus() {
+            UUID restaurantId = UUID.randomUUID();
+            Restaurant restaurant = restaurant(restaurantCategory("한식"), "한식당");
+            ReflectionTestUtils.setField(restaurant, "id", restaurantId);
+            UUID ownerId = restaurant.getUser().getId();
+
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(userRepository.findByIdAndDeletedAtIsNull(ownerId)).thenReturn(Optional.of(restaurant.getUser()));
+
+            RestaurantResponse response = restaurantService.changeRestaurantStatus(
+                    restaurantId,
+                    RestaurantStatus.CLOSED,
+                    ownerId
+            );
+
+            assertThat(restaurant.getStatus()).isEqualTo(RestaurantStatus.CLOSED);
+            assertThat(response.status()).isEqualTo(RestaurantStatus.CLOSED);
+        }
+
+        @Test
+        @DisplayName("MANAGER는 모든 음식점 상태를 변경할 수 있다")
+        void successManagerChangesAnyRestaurantStatus() {
+            UUID restaurantId = UUID.randomUUID();
+            Restaurant restaurant = restaurant(restaurantCategory("치킨"), "치킨집");
+            ReflectionTestUtils.setField(restaurant, "id", restaurantId);
+            UUID managerId = UUID.randomUUID();
+            User manager = user(Role.MANAGER);
+            ReflectionTestUtils.setField(manager, "id", managerId);
+
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(userRepository.findByIdAndDeletedAtIsNull(managerId)).thenReturn(Optional.of(manager));
+
+            RestaurantResponse response = restaurantService.changeRestaurantStatus(
+                    restaurantId,
+                    RestaurantStatus.CLOSED,
+                    managerId
+            );
+
+            assertThat(restaurant.getStatus()).isEqualTo(RestaurantStatus.CLOSED);
+            assertThat(response.status()).isEqualTo(RestaurantStatus.CLOSED);
+        }
+
+        @Test
+        @DisplayName("MASTER는 모든 음식점 상태를 변경할 수 있다")
+        void successMasterChangesAnyRestaurantStatus() {
+            UUID restaurantId = UUID.randomUUID();
+            Restaurant restaurant = restaurant(restaurantCategory("피자"), "피자집");
+            ReflectionTestUtils.setField(restaurant, "id", restaurantId);
+            UUID masterId = UUID.randomUUID();
+            User master = user(Role.MASTER);
+            ReflectionTestUtils.setField(master, "id", masterId);
+
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(userRepository.findByIdAndDeletedAtIsNull(masterId)).thenReturn(Optional.of(master));
+
+            RestaurantResponse response = restaurantService.changeRestaurantStatus(
+                    restaurantId,
+                    RestaurantStatus.OPEN,
+                    masterId
+            );
+
+            assertThat(restaurant.getStatus()).isEqualTo(RestaurantStatus.OPEN);
+            assertThat(response.status()).isEqualTo(RestaurantStatus.OPEN);
+        }
+
+        @Test
+        @DisplayName("상태 변경 대상 음식점이 존재하지 않으면 변경할 수 없다")
+        void failRestaurantNotFound() {
+            UUID restaurantId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
+
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> restaurantService.changeRestaurantStatus(
+                    restaurantId,
+                    RestaurantStatus.CLOSED,
+                    userId
+            ))
+                    .isInstanceOf(ApiException.class)
+                    .hasFieldOrPropertyWithValue("responseCode", GeneralResponseCode.RESTAURANT_NOT_FOUND);
+
+            verifyNoInteractions(userRepository);
+        }
+
+        @Test
+        @DisplayName("OWNER는 다른 사용자의 음식점 상태를 변경할 수 없다")
+        void failOwnerChangesOthersRestaurantStatus() {
+            UUID restaurantId = UUID.randomUUID();
+            Restaurant restaurant = restaurant(restaurantCategory("한식"), "한식당");
+            ReflectionTestUtils.setField(restaurant, "id", restaurantId);
+            UUID otherOwnerId = UUID.randomUUID();
+            User otherOwner = user(Role.OWNER);
+            ReflectionTestUtils.setField(otherOwner, "id", otherOwnerId);
+
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(userRepository.findByIdAndDeletedAtIsNull(otherOwnerId)).thenReturn(Optional.of(otherOwner));
+
+            assertThatThrownBy(() -> restaurantService.changeRestaurantStatus(
+                    restaurantId,
+                    RestaurantStatus.CLOSED,
+                    otherOwnerId
+            ))
+                    .isInstanceOf(ApiException.class)
+                    .hasFieldOrPropertyWithValue("responseCode", AuthResponseCode.FORBIDDEN);
+
+            assertThat(restaurant.getStatus()).isEqualTo(RestaurantStatus.OPEN);
+        }
+
+        @Test
+        @DisplayName("상태 변경 요청 사용자가 존재하지 않으면 변경할 수 없다")
+        void failUserNotFound() {
+            UUID restaurantId = UUID.randomUUID();
+            Restaurant restaurant = restaurant(restaurantCategory("한식"), "한식당");
+            ReflectionTestUtils.setField(restaurant, "id", restaurantId);
+            UUID userId = UUID.randomUUID();
+
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> restaurantService.changeRestaurantStatus(
+                    restaurantId,
+                    RestaurantStatus.CLOSED,
+                    userId
+            ))
+                    .isInstanceOf(ApiException.class)
+                    .hasFieldOrPropertyWithValue("responseCode", GeneralResponseCode.USER_NOT_FOUND);
+
+            assertThat(restaurant.getStatus()).isEqualTo(RestaurantStatus.OPEN);
+        }
+
+        @Test
+        @DisplayName("DB 권한이 OWNER, MANAGER, MASTER가 아니면 본인 음식점이어도 상태를 변경할 수 없다")
+        void failWhenDbRoleIsNotAllowedEvenIfUserOwnsRestaurant() {
+            UUID restaurantId = UUID.randomUUID();
+            Restaurant restaurant = restaurant(restaurantCategory("한식"), "한식당");
+            ReflectionTestUtils.setField(restaurant, "id", restaurantId);
+            UUID ownerId = restaurant.getUser().getId();
+            User customer = user(Role.CUSTOMER);
+            ReflectionTestUtils.setField(customer, "id", ownerId);
+
+            when(restaurantRepository.findByIdAndDeletedAtIsNull(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(userRepository.findByIdAndDeletedAtIsNull(ownerId)).thenReturn(Optional.of(customer));
+
+            assertThatThrownBy(() -> restaurantService.changeRestaurantStatus(
+                    restaurantId,
+                    RestaurantStatus.CLOSED,
+                    ownerId
+            ))
+                    .isInstanceOf(ApiException.class)
+                    .hasFieldOrPropertyWithValue("responseCode", AuthResponseCode.FORBIDDEN);
+
+            assertThat(restaurant.getStatus()).isEqualTo(RestaurantStatus.OPEN);
         }
     }
 
@@ -805,9 +1058,10 @@ class RestaurantServiceTest {
         }
     }
 
-    private static RestaurantCreateRequest validRestaurantCreateRequest() {
+    private static RestaurantCreateRequest validRestaurantCreateRequest(UUID regionId) {
         return new RestaurantCreateRequest(
                 "한식",
+                regionId,
                 "한식당",
                 "02-1234-5678",
                 "정성껏 만든 한식",
@@ -820,6 +1074,26 @@ class RestaurantServiceTest {
                 new BigDecimal("127.1234567"),
                 new BigDecimal("4.5")
         );
+    }
+
+    private static Region leafRegion(String name) {
+        Region region = Region.builder()
+                .parent(null)
+                .name(name)
+                .build();
+        ReflectionTestUtils.setField(region, "id", UUID.randomUUID());
+        ReflectionTestUtils.setField(region, "depth", Region.MAX_DEPTH);
+        return region;
+    }
+
+    private static Region nonLeafRegion(String name) {
+        Region region = Region.builder()
+                .parent(null)
+                .name(name)
+                .build();
+        ReflectionTestUtils.setField(region, "id", UUID.randomUUID());
+        ReflectionTestUtils.setField(region, "depth", 2);
+        return region;
     }
 
     private static RestaurantCategory restaurantCategory(String code) {
@@ -842,6 +1116,7 @@ class RestaurantServiceTest {
         Restaurant restaurant = Restaurant.builder()
                 .user(owner)
                 .category(category)
+                .region(leafRegion("역삼동"))
                 .name(name)
                 .phone("02-000-0000")
                 .description("설명")
