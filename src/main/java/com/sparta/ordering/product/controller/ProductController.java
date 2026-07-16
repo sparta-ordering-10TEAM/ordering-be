@@ -69,7 +69,7 @@ public class ProductController implements ProductApi {
         Role role = SecurityUtil.getRole(authentication);
         ProductResponse responseDto = productService.createProduct(request, userDetails.getUserId(), role);
 
-        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, responseDto);
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.CREATED, responseDto);
     }
 
     @Override

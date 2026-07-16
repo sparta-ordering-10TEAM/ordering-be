@@ -4,6 +4,7 @@ import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import com.sparta.ordering.global.security.SecurityUtil;
+import com.sparta.ordering.payment.controller.api.PaymentApi;
 import com.sparta.ordering.payment.dto.PaymentCancelRequest;
 import com.sparta.ordering.payment.dto.PaymentRequest;
 import com.sparta.ordering.payment.dto.PaymentResponse;
@@ -36,11 +37,12 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
-public class PaymentController {
+public class PaymentController implements PaymentApi {
 
     private final PaymentFacade paymentFacade;
     private final PaymentService paymentService;
 
+    @Override
     @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping("/payments")
     public ResponseEntity<GeneralResponse<PaymentResponse>> createPayment(
@@ -48,9 +50,10 @@ public class PaymentController {
             @Valid @RequestBody PaymentRequest request
     ) {
         PaymentResponse response = paymentFacade.processPayment(userDetails.getUserId(), request);
-        return  GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
+        return  GeneralResponse.toResponseEntity(GeneralResponseCode.CREATED, response);
     }
 
+    @Override
     @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/payments/{paymentId}")
     public ResponseEntity<GeneralResponse<PaymentResponse>> getPayment(
@@ -63,6 +66,7 @@ public class PaymentController {
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, response);
     }
 
+    @Override
     @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/payments")
     public ResponseEntity<GeneralResponse<Page<PaymentResponse>>> getPayments(
@@ -75,6 +79,7 @@ public class PaymentController {
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, paymentResponse);
     }
 
+    @Override
     @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
     @PostMapping("/payments/{paymentId}/cancel")
     public ResponseEntity<GeneralResponse<PaymentResponse>> cancelPayment(
