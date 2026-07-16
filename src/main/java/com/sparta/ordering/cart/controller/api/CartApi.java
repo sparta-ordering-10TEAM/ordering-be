@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +31,11 @@ import java.util.UUID;
 @RequestMapping("/api")
 public interface CartApi {
 
-    @Operation(summary = "내 장바구니 조회", description = "로그인한 CUSTOMER의 장바구니를 조회합니다. 장바구니가 없으면 빈 장바구니를 반환합니다.")
+    @Operation(
+            summary = "내 장바구니 조회",
+            description = "로그인한 CUSTOMER의 장바구니를 조회합니다. 장바구니가 없으면 빈 장바구니를 반환합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -42,7 +47,11 @@ public interface CartApi {
             @AuthenticationPrincipal CustomUserDetails userDetails
     );
 
-    @Operation(summary = "장바구니 상품 추가", description = "장바구니에 상품을 담습니다. 장바구니가 없으면 새로 생성하고, 이미 담긴 상품이면 수량을 증가시킵니다.")
+    @Operation(
+            summary = "장바구니 상품 추가",
+            description = "장바구니에 상품을 담습니다. 장바구니가 없으면 새로 생성하고, 이미 담긴 상품이면 수량을 증가시킵니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -88,7 +97,11 @@ public interface CartApi {
             @Valid @RequestBody CartItemRequest request
     );
 
-    @Operation(summary = "장바구니 상품 수량 수정", description = "장바구니에 담긴 상품의 수량을 지정한 값으로 변경합니다.")
+    @Operation(
+            summary = "장바구니 상품 수량 수정",
+            description = "장바구니에 담긴 상품의 수량을 지정한 값으로 변경합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -118,7 +131,11 @@ public interface CartApi {
             @Valid @RequestBody CartItemQuantityRequest request
     );
 
-    @Operation(summary = "장바구니 상품 삭제", description = "장바구니에서 상품 1개를 삭제합니다. 마지막 상품을 삭제하면 장바구니도 함께 비워집니다.")
+    @Operation(
+            summary = "장바구니 상품 삭제",
+            description = "장바구니에서 상품 1개를 삭제합니다. 마지막 상품을 삭제하면 장바구니도 함께 비워집니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
@@ -139,7 +156,11 @@ public interface CartApi {
             @PathVariable UUID cartItemId
     );
 
-    @Operation(summary = "장바구니 비우기", description = "장바구니에 담긴 상품을 전부 삭제합니다.")
+    @Operation(
+            summary = "장바구니 비우기",
+            description = "장바구니에 담긴 상품을 전부 삭제합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
