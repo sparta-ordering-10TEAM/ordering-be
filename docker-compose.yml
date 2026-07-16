@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   ordering-db:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     container_name: ordering-db
     restart: unless-stopped
     environment:
