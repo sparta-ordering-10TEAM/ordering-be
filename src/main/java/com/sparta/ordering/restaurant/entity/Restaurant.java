@@ -26,6 +26,10 @@ public class Restaurant extends BaseUpdatableEntity {
     @JoinColumn(name = "category_id", nullable = false)
     private RestaurantCategory category;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "region_id", nullable = false)
+    private Region region;
+
     @Column(nullable = false, length = 100)
     private String name;
 
@@ -73,6 +77,7 @@ public class Restaurant extends BaseUpdatableEntity {
     public Restaurant(
             User user,
             RestaurantCategory category,
+            Region region,
             String name,
             String phone,
             String description,
@@ -88,6 +93,7 @@ public class Restaurant extends BaseUpdatableEntity {
     ) {
         this.user = user;
         this.category = category;
+        this.region = region;
         this.name = name;
         this.phone = phone;
         this.description = description;
@@ -106,6 +112,7 @@ public class Restaurant extends BaseUpdatableEntity {
 
     public void update(
             RestaurantCategory category,
+            Region region,
             String name,
             String phone,
             String description,
@@ -120,6 +127,9 @@ public class Restaurant extends BaseUpdatableEntity {
     ) {
         if (category != null) {
             this.category = category;
+        }
+        if (region != null) {
+            this.region = region;
         }
         if (name != null) {
             this.name = name;

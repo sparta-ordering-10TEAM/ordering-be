@@ -36,7 +36,7 @@ public class CartService {
     @Transactional(readOnly = true)
     public CartResponse getMyCart(UUID userId) {
         // 장바구니 없는 경우 빈 장바구니 반환
-        return cartRepository.findByUser_Id(userId)
+        return cartRepository.findByUser_IdAndDeletedAtIsNull(userId)
                 .map(cart -> toCartResponse(cart, cartItemRepository.findByCart_IdAndDeletedAtIsNullWithProduct(cart.getId())))
                 .orElseGet(CartResponse::empty);
     }
@@ -82,18 +82,16 @@ public class CartService {
         }
     }
 
-    // 장바구니가 비어있으면 식당을 지정, 이미 있으면 같은 식당의 상품인지 검증
+    // 카트는 생성 시점에 항상 restaurant이 채워지므로 동일 식당인지만 검증
     private void validateSameRestaurant(Cart cart, Restaurant restaurant) {
-        if (cart.getRestaurant() == null) {
-            cart.changeRestaurant(restaurant);
-        } else if (!cart.getRestaurant().getId().equals(restaurant.getId())) {
+        if (!cart.getRestaurant().getId().equals(restaurant.getId())) {
             throw new ApiException(GeneralResponseCode.CART_DIFFERENT_RESTAURANT);
         }
     }
 
     // 유저의 장바구니를 조회하고, 없으면 새로 생성
     private Cart getOrCreateCart(UUID userId, Restaurant restaurant) {
-        return cartRepository.findByUser_Id(userId)
+        return cartRepository.findByUser_IdAndDeletedAtIsNull(userId)
                 .orElseGet(() -> {
                     User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                             .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
@@ -127,28 +125,29 @@ public class CartService {
         // soft delete 수행
         cartItem.softDelete(userId);
 
-        // 아이템 삭제 후 카트가 비어있으면 Restaurant null 로 초기화
+        // 아이템 삭제 후 카트가 비어있으면 카트 자체를 soft delete (다음 addItem은 새 카트를 생성)
         Cart cart = cartItem.getCart();
         List<CartItem> itemList = cartItemRepository.findByCart_IdAndDeletedAtIsNullWithProduct(cart.getId());
         if (itemList.isEmpty()) {
-            cart.changeRestaurant(null);
+            cart.softDelete(userId);
+            return CartResponse.empty();
         }
 
-        return toCartResponse(cartItem.getCart(), itemList);
+        return toCartResponse(cart, itemList);
     }
 
     @Transactional
     public CartResponse clearCart(UUID userId) {
 
         // 카트 소유자 검증
-        Cart cart = cartRepository.findByUser_Id(userId)
+        Cart cart = cartRepository.findByUser_IdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.CART_NOT_FOUND));
 
-        // 장바구니 비우기 (벌크 연산)
+        // 장바구니 비우기 (벌크 연산) + 카트 자체도 soft delete (다음 addItem은 새 카트를 생성)
         cartItemRepository.softDeleteAllByCartId(cart.getId(), userId);
-        cart.changeRestaurant(null);
+        cart.softDelete(userId);
 
-        return CartResponse.from(cart, List.of());
+        return CartResponse.empty();
     }
 
     private CartResponse toCartResponse(Cart cart, List<CartItem> cartItems) {

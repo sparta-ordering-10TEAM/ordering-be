@@ -48,8 +48,6 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
             """)
     Optional<Review> findByIdAndDeletedAtIsNullWithOrder(UUID id);
 
-    Optional<Review> findByIdAndCustomer_IdAndDeletedAtIsNull(UUID id, UUID customerId);
-
     @Query("""
             SELECT r FROM Review r
             JOIN FETCH r.order o
@@ -60,4 +58,6 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
     Optional<Review> findByIdAndCustomer_IdAndDeletedAtIsNullWithOrder(UUID id, UUID customerId);
 
     boolean existsByOrder_IdAndCustomer_IdAndDeletedAtIsNull(UUID orderId, UUID customerId);
+
+    Optional<Review> findByIdAndOrder_Restaurant_User_IdAndDeletedAtIsNull(UUID id, UUID orderRestaurantUserId);
 }

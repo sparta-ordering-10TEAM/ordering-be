@@ -2,16 +2,20 @@ package com.sparta.ordering.restaurant.service;
 
 import com.sparta.ordering.global.code.AuthResponseCode;
 import com.sparta.ordering.global.code.GeneralResponseCode;
+import com.sparta.ordering.global.config.CacheConfig;
 import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.restaurant.dto.RegionCreateRequest;
 import com.sparta.ordering.restaurant.dto.RegionResponse;
 import com.sparta.ordering.restaurant.dto.RegionUpdateRequest;
 import com.sparta.ordering.restaurant.entity.Region;
 import com.sparta.ordering.restaurant.repository.RegionRepository;
+import com.sparta.ordering.restaurant.repository.RestaurantRepository;
 import com.sparta.ordering.user.entity.Role;
 import com.sparta.ordering.user.entity.User;
 import com.sparta.ordering.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,8 +30,10 @@ public class RegionService {
     private static final Set<Role> ADMIN_ROLES = Set.of(Role.MASTER, Role.MANAGER);
 
     private final RegionRepository regionRepository;
+    private final RestaurantRepository restaurantRepository;
     private final UserRepository userRepository;
 
+    @Cacheable(value = CacheConfig.REGIONS, key = "#parentId ?: 'root'")
     @Transactional(readOnly = true)
     public List<RegionResponse> getRegions(UUID parentId) {
         List<Region> regions = (parentId == null)
@@ -36,6 +42,7 @@ public class RegionService {
         return regions.stream().map(RegionResponse::from).toList();
     }
 
+    @CacheEvict(value = CacheConfig.REGIONS, allEntries = true)
     @Transactional
     public RegionResponse createRegion(RegionCreateRequest request, UUID userId) {
 
@@ -58,6 +65,7 @@ public class RegionService {
         return RegionResponse.from(regionRepository.save(region));
     }
 
+    @CacheEvict(value = CacheConfig.REGIONS, allEntries = true)
     @Transactional
     public RegionResponse updateRegion(UUID regionId, RegionUpdateRequest request, UUID userId) {
         validateAdminPermission(userId);
@@ -77,6 +85,7 @@ public class RegionService {
         return RegionResponse.from(region);
     }
 
+    @CacheEvict(value = CacheConfig.REGIONS, allEntries = true)
     @Transactional
     public void deleteRegion(UUID regionId, UUID userId) {
         validateAdminPermission(userId);
@@ -85,6 +94,10 @@ public class RegionService {
 
         if (regionRepository.existsByParent_IdAndDeletedAtIsNull(regionId)) {
             throw new ApiException(GeneralResponseCode.REGION_HAS_CHILDREN);
+        }
+
+        if (restaurantRepository.existsByRegion_IdAndDeletedAtIsNull(regionId)) {
+            throw new ApiException(GeneralResponseCode.REGION_IN_USE);
         }
 
         region.softDelete(userId);

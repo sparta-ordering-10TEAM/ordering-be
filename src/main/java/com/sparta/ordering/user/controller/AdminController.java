@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -51,6 +52,16 @@ public class AdminController implements AdminApi {
     @PatchMapping("/{userId}/role")
     public ResponseEntity<GeneralResponse<UserResponse>> updateRole(@PathVariable UUID userId, @RequestBody UserRoleUpdateRequest userRoleUpdateRequest) {
         UserResponse result = adminService.updateRole(userId, userRoleUpdateRequest);
+        return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, result);
+    }
+
+    @Override
+    @PreAuthorize("hasAnyRole('MANAGER', 'MASTER')")
+    @PatchMapping("/{userId}/approve-owner")
+    public ResponseEntity<GeneralResponse<UserResponse>> approveOwner(
+            @PathVariable UUID userId,
+            @AuthenticationPrincipal UUID approverId) {
+        UserResponse result = adminService.approveOwner(userId, approverId);
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, result);
     }
 
