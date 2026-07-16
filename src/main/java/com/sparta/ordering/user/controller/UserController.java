@@ -53,10 +53,9 @@ public class UserController implements UserApi {
     public ResponseEntity<GeneralResponse<ProfileResponse>> updateProfile(
             @AuthenticationPrincipal CustomUserDetails loginUser,
             @PathVariable UUID userId,
-            @Valid @RequestPart("request") ProfileUpdateRequest profileUpdateRequest,
+            @Valid @RequestPart(value = "request") ProfileUpdateRequest profileUpdateRequest,
             @RequestPart(value = "image", required = false) MultipartFile profileImage) {
 
-        // TODO: 인프라 세팅 후 프로필 이미지 업데이트 추가
         ProfileResponse result = userService.updateProfile(loginUser.getUserId(), userId, profileUpdateRequest, profileImage);
         return GeneralResponse.toResponseEntity(GeneralResponseCode.OK, result);
     }

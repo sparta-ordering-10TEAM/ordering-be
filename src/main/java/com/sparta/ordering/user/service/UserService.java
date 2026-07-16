@@ -4,6 +4,7 @@ import com.sparta.ordering.auth.security.session.JwtSessionService;
 import com.sparta.ordering.global.code.AuthResponseCode;
 import com.sparta.ordering.global.code.GeneralResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
+import com.sparta.ordering.global.storage.FileStorageService;
 import com.sparta.ordering.user.dto.request.ChangePasswordRequest;
 import com.sparta.ordering.user.dto.request.ProfileUpdateRequest;
 import com.sparta.ordering.user.dto.request.UserCreateRequest;
@@ -12,21 +13,30 @@ import com.sparta.ordering.user.dto.response.UserResponse;
 import com.sparta.ordering.user.entity.User;
 import com.sparta.ordering.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtSessionService jwtSessionService;
+    private final FileStorageService fileStorageService;
 
+    @Cacheable(cacheNames = "users", key = "#userId")
+    public Optional<User> findCachedById(UUID userId) {
+        return userRepository.findByIdAndDeletedAtIsNull(userId);
+    }
+
+    @Transactional
     public UserResponse create(UserCreateRequest userCreateRequest) {
         // 중복 검사
         if (userRepository.existsByUserNameAndDeletedAtIsNull(userCreateRequest.userName()) ||
@@ -59,19 +69,27 @@ public class UserService {
         return ProfileResponse.from(user);
     }
 
-
+    @Transactional
     public ProfileResponse updateProfile(UUID loginUserId, UUID userId, ProfileUpdateRequest profileUpdateRequest,
                                          MultipartFile profileImage) {
         validateOwnership(loginUserId, userId);
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
-        // TODO: 인프라 세팅 완료되면 ProfileImageUrl도 업데이트
+        String imageUrl = null;
+        if (profileImage != null && !profileImage.isEmpty()) {
+            if (user.getProfileImageUrl() != null) {
+                fileStorageService.delete(user.getProfileImageUrl());
+            }
+            imageUrl = fileStorageService.upload(profileImage, userId);
+        }
 
-        user.updateProfile(profileUpdateRequest.nickName(), profileUpdateRequest.phoneNumber(),null);
+        user.updateProfile(profileUpdateRequest.nickName(), profileUpdateRequest.phoneNumber(), imageUrl);
         return ProfileResponse.from(user);
     }
 
+    @CacheEvict(cacheNames = "users", key = "#userId")
+    @Transactional
     public void updatePassword(UUID loginUserId, UUID userId, ChangePasswordRequest changePasswordRequest) {
         validateOwnership(loginUserId, userId);
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
@@ -82,6 +100,8 @@ public class UserService {
         jwtSessionService.invalidateToken(userId);
     }
 
+    @CacheEvict(cacheNames = "users", key = "#userId")
+    @Transactional
     public void deactivate(UUID loginUserId, UUID userId) {
         validateOwnership(loginUserId, userId);
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)

@@ -8,8 +8,10 @@ import com.sparta.ordering.order.repository.OrderRepository;
 import com.sparta.ordering.product.repository.ProductRepository;
 import com.sparta.ordering.restaurant.entity.Restaurant;
 import com.sparta.ordering.restaurant.repository.RestaurantRepository;
+import com.sparta.ordering.review.dto.ReviewDetailResponse;
 import com.sparta.ordering.review.dto.ReviewResponse;
 import com.sparta.ordering.review.entity.Review;
+import com.sparta.ordering.review.repository.ReviewReplyRepository;
 import com.sparta.ordering.review.repository.ReviewRepository;
 import com.sparta.ordering.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
@@ -54,6 +56,9 @@ class ReviewServiceTest {
 
     @Mock
     private ProductRepository productRepository;
+
+    @Mock
+    private ReviewReplyRepository reviewReplyRepository;
 
     @InjectMocks
     private ReviewService reviewService;
@@ -456,7 +461,7 @@ class ReviewServiceTest {
                     .thenReturn(Optional.of(review));
 
             // when
-            ReviewResponse response = reviewService.getReview(reviewId);
+            ReviewDetailResponse response = reviewService.getReview(reviewId);
 
             // then
             assertThat(response.id()).isEqualTo(reviewId);

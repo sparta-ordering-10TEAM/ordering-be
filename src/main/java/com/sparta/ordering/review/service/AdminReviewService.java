@@ -28,17 +28,23 @@ public class AdminReviewService {
 
     @Transactional
     public void softDeleteReview(UUID reviewId, UUID userId) {
-        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
-                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
-
-        if (!allowedRoles.contains(user.getRole())) { // 사용자 Role 검증
-            throw new ApiException(AuthResponseCode.FORBIDDEN);
-        }
+        validateAuthorities(userId);
 
         Review review = reviewRepository.findByIdAndDeletedAtIsNullWithOrder(reviewId)
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.REVIEW_NOT_FOUND));
 
         review.softDelete(userId);
         restaurantRepository.updateAverageRating(review.getOrder().getRestaurant().getId());
+    }
+
+
+
+    private void validateAuthorities(UUID userId){
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
+
+        if (!allowedRoles.contains(user.getRole())) { // 사용자 Role 검증
+            throw new ApiException(AuthResponseCode.FORBIDDEN);
+        }
     }
 }

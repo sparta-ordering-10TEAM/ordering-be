@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -92,6 +93,12 @@ public class Order extends BaseUpdatableEntity {
         this.orderStatus = OrderStatus.CANCELLED;
     }
 
+    @Override
+    public void softDelete(UUID deletedBy) {
+        validateDeleteStatus();
+        super.softDelete(deletedBy);
+    }
+
     private void validateStatus(OrderStatus requestStatus) {
         boolean valid = switch (this.orderStatus) {
             case REQUESTED ->
@@ -125,6 +132,16 @@ public class Order extends BaseUpdatableEntity {
 
         if (now.isAfter(deadline)) {
             throw new ApiException(GeneralResponseCode.ORDER_CANCELLATION_TIME_EXPIRED);
+        }
+    }
+
+    private void validateDeleteStatus() {
+        boolean valid = this.orderStatus == OrderStatus.COMPLETED
+                || this.orderStatus == OrderStatus.CANCELLED
+                || this.orderStatus == OrderStatus.REJECTED;
+
+        if (!valid) {
+            throw new ApiException(GeneralResponseCode.ORDER_DELETE_STATUS_INVALID);
         }
     }
 }

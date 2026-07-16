@@ -146,6 +146,64 @@ class AdminServiceTest {
     }
 
     @Test
+    @DisplayName("가게주인 승인 성공 - CUSTOMER를 OWNER로 변경")
+    void approve_owner_success() {
+        // given
+        UUID userId = UUID.randomUUID();
+        UUID approverId = UUID.randomUUID();
+
+        User user = User.builder()
+                .role(Role.CUSTOMER)
+                .locked(false)
+                .build();
+        ReflectionTestUtils.setField(user, "id", userId);
+
+        when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
+
+        // when
+        UserResponse result = adminService.approveOwner(userId, approverId);
+
+        // then
+        assertThat(user.getRole()).isEqualTo(Role.OWNER);
+        assertThat(user.getApprovedOwnerBy()).isEqualTo(approverId);
+        assertThat(result.getRole()).isEqualTo(Role.OWNER);
+    }
+
+    @Test
+    @DisplayName("가게주인 승인 실패 - 존재하지 않는 사용자")
+    void approve_owner_user_not_found() {
+        // given
+        UUID userId = UUID.randomUUID();
+        UUID approverId = UUID.randomUUID();
+
+        when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.empty());
+
+        // when & then
+        ApiException ex = assertThrows(ApiException.class, () -> adminService.approveOwner(userId, approverId));
+        assertEquals(GeneralResponseCode.USER_NOT_FOUND, ex.getResponseCode());
+    }
+
+    @Test
+    @DisplayName("가게주인 승인 실패 - CUSTOMER가 아닌 회원")
+    void approve_owner_invalid_role() {
+        // given
+        UUID userId = UUID.randomUUID();
+        UUID approverId = UUID.randomUUID();
+
+        User user = User.builder()
+                .role(Role.OWNER)
+                .locked(false)
+                .build();
+        ReflectionTestUtils.setField(user, "id", userId);
+
+        when(userRepository.findByIdAndDeletedAtIsNull(userId)).thenReturn(Optional.of(user));
+
+        // when & then
+        ApiException ex = assertThrows(ApiException.class, () -> adminService.approveOwner(userId, approverId));
+        assertEquals(GeneralResponseCode.INVALID_ROLE_CHANGE, ex.getResponseCode());
+    }
+
+    @Test
     @DisplayName("회원 목록 조회 성공 - 조건 없이 전체 조회")
     void search_users_no_condition() {
         // given
