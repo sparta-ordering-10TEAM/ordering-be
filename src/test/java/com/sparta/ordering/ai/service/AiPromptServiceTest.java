@@ -8,6 +8,8 @@ import com.sparta.ordering.ai.facade.AiPromptFacade;
 import com.sparta.ordering.ai.repository.AiPromptLogRepository;
 import com.sparta.ordering.global.code.AuthResponseCode;
 import com.sparta.ordering.global.exception.ApiException;
+import com.sparta.ordering.review.dto.ReviewDetailResponse;
+import com.sparta.ordering.review.service.ReviewService;
 import com.sparta.ordering.user.entity.Role;
 import com.sparta.ordering.user.entity.User;
 import com.sparta.ordering.user.repository.UserRepository;
@@ -45,6 +47,9 @@ class AiPromptServiceTest {
     @Mock
     private GeminiClient geminiClient;
 
+    @Mock
+    private ReviewService reviewService;
+
     @InjectMocks
     private AiPromptService aiPromptService;
 
@@ -81,16 +86,16 @@ class AiPromptServiceTest {
             // given
             String prompt = "치킨 설명 생성";
             String generatedText = "바삭하고 고소한 후라이드 치킨";
-            when(geminiClient.generateDescription(anyString(), anyString())).thenReturn(generatedText);
+            when(geminiClient.generateText(anyString(), anyString())).thenReturn(generatedText);
 
-            AiPromptFacade facade = new AiPromptFacade(geminiClient, aiPromptService);
+            AiPromptFacade facade = new AiPromptFacade(geminiClient, aiPromptService, reviewService);
 
             // when
             String result = facade.generateProductDescription(prompt);
 
             // then
             assertThat(result).isEqualTo(generatedText);
-            verify(geminiClient, times(1)).generateDescription(anyString(), eq(prompt));
+            verify(geminiClient, times(1)).generateText(anyString(), eq(prompt));
             verify(aiPromptLogRepository, times(1)).save(any(AiPromptLog.class));
         }
 
@@ -100,9 +105,9 @@ class AiPromptServiceTest {
             // given
             String prompt = "치킨 설명 생성";
             String generatedText = "A".repeat(60);
-            when(geminiClient.generateDescription(anyString(), anyString())).thenReturn(generatedText);
+            when(geminiClient.generateText(anyString(), anyString())).thenReturn(generatedText);
 
-            AiPromptFacade facade = new AiPromptFacade(geminiClient, aiPromptService);
+            AiPromptFacade facade = new AiPromptFacade(geminiClient, aiPromptService, reviewService);
 
             // when
             String result = facade.generateProductDescription(prompt);
@@ -111,7 +116,7 @@ class AiPromptServiceTest {
             String expected = "A".repeat(47) + "...";
             assertThat(result).isEqualTo(expected);
             assertThat(result.length()).isEqualTo(50);
-            verify(geminiClient, times(1)).generateDescription(anyString(), eq(prompt));
+            verify(geminiClient, times(1)).generateText(anyString(), eq(prompt));
             verify(aiPromptLogRepository, times(1)).save(any(AiPromptLog.class));
         }
 
@@ -121,9 +126,9 @@ class AiPromptServiceTest {
             // given
             String prompt = "치킨 설명 생성";
             String generatedText = "A".repeat(50);
-            when(geminiClient.generateDescription(anyString(), anyString())).thenReturn(generatedText);
+            when(geminiClient.generateText(anyString(), anyString())).thenReturn(generatedText);
 
-            AiPromptFacade facade = new AiPromptFacade(geminiClient, aiPromptService);
+            AiPromptFacade facade = new AiPromptFacade(geminiClient, aiPromptService, reviewService);
 
             // when
             String result = facade.generateProductDescription(prompt);
@@ -131,7 +136,70 @@ class AiPromptServiceTest {
             // then
             assertThat(result).isEqualTo(generatedText);
             assertThat(result.length()).isEqualTo(50);
-            verify(geminiClient, times(1)).generateDescription(anyString(), eq(prompt));
+            verify(geminiClient, times(1)).generateText(anyString(), eq(prompt));
+            verify(aiPromptLogRepository, times(1)).save(any(AiPromptLog.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("AI 프롬프트 파사드 리뷰 답변 생성 (generateReviewReply)")
+    class GenerateReviewReply {
+
+        @Test
+        @DisplayName("성공 - 200자 이하인 경우 생략 처리되지 않음")
+        void success() {
+            // given
+            UUID reviewId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
+            String reviewComment = "맛있어요!";
+            String expectedText = "리뷰를 남겨주셔서 감사합니다. 맛있게 드셔주셨다니 기쁩니다!";
+
+            ReviewDetailResponse review = new ReviewDetailResponse(
+                    reviewId, UUID.randomUUID(), UUID.randomUUID(), 5, reviewComment,
+                    java.time.Instant.now(), java.time.Instant.now(), userId, userId, null
+            );
+
+            when(reviewService.getReview(reviewId)).thenReturn(review);
+            when(geminiClient.generateText(anyString(), eq(reviewComment))).thenReturn(expectedText);
+
+            AiPromptFacade facade = new AiPromptFacade(geminiClient, aiPromptService, reviewService);
+
+            // when
+            String result = facade.generateReviewReply(reviewId, userId);
+
+            // then
+            assertThat(result).isEqualTo(expectedText);
+            verify(geminiClient, times(1)).generateText(anyString(), eq(reviewComment));
+            verify(aiPromptLogRepository, times(1)).save(any(AiPromptLog.class));
+        }
+
+        @Test
+        @DisplayName("성공 - 200자를 초과하는 경우 197자 자른 뒤 ...을 붙여 200자로 만듦")
+        void successWithTruncate() {
+            // given
+            UUID reviewId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
+            String reviewComment = "맛있어요!";
+            String generatedText = "A".repeat(250);
+
+            ReviewDetailResponse review = new ReviewDetailResponse(
+                    reviewId, UUID.randomUUID(), UUID.randomUUID(), 5, reviewComment,
+                    java.time.Instant.now(), java.time.Instant.now(), userId, userId, null
+            );
+
+            when(reviewService.getReview(reviewId)).thenReturn(review);
+            when(geminiClient.generateText(anyString(), eq(reviewComment))).thenReturn(generatedText);
+
+            AiPromptFacade facade = new AiPromptFacade(geminiClient, aiPromptService, reviewService);
+
+            // when
+            String result = facade.generateReviewReply(reviewId, userId);
+
+            // then
+            String expected = "A".repeat(197) + "...";
+            assertThat(result).isEqualTo(expected);
+            assertThat(result.length()).isEqualTo(200);
+            verify(geminiClient, times(1)).generateText(anyString(), eq(reviewComment));
             verify(aiPromptLogRepository, times(1)).save(any(AiPromptLog.class));
         }
     }

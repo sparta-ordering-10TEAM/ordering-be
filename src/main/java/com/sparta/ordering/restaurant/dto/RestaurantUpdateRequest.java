@@ -8,10 +8,14 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 public record RestaurantUpdateRequest(
         @Size(min = 1, max = 20, message = "카테고리는 1자 이상 20자 이하여야 합니다.")
         String category,
+
+        @Size(min = 1, max = 20, message = "지역은 1자 이상 20자 이하여야 합니다.")
+        UUID regionId,
 
         @Size(min = 1, max = 100, message = "식당 이름은 1자 이상 100자 이하여야 합니다.")
         @Pattern(regexp = ".*\\S.*", message = "식당 이름은 공백일 수 없습니다.")

@@ -3,6 +3,8 @@ package com.sparta.ordering.review.controller.api;
 import com.sparta.ordering.auth.security.customauthentication.CustomUserDetails;
 import com.sparta.ordering.global.dto.GeneralResponse;
 import com.sparta.ordering.review.dto.PostReviewRequest;
+import com.sparta.ordering.review.dto.ReplyReviewRequest;
+import com.sparta.ordering.review.dto.ReviewDetailResponse;
 import com.sparta.ordering.review.dto.ReviewResponse;
 import com.sparta.ordering.review.dto.UpdateReviewRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,6 +32,16 @@ import java.util.UUID;
 @RequestMapping("/api")
 public interface ReviewApi {
     @Operation(
+            summary = "리뷰 단건 조회",
+            description = "특정 리뷰의 상세 내용을 조회합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @GetMapping("/reviews/{reviewId}")
+    ResponseEntity<GeneralResponse<ReviewDetailResponse>> getReview(
+            @PathVariable UUID reviewId
+    );
+
+    @Operation(
             summary = "리뷰 생성",
             description = "완료된 주문에 대해 평점과 리뷰 코멘트를 등록합니다. 생성된 리뷰 ID가 반환됩니다.",
             security = @SecurityRequirement(name = "bearerAuth")
@@ -49,7 +61,7 @@ public interface ReviewApi {
     @GetMapping("/restaurants/{restaurantId}/reviews")
     ResponseEntity<GeneralResponse<Page<ReviewResponse>>> searchRestaurantReviews(
             @PathVariable UUID restaurantId,
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     );
 
     @Operation(
@@ -88,12 +100,39 @@ public interface ReviewApi {
     );
 
     @Operation(
-            summary = "리뷰 단건 조회",
-            description = "특정 리뷰의 상세 내용을 조회합니다.",
+            summary = "[사장님] 리뷰 답변 작성",
+            description = "특정 리뷰에 대한 답변을 작성합니다. 생성된 리뷰 ID가 반환됩니다.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
-    @GetMapping("/reviews/{reviewId}")
-    ResponseEntity<GeneralResponse<ReviewResponse>> getReview(
-            @PathVariable UUID reviewId
+    @PostMapping("/reviews/{reviewId}/reply")
+    ResponseEntity<GeneralResponse<UUID>> replyReview(
+            @PathVariable UUID reviewId,
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestBody @Valid ReplyReviewRequest request,
+            Authentication authentication
+    );
+
+    @Operation(
+            summary = "[사장님] 리뷰 답변 수정",
+            description = "작성한 리뷰 답변을 수정합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @PatchMapping("/reviews/replies/{reviewReplyId}")
+    ResponseEntity<GeneralResponse<Void>> updateReviewReply(
+            @PathVariable UUID reviewReplyId,
+            @RequestBody @Valid ReplyReviewRequest request,
+            @AuthenticationPrincipal CustomUserDetails user
+    );
+
+    @Operation(
+            summary = "리뷰 답변 삭제",
+            description = "작성한 리뷰 답변을 삭제(Soft Delete)하거나, 관리자가 강제 삭제합니다.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @DeleteMapping("/reviews/replies/{reviewReplyId}")
+    ResponseEntity<GeneralResponse<Void>> deleteReviewReply(
+            @PathVariable UUID reviewReplyId,
+            @AuthenticationPrincipal CustomUserDetails user,
+            Authentication authentication
     );
 }

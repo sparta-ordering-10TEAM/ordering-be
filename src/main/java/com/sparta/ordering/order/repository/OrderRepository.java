@@ -15,17 +15,6 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     Optional<Order> findByIdAndCustomer_IdAndDeletedAtIsNull(UUID id, UUID customerId);
 
-    boolean existsByOrderNumber(String orderNumber);
-
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("""
-            SELECT o FROM Order o
-            WHERE o.id = :id
-            AND o.customer.id = :customerId
-            AND o.deletedAt IS NULL
-            """)
-    Optional<Order> findByIdAndCustomerIdForUpdate(UUID id, UUID customerId);
-
     @Query("""
            SELECT o FROM Order o
            JOIN FETCH o.restaurant
@@ -39,10 +28,9 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
            JOIN FETCH o.restaurant r
            WHERE r.user.id = :ownerId
            AND o.deletedAt IS NULL
-           AND r.deletedAt IS NULL
            """
     )
-    Page<Order> findAllByOwnerIdWithRestaurant(UUID ownerId, Pageable pageable);
+    Page<Order> findAllByRestaurantOwnerIdWithRestaurant(UUID ownerId, Pageable pageable);
 
     @Query("""
            SELECT o FROM Order o
@@ -52,6 +40,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     )
     Page<Order> findAllWithRestaurant(Pageable pageable);
 
+    // 주문 상세 조회
     @Query("""
            SELECT DISTINCT o FROM Order o
            JOIN FETCH o.restaurant
@@ -61,7 +50,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
            AND o.deletedAt IS NULL
            AND (oi IS NULL OR oi.deletedAt IS NULL)
            """)
-    Optional<Order> findByCustomerIdWithRestaurantAndOrderItems(UUID customerId, UUID orderId);
+    Optional<Order> findDetailByIdAndCustomerId(UUID orderId, UUID customerId);
 
     @Query("""
            SELECT DISTINCT o FROM Order o
@@ -70,10 +59,9 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
            WHERE o.id = :orderId
            AND r.user.id = :ownerId
            AND o.deletedAt IS NULL
-           AND r.deletedAt IS NULL
            AND (oi IS NULL OR oi.deletedAt IS NULL)
            """)
-    Optional<Order> findByOwnerIdWithRestaurantAndOrderItems(UUID ownerId, UUID orderId);
+    Optional<Order> findDetailByIdAndRestaurantOwnerId(UUID orderId, UUID ownerId);
 
     @Query("""
            SELECT DISTINCT o FROM Order o
@@ -83,7 +71,21 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
            AND o.deletedAt IS NULL
            AND (oi IS NULL OR oi.deletedAt IS NULL)
            """)
-    Optional<Order> findByIdWithRestaurantAndOrderItems(UUID orderId);
+    Optional<Order> findDetailById(UUID orderId);
+
+
+    // 주문 취소 상태 변경
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+       SELECT o
+       FROM Order o
+       JOIN o.restaurant r
+       WHERE o.id = :orderId
+       AND o.customer.id = :customerId
+       AND o.deletedAt IS NULL
+       AND r.deletedAt IS NULL
+       """)
+    Optional<Order> findByIdAndCustomerIdForCancel(UUID orderId, UUID customerId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
@@ -94,5 +96,35 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
            AND o.deletedAt IS NULL
            AND r.deletedAt IS NULL
            """)
-    Optional<Order> findByIdAndOwnerIdForUpdate(UUID orderId, UUID ownerId);
+    Optional<Order> findByIdAndRestaurantOwnerIdForStatusUpdate(UUID orderId, UUID ownerId);
+
+
+    // 주문 삭제
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            SELECT o FROM Order o
+            WHERE o.id = :orderId
+            AND o.customer.id = :customerId
+            AND o.deletedAt IS NULL
+            """)
+    Optional<Order> findByIdAndCustomerIdForDelete(UUID orderId, UUID customerId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+       SELECT o
+       FROM Order o
+       JOIN o.restaurant r
+       WHERE o.id = :orderId
+       AND r.user.id = :ownerId
+       AND o.deletedAt IS NULL
+       """)
+    Optional<Order> findByIdAndRestaurantOwnerIdForDelete(UUID orderId, UUID ownerId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+           SELECT o FROM Order o
+           WHERE o.id = :orderId
+           AND o.deletedAt IS NULL
+           """)
+    Optional<Order> findByIdForDelete(UUID orderId);
 }

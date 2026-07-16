@@ -6,9 +6,11 @@ import com.sparta.ordering.global.exception.ApiException;
 import com.sparta.ordering.restaurant.dto.RestaurantCreateRequest;
 import com.sparta.ordering.restaurant.dto.RestaurantResponse;
 import com.sparta.ordering.restaurant.dto.RestaurantUpdateRequest;
+import com.sparta.ordering.restaurant.entity.Region;
 import com.sparta.ordering.restaurant.entity.Restaurant;
 import com.sparta.ordering.restaurant.entity.RestaurantCategory;
 import com.sparta.ordering.restaurant.entity.RestaurantStatus;
+import com.sparta.ordering.restaurant.repository.RegionRepository;
 import com.sparta.ordering.restaurant.repository.RestaurantCategoryRepository;
 import com.sparta.ordering.restaurant.repository.RestaurantRepository;
 import com.sparta.ordering.user.entity.Role;
@@ -21,7 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -30,13 +31,18 @@ public class RestaurantService {
 
     private final RestaurantRepository restaurantRepository;
     private final RestaurantCategoryRepository restaurantCategoryRepository;
+    private final RegionRepository regionRepository;
     private final UserRepository userRepository;
 
-    private static final Set<Role> PRIVILEGED_ROLES = Set.of(Role.MANAGER, Role.MASTER);
-
     @Transactional(readOnly = true)
-    public Page<RestaurantResponse> getRestaurants(String category, Pageable pageable) {
-        return findRestaurants(category, pageable)
+    public Page<RestaurantResponse> getRestaurants(
+            String category,
+            UUID regionId,
+            RestaurantStatus status,
+            Pageable pageable) {
+        UUID categoryId = StringUtils.hasText(category) ? getActiveCategory(category).getId() : null;
+
+        return restaurantRepository.findWithFilters(categoryId, regionId, status, pageable)
                 .map(RestaurantResponse::from);
     }
 
@@ -65,9 +71,12 @@ public class RestaurantService {
         RestaurantCategory category = restaurantCategoryRepository.findByCodeAndDeletedAtIsNull(request.category())
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.RESTAURANT_CATEGORY_NOT_FOUND));
 
+        Region region = getActiveLeafRegion(request.regionId());
+
         Restaurant restaurant = Restaurant.builder()
                 .user(owner)
                 .category(category)
+                .region(region)
                 .name(request.name())
                 .description(request.description())
                 .phone(request.phone())
@@ -87,6 +96,7 @@ public class RestaurantService {
         return RestaurantResponse.from(savedRestaurant);
     }
 
+
     @Transactional
     public RestaurantResponse updateRestaurant(
             UUID restaurantId,
@@ -94,15 +104,15 @@ public class RestaurantService {
             UUID userId
     ) {
         Restaurant restaurant = getActiveRestaurant(restaurantId);
-        User requestUser = userRepository.findByIdAndDeletedAtIsNull(userId)
-                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
-        validateModificationPermission(requestUser, restaurant);
+        validateModificationPermission(userId, restaurant);
 
-        RestaurantCategory category = (request.category() != null) ? getActiveCategory(request.category()): null;
+        RestaurantCategory category = (request.category() != null) ? getActiveCategory(request.category()) : null;
+        Region region = (request.regionId() != null) ? getActiveLeafRegion(request.regionId()) : null;
 
         restaurant.update(
                 category,
+                region,
                 request.name(),
                 request.phone(),
                 request.description(),
@@ -120,12 +130,21 @@ public class RestaurantService {
     }
 
     @Transactional
+    public RestaurantResponse changeRestaurantStatus(UUID restaurantId, RestaurantStatus status, UUID userId) {
+        Restaurant restaurant = getActiveRestaurant(restaurantId);
+
+        validateModificationPermission(userId, restaurant);
+
+        restaurant.changeStatus(status);
+
+        return RestaurantResponse.from(restaurant);
+    }
+
+    @Transactional
     public void deleteRestaurant(UUID restaurantId, UUID userId) {
         Restaurant restaurant = getActiveRestaurant(restaurantId);
-        User requestUser = userRepository.findByIdAndDeletedAtIsNull(userId)
-                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
 
-        validateModificationPermission(requestUser, restaurant);
+        validateModificationPermission(userId, restaurant);
 
         restaurant.softDelete(userId);
     }
@@ -150,13 +169,26 @@ public class RestaurantService {
                 .orElseThrow(() -> new ApiException(GeneralResponseCode.RESTAURANT_NOT_FOUND));
     }
 
-    private void validateModificationPermission(User user, Restaurant restaurant) {
-        if (PRIVILEGED_ROLES.contains(user.getRole())) {
+    private void validateModificationPermission(UUID userId, Restaurant restaurant) {
+        User requestUser = userRepository.findByIdAndDeletedAtIsNull(userId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.USER_NOT_FOUND));
+
+        if (requestUser.getRole().isAdmin()) {
             return;
         }
-        if (user.getRole() == Role.OWNER && restaurant.isOwnedBy(user)) {
+        if (requestUser.getRole() == Role.OWNER && restaurant.isOwnedBy(requestUser)) {
             return;
         }
         throw new ApiException(AuthResponseCode.FORBIDDEN);
+    }
+
+    private Region getActiveLeafRegion(UUID regionId) {
+        Region region = regionRepository.findByIdAndDeletedAtIsNull(regionId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.REGION_NOT_FOUND));
+
+        if (!region.isLeaf()) {
+            throw new ApiException(GeneralResponseCode.REGION_NOT_LEAF);
+        }
+        return region;
     }
 }

@@ -7,8 +7,11 @@ import com.sparta.ordering.order.entity.OrderStatus;
 import com.sparta.ordering.order.repository.OrderRepository;
 import com.sparta.ordering.product.repository.ProductRepository;
 import com.sparta.ordering.restaurant.repository.RestaurantRepository;
+import com.sparta.ordering.review.dto.ReviewDetailResponse;
 import com.sparta.ordering.review.dto.ReviewResponse;
 import com.sparta.ordering.review.entity.Review;
+import com.sparta.ordering.review.entity.ReviewReply;
+import com.sparta.ordering.review.repository.ReviewReplyRepository;
 import com.sparta.ordering.review.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,6 +28,16 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final RestaurantRepository restaurantRepository;
     private final ProductRepository productRepository;
+    private final ReviewReplyRepository reviewReplyRepository;
+
+    @Transactional(readOnly = true)
+    public ReviewDetailResponse getReview(UUID reviewId) {
+        Review review = reviewRepository.findByIdAndDeletedAtIsNull(reviewId)
+                .orElseThrow(() -> new ApiException(GeneralResponseCode.REVIEW_NOT_FOUND));
+        ReviewReply reply = reviewReplyRepository.findByReview_IdAndDeletedAtIsNull(reviewId)
+                .orElse(null);
+        return ReviewDetailResponse.fromEntity(review, reply);
+    }
 
     @Transactional
     public UUID postReview(int rating, String comment, UUID orderId, UUID userId) {
@@ -100,12 +113,5 @@ public class ReviewService {
 
         review.softDelete(userId);
         restaurantRepository.updateAverageRating(review.getOrder().getRestaurant().getId());
-    }
-
-    @Transactional(readOnly = true)
-    public ReviewResponse getReview(UUID reviewId) {
-        Review review = reviewRepository.findByIdAndDeletedAtIsNull(reviewId)
-                .orElseThrow(() -> new ApiException(GeneralResponseCode.REVIEW_NOT_FOUND));
-        return ReviewResponse.fromEntity(review);
     }
 }

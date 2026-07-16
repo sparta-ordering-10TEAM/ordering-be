@@ -6,9 +6,22 @@ import com.sparta.ordering.ai.entity.AiPromptLog;
 import com.sparta.ordering.ai.entity.PromptType;
 import com.sparta.ordering.ai.repository.AiPromptLogRepository;
 import com.sparta.ordering.auth.security.session.JwtSessionService;
+import com.sparta.ordering.order.entity.Order;
+import com.sparta.ordering.order.entity.OrderStatus;
+import com.sparta.ordering.order.repository.OrderRepository;
+import com.sparta.ordering.restaurant.entity.Region;
+import com.sparta.ordering.restaurant.entity.Restaurant;
+import com.sparta.ordering.restaurant.entity.RestaurantCategory;
+import com.sparta.ordering.restaurant.repository.RegionRepository;
+import com.sparta.ordering.restaurant.repository.RestaurantCategoryRepository;
+import com.sparta.ordering.restaurant.repository.RestaurantRepository;
+import com.sparta.ordering.review.entity.Review;
+import com.sparta.ordering.review.repository.ReviewRepository;
 import com.sparta.ordering.user.entity.Role;
 import com.sparta.ordering.user.entity.User;
 import com.sparta.ordering.user.repository.UserRepository;
+import org.springframework.test.util.ReflectionTestUtils;
+import java.lang.reflect.Constructor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -53,6 +66,21 @@ class AiPromptControllerIntegrationTest {
 
     @Autowired
     private JwtSessionService jwtSessionService;
+
+    @Autowired
+    private RestaurantCategoryRepository restaurantCategoryRepository;
+
+    @Autowired
+    private RegionRepository regionRepository;
+
+    @Autowired
+    private RestaurantRepository restaurantRepository;
+
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
+    private ReviewRepository reviewRepository;
 
     @MockitoBean
     private GeminiClient geminiClient;
@@ -102,7 +130,7 @@ class AiPromptControllerIntegrationTest {
         customerToken = jwtSessionService.createJwtSession(customer.getId()).getAccessToken();
 
         // GeminiClient 기본 동작 모킹
-        when(geminiClient.generateDescription(anyString(), anyString())).thenReturn("바삭바삭 매운 떡볶이 설명문구");
+        when(geminiClient.generateText(anyString(), anyString())).thenReturn("바삭바삭 매운 떡볶이 설명문구");
     }
 
     @Nested
@@ -226,6 +254,88 @@ class AiPromptControllerIntegrationTest {
             AiPromptLog deleted = aiPromptLogRepository.findById(log1.getId()).orElseThrow();
             assertThat(deleted.getDeletedAt()).isNotNull();
             assertThat(deleted.getDeletedBy()).isEqualTo(manager.getId());
+        }
+    }
+
+    @Nested
+    @DisplayName("AI 리뷰 답변 생성 (POST /api/reviews/{reviewId}/generate-reply)")
+    class GenerateReviewReply {
+
+        private Review savedReview;
+
+        @BeforeEach
+        void setUpNested() throws Exception {
+            // 카테고리 생성
+            Constructor<RestaurantCategory> categoryConstructor = RestaurantCategory.class.getDeclaredConstructor();
+            categoryConstructor.setAccessible(true);
+            RestaurantCategory category = categoryConstructor.newInstance();
+            ReflectionTestUtils.setField(category, "code", "CAT_" + UUID.randomUUID().toString().substring(0, 8));
+            restaurantCategoryRepository.save(category);
+
+            // 지역 생성 (Restaurant.region_id NOT NULL 제약)
+            Region sido = regionRepository.save(Region.builder().name("서울").build());
+            Region sigungu = regionRepository.save(Region.builder().parent(sido).name("강남구").build());
+            Region region = regionRepository.save(Region.builder().parent(sigungu).name("역삼동").build());
+
+            // 가게 생성
+            Restaurant restaurant = Restaurant.builder()
+                    .user(owner)
+                    .category(category)
+                    .region(region)
+                    .name("맛있는 치킨집")
+                    .phone("02-123-4567")
+                    .description("치킨이 맛있는 집")
+                    .address("서울시 강남구")
+                    .addressDetail("101호")
+                    .zipCode("12345")
+                    .minOrderAmount(15000)
+                    .deliveryFee(3000)
+                    .status(com.sparta.ordering.restaurant.entity.RestaurantStatus.OPEN)
+                    .latitude(new java.math.BigDecimal("37.123456"))
+                    .longitude(new java.math.BigDecimal("127.123456"))
+                    .deliveryRadiusKm(new java.math.BigDecimal("3.0"))
+                    .build();
+            restaurantRepository.save(restaurant);
+
+            // 주문 생성
+            Order order = Order.create("ORD_" + UUID.randomUUID().toString().substring(0, 8), restaurant, customer, "서울시 강남구", "맛있게 해주세요");
+            ReflectionTestUtils.setField(order, "orderStatus", OrderStatus.COMPLETED);
+            orderRepository.save(order);
+
+            // 리뷰 생성
+            savedReview = Review.builder()
+                    .order(order)
+                    .customer(customer)
+                    .rating(5)
+                    .comment("맛있어요!")
+                    .build();
+            savedReview = reviewRepository.save(savedReview);
+        }
+
+        @Test
+        @DisplayName("성공 - OWNER 권한으로 호출 시 AI 답글 생성 및 반환, 로그 적재 확인")
+        void success() throws Exception {
+            // when & then
+            mockMvc.perform(post("/api/reviews/{reviewId}/generate-reply", savedReview.getId())
+                            .header("Authorization", "Bearer " + ownerToken)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.status").value(201))
+                    .andExpect(jsonPath("$.data").value("바삭바삭 매운 떡볶이 설명문구")); // generateText 모킹은 setup에서 "바삭바삭 매운 떡볶이 설명문구"이지만, generateReviewReply 로직에서 200자 제한을 넘지 않으므로 그대로 반환됩니다.
+
+            // 로그가 DB에 적재되었는지 검증
+            long logCount = aiPromptLogRepository.count();
+            assertThat(logCount).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("실패 - CUSTOMER 권한으로 호출 시 403 Forbidden 발생")
+        void failForbidden() throws Exception {
+            // when & then
+            mockMvc.perform(post("/api/reviews/{reviewId}/generate-reply", savedReview.getId())
+                            .header("Authorization", "Bearer " + customerToken)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isForbidden());
         }
     }
 }
