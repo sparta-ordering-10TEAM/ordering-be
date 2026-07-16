@@ -10,9 +10,11 @@ import com.sparta.ordering.cart.repository.CartItemRepository;
 import com.sparta.ordering.cart.repository.CartRepository;
 import com.sparta.ordering.product.entity.Product;
 import com.sparta.ordering.product.repository.ProductRepository;
+import com.sparta.ordering.restaurant.entity.Region;
 import com.sparta.ordering.restaurant.entity.Restaurant;
 import com.sparta.ordering.restaurant.entity.RestaurantCategory;
 import com.sparta.ordering.restaurant.entity.RestaurantStatus;
+import com.sparta.ordering.restaurant.repository.RegionRepository;
 import com.sparta.ordering.restaurant.repository.RestaurantCategoryRepository;
 import com.sparta.ordering.restaurant.repository.RestaurantRepository;
 import com.sparta.ordering.user.entity.Role;
@@ -65,6 +67,9 @@ class CartControllerIntegrationTest {
     private RestaurantRepository restaurantRepository;
 
     @Autowired
+    private RegionRepository regionRepository;
+
+    @Autowired
     private ProductRepository productRepository;
 
     @Autowired
@@ -115,10 +120,16 @@ class CartControllerIntegrationTest {
         ReflectionTestUtils.setField(category, "code", "CAT_" + UUID.randomUUID().toString().substring(0, 8));
         restaurantCategoryRepository.save(category);
 
+        // 지역 생성 (Restaurant.region_id NOT NULL 제약)
+        Region sido = regionRepository.save(Region.builder().name("서울").build());
+        Region sigungu = regionRepository.save(Region.builder().parent(sido).name("강남구").build());
+        Region region = regionRepository.save(Region.builder().parent(sigungu).name("역삼동").build());
+
         // 가게 2곳 생성 (다른 가게 상품 검증용)
         restaurant = Restaurant.builder()
                 .user(owner)
                 .category(category)
+                .region(region)
                 .name("맛있는 치킨집")
                 .phone("02-123-4567")
                 .description("치킨이 맛있는 집")
@@ -137,6 +148,7 @@ class CartControllerIntegrationTest {
         otherRestaurant = Restaurant.builder()
                 .user(owner)
                 .category(category)
+                .region(region)
                 .name("든든한 피자집")
                 .phone("02-987-6543")
                 .description("피자가 든든한 집")
