@@ -36,6 +36,8 @@
 * **Documentation:** Swagger
 * **Logging:** Logback(Slf4j)
 
+<img width="622" height="427" alt="image" src="https://github.com/user-attachments/assets/50229118-1b5c-4f9b-a6b7-dec763254822" />
+
 ---
 
 ## ⚙️ Core Architecture & System Rules
